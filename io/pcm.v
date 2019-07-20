@@ -37,10 +37,10 @@ module PCM(
 	reg [23:0] RALATCH;
 	reg [23:0] PALATCH;
 	
-	assign nSDRMPX = ~SDRMPX;
-	assign nSDPMPX = ~SDPMPX;
-	assign SDPOE = ~nSDPOE;
-	assign CEN = ~COUNT[1];
+	wire nSDRMPX = ~SDRMPX;
+	wire nSDPMPX = ~SDPMPX;
+	wire SDPOE = ~nSDPOE;
+	wire CEN = ~COUNT[1];
 	
 	always @(posedge CLK_68KCLKB or negedge nSDPOE)
 	begin

@@ -19,6 +19,8 @@
     Date: 21-03-2019
 */
 
+//altera message_off 10030
+
 // ADPCM-A uses a LUT because it is very sensitive to rounding
 // it looks like the original algorithm also used a table
 

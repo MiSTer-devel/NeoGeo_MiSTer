@@ -84,6 +84,7 @@ module lspc2_clk(
 	// S274A
 	assign LSPC_8M = ~|{S276_Q, R262_Q};
 	
+	wire S219A_nQ;
 	FD4 S219A(LSPC_8M, S219A_nQ, 1'b1, 1'b1, LSPC_4M, S219A_nQ);
 	
 endmodule

@@ -56,6 +56,7 @@ module hshrink(
 	assign U226_P[3] = ~|{~&{SHRINK[3:2]}, ~|{SHRINK[1:0]}};
 
 	// Shift registers
+	wire T193A_OUT, U258A_OUT;
 	FS2 U193(CK, U193_P, 1'b1, ~L, U193_REG);
 	BD3 T193A(U193_REG[3], T193A_OUT);
 	FS2 T196(CK, T196_P, T193A_OUT, ~L, T196_REG);

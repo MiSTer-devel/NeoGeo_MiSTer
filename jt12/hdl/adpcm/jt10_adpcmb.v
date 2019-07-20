@@ -84,7 +84,7 @@ always @( posedge clk or negedge rst_n )
         d3        <= { {xw-16{1'b0}}, d2l[18:3] }; // xw bits
         next_step3<= step2l[22:6];
         // III 2's complement of d3 if necessary
-        d4        <= sign_data ? ~d3+1 : d3;
+        d4        <= sign_data ? ~d3+1'd1 : d3;
         // IV   Advance the waveform
         next_x5   <= x1+d4;
         // V: limit or reset outputs

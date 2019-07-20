@@ -22,9 +22,12 @@ module autoanim(
 );
 
 	wire [3:0] D151_Q;
-	
-	assign E95A_OUT = ~|{E117_CO, 1'b0};	// Used for test mode
-	assign E149_OUT = ~^{CLK, 1'b0};			// Used for test mode
+
+	wire B91_CO;
+	wire E117_CO;
+
+	wire E95A_OUT = ~|{E117_CO, 1'b0};	// Used for test mode
+	wire E149_OUT = ~^{CLK, 1'b0};			// Used for test mode
 	
 	// Timer counters
 	C43 B91(E149_OUT, ~AA_SPEED[3:0], E95A_OUT, 1'b1, 1'b1, 1'b1, , B91_CO);

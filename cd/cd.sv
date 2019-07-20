@@ -96,6 +96,8 @@ module cd_sys(
 	wire [7:0] MSF_F;
 	
 	wire HOCK, CDCK, CDD_nIRQ;
+	wire DRIVE_sd_rd;
+	wire DRIVE_READING;
 	
 	cd_drive DRIVE(
 		.clk_sys(clk_sys),

@@ -33,15 +33,16 @@ module irq(
 	assign ACK[1] = ~&{nWR_ACK, ACK_BITS[1]};
 	assign ACK[2] = ~&{nWR_ACK, ACK_BITS[2]};
 	
+	wire B56_Q, B56_nQ, B52_Q, B52_nQ, C52_Q;
 	FD3 B56(RESET_IRQ, 1'b0, ACK[0], B56_Q, B56_nQ);
 	FD3 B52(TIMER_IRQ, 1'b0, ACK[1], B52_Q, B52_nQ);
 	FD3 C52(VBL_IRQ, 1'b0, ACK[2], C52_Q);
 	
 	// B49
-	assign B49_OUT = B52_Q | B56_nQ;
+	wire B49_OUT = B52_Q | B56_nQ;
 	
 	// B50A
-	assign B50A_OUT = ~|{C52_Q, B56_nQ, B52_nQ};
+	wire B50A_OUT = ~|{C52_Q, B56_nQ, B52_nQ};
 	
 	FDSCell B32(CLK, {1'b0, B50A_OUT, B49_OUT, B56_Q}, B32_Q);
 	

@@ -147,7 +147,7 @@ always @(posedge clk or negedge rst_n)
         // III, shift by 0 or 1
         if( shcnt_mod3 ) begin
             pcm4   <= pcm3>>>1;
-            shcnt4 <= shcnt3-1;
+            shcnt4 <= shcnt3-1'd1;
         end else begin
             pcm4   <= pcm3;
             shcnt4 <= shcnt3;
@@ -155,7 +155,7 @@ always @(posedge clk or negedge rst_n)
         // IV, shift by 0 or 1
         if( shcnt_mod4 ) begin
             pcm5   <= pcm4>>>1;
-            shcnt5 <= shcnt4-1;
+            shcnt5 <= shcnt4-1'd1;
         end else begin
             pcm5   <= pcm4;
             shcnt5 <= shcnt4;
@@ -163,7 +163,7 @@ always @(posedge clk or negedge rst_n)
         // V, shift by 0 or 1
         if( shcnt_mod5 ) begin
             pcm6   <= pcm5>>>1;
-            shcnt6 <= shcnt5-1;
+            shcnt6 <= shcnt5-1'd1;
         end else begin
             pcm6   <= pcm5;
             shcnt6 <= shcnt5;

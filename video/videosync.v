@@ -142,6 +142,7 @@ module videosync(
 	// H277B H269B H275A
 	wire MATCH_PAL = ~&{RASTERC[4:3]} | RASTERC[5] | RASTERC[8];
 	
+	wire H272_Q, BLANK_PAL;
 	FDM H272(RASTERC[2], MATCH_PAL, H272_Q);
 	FDM I238(FLIP, H272_Q, BLANK_PAL);
 	
@@ -152,6 +153,7 @@ module videosync(
 	FD4 J251(~RASTERC[4], MATCH_NTSC, 1'b1, nRESETP, BLANK_NTSC);
 	
 	// J240A: T2E
+	wire BLANK_NTSC;
 	assign VSYNC = VMODE ? BLANK_PAL : RASTERC[8];
 	assign BNK = ~(VMODE ? RASTERC[8] : BLANK_NTSC);
 	
@@ -161,8 +163,8 @@ module videosync(
 	//assign #1 S136A_OUT = ~LSPC_1_5M;
 	
 	// P13A
-	assign #1 nPIXEL_H256 = ~PIXELC[8];	//~P15_QC
-	assign P13A_OUT = PIXELC[6] & nPIXEL_H256;	//P15_QA
+	wire #1 nPIXEL_H256 = ~PIXELC[8];	//~P15_QC
+	wire P13A_OUT = PIXELC[6] & nPIXEL_H256;	//P15_QA
 	
 	reg [3:0] R15_REG;
 	reg [3:0] T116_REG;

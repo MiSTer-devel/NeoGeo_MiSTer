@@ -117,7 +117,8 @@ module lspc_regs(
 
 	// CPU VRAM write request flag handling
 	// Set by write to REG_VRAMRW, reset when write is done or write to REG_VRAMADDR
-	assign D32A_OUT = D28_nQ & 1'b1;	// Used for test mode
+	wire D32A_OUT = D28_nQ & 1'b1;	// Used for test mode
+	wire D38_Q, D28_nQ;
 	FDPCell D38(~WR_VRAM_RW, 1'b1, 1'b1, D32A_OUT, D38_Q, nVRAM_WRITE_REQ);
 	FDPCell D28(D112B_OUT, 1'b1, 1'b1, D38_Q, , D28_nQ);
 	

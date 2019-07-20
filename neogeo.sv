@@ -660,6 +660,12 @@ hps_io #(
 	wire [23:0] DMA_ADDR_OUT;
 	wire [1:0] wtbt;
 	
+	wire DMA_SDRAM_BUSY;
+	wire SDRAM_WR_PULSE;
+	wire SDRAM_RD_PULSE;
+	wire sdram_rd_type;
+	wire PROM_DATA_READY;
+
 	cd_sys cdsystem(
 		.nRESET(nRESET),
 		.clk_sys(clk_sys), .CLK_68KCLK(CLK_68KCLK),

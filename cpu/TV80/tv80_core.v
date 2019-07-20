@@ -611,7 +611,7 @@ module tv80_core (/*AUTOARG*/
                                 begin                                  
                                   if (Inc_WZ == 1'b1 ) 
                                     begin
-                                      A <= #1 TmpAddr + 1;
+                                      A <= #1 TmpAddr + 1'd1;
                                     end 
                                   else 
                                     begin
@@ -1339,7 +1339,7 @@ module tv80_core (/*AUTOARG*/
         end 
       else if (BTR_r == 1'b1 ) 
         begin
-          PC16_B = -2;
+          PC16_B = -16'd2;
         end
       else
         begin
@@ -1357,13 +1357,13 @@ module tv80_core (/*AUTOARG*/
           SP16_A = SP;
           
           if (IncDec_16[3] == 1'b1)
-            SP16_B = -1;
+            SP16_B = -16'd1;
           else
             SP16_B = 1;
         end
 
       if (IncDec_16[3])  
-        ID16_B = -1;
+        ID16_B = -16'd1;
       else
         ID16_B = 1;
 

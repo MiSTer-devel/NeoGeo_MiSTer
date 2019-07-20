@@ -44,8 +44,8 @@ always @(posedge clk or negedge rst_n)
         cycle <= 'd0;
     end else if(cen) begin
         if( start ) begin
-            cycle <= ~'d0;
-            r     <=  'd0;
+            cycle <= ~16'd0;
+            r     <=  16'd0;
             d     <= a;
         end else if(cycle[0]) begin
             cycle <= { 1'b0, cycle[dw-1:1] };
