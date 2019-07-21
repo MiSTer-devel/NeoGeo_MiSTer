@@ -125,7 +125,7 @@ module emu
 	// SDRAM2_EN: 
 	//
 	//    1 - MiSTer is configured for SDRAM2 use, core can use SDRAM2_* signals.
-	//        It doesn't mean the SDRAM module is plugged.
+	//        It doesn't mean SDRAM module is plugged.
 	//
 	//    0 - MiSter is not configured for SDRAM2 module, the core
 	//        has to set all output SDRAM2_* signals to Z ASAP to avoid signal collision!
@@ -749,20 +749,7 @@ hps_io #(
 		(ioctl_index == INDEX_P2ROM) ? 	ioctl_addr + 27'h0200000 :				// P2+: $0200000~$05FFFFF
 		(ioctl_index >= INDEX_CROMS) ? 	{1'b0, ioctl_addr[24:0], 1'b0} + {ioctl_index[7:1]-INDEX_CROMS[7:1], 18'h00000, ioctl_index[0], 1'b0} + 27'h0800000 : // C*: $0800000~$1FFFFFF
 		27'h0000000;
-/*	
-	reg [3:0] latch_mask;
-	always @(posedge clk_sys) begin
-		reg old_rst = 0;
 
-		//make sure all lower bits are filled with 1
-		latch_mask <= latch_mask | latch_mask[2:0];
-
-		old_rst <= status[0];
-		if(~old_rst & status[0]) latch_mask <= 0;
-		
-		if(ioctl_wr) latch_mask <= latch_mask | ioctl_addr_offset[26:23];
-	end
-*/
 	sdram_mux SDRAM_MUX(
 		.nRESET(nRESET),
 		.clk_sys(clk_sys),
