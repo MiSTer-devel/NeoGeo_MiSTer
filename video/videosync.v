@@ -196,6 +196,6 @@ module videosync(
 	//assign SYNC = ~^{HSYNC, VSYNC};
 	
 	// L40A
-	assign CHBL = ~&{BNKB, R15_REG[3]};
+	assign CHBL = ~R15_REG[3];
 
 endmodule

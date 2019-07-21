@@ -156,8 +156,6 @@ assign LED_POWER = 0;
 assign VIDEO_ARX = 8'd10;	// 320/32
 assign VIDEO_ARY = 8'd7;	// 224/32
 
-assign VGA_DE = ~CHBL & nBNKB;
-
 // status bit definition:
 // 31       23       15       7
 // --AA-PSS -------- L--CGGDD DEEMVTTR
@@ -242,8 +240,6 @@ pll pll(
 	.locked(locked)
 );
 
-assign CLK_VIDEO = clk_sys;
-assign CE_PIXEL = CLK_6MB;
 wire nRST = ~(ioctl_download | status[0]);
 
 // The watchdog should output nRESET but it makes video sync stop for a moment, so the
@@ -1312,6 +1308,7 @@ hps_io #(
 	wire SPR_EN = SYSTEM_CDx ? CD_SPR_EN : 1'b1;
 	wire DOTA_GATED = SPR_EN & DOTA;
 	wire DOTB_GATED = SPR_EN & DOTB;
+	wire HSync,VSync;
 	
 	lspc2_a2	LSPC(
 		.CLK_24M(CLK_24M),
@@ -1330,7 +1327,7 @@ hps_io #(
 		.CHG(CHG),
 		.LD1(LD1), .LD2(LD2),
 		.WE(WE), .CK(CK),	.SS1(SS1), .SS2(SS2),
-		.HSYNC(VGA_HS), .VSYNC(VGA_VS),
+		.HSYNC(HSync), .VSYNC(VSync),
 		.CHBL(CHBL), .BNKB(nBNKB),
 		.VCS(VCS),
 		.SVRAM_ADDR(SLOW_VRAM_ADDR),
@@ -1363,17 +1360,39 @@ hps_io #(
 	pal_ram PALRAM({PALBNK, PAL_RAM_ADDR}, CLK_24M, M68K_DATA, ~nPAL_WE, PAL_RAM_DATA);	// Was CLK_12M
 	
 	// DAC latches
-	always @(posedge CLK_6MB, negedge nBNKB)
-	begin
-		if (!nBNKB)
-			PAL_RAM_REG <= 16'h0000;
-		else
+	reg ce_pix;
+	always @(posedge clk_sys) begin
+		reg old_clk;
+	
+		ce_pix <= 0;
+		old_clk <= CLK_6MB;
+		if(~old_clk & CLK_6MB) begin
+			ce_pix <= 1;
 			PAL_RAM_REG <= VIDEO_EN ? PAL_RAM_DATA : 16'h0000;
+		end
 	end
-	
-	// Final video output 6 bits -> 8 bits
-	assign VGA_R = {PAL_RAM_REG[11:8], PAL_RAM_REG[14], PAL_RAM_REG[15], 2'b00};
-	assign VGA_G = {PAL_RAM_REG[7:4], PAL_RAM_REG[13], PAL_RAM_REG[15], 2'b00};
-	assign VGA_B = {PAL_RAM_REG[3:0], PAL_RAM_REG[12], PAL_RAM_REG[15], 2'b00};
-	
+
+	assign CLK_VIDEO = clk_sys;
+	assign CE_PIXEL = ce_pix;
+
+	video_cleaner cideo_cleaner
+	(
+		.*,
+
+		.clk_vid(clk_sys),
+		.ce_pix(ce_pix),
+
+		.R({PAL_RAM_REG[11:8], PAL_RAM_REG[14], {3{PAL_RAM_REG[15]}}}),
+		.G({PAL_RAM_REG[7:4],  PAL_RAM_REG[13], {3{PAL_RAM_REG[15]}}}),
+		.B({PAL_RAM_REG[3:0],  PAL_RAM_REG[12], {3{PAL_RAM_REG[15]}}}),
+
+		.HSync(HSync),
+		.VSync(VSync),
+		.HBlank(CHBL),
+		.VBlank(~nBNKB),
+
+		.HBlank_out(),
+		.VBlank_out()
+	);
+
 endmodule
