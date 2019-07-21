@@ -294,7 +294,7 @@ begin
 	end
 	else
 	begin
-		if (counter_p == 3'd4)
+		if (counter_p == 3'd3)
 			counter_p <= 3'd0;
 		else
 			counter_p <= counter_p + 3'd1;
@@ -314,7 +314,7 @@ begin
 	end
 	else
 	begin
-		if (counter_p == 3'd3)
+		if (counter_p == 3'd2)
 			divb <= ~divb;
 	end
 end

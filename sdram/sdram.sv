@@ -74,7 +74,7 @@ assign {SDRAM_DQMH,SDRAM_DQML} = SDRAM_A[12:11];
 // Burst length = 4
 localparam BURST_LENGTH        = 3'b010;   // 000=1, 001=2, 010=4, 011=8
 localparam ACCESS_TYPE         = 1'b0;     // 0=sequential, 1=interleaved
-localparam CAS_LATENCY         = 3'd3;     // 2 for < 100MHz, 3 for >100MHz
+localparam CAS_LATENCY         = 3'd2;     // 2 for < 100MHz, 3 for >100MHz
 localparam OP_MODE             = 2'b00;    // only 00 (standard operation) allowed
 localparam NO_WRITE_BURST      = 1'b1;     // 0= write burst enabled, 1=only single access write
 localparam MODE                = {3'b000, NO_WRITE_BURST, OP_MODE, CAS_LATENCY, ACCESS_TYPE, BURST_LENGTH};
@@ -107,7 +107,7 @@ reg [15:0] data_fourth;*/
 typedef enum
 {
 	STATE_STARTUP,
-	STATE_OPEN_1, STATE_OPEN_2,
+	STATE_OPEN,
 	STATE_WRITE,
 	STATE_READ,
 	STATE_IDLE,	  STATE_IDLE_1, STATE_IDLE_2, STATE_IDLE_3,
@@ -234,7 +234,7 @@ always @(posedge clk) begin
             //-- Start the refresh cycle. 
             //-- This tasks tRFC (66ns), so 7 idle cycles are needed @ 120MHz
             //------------------------------------------------------------------------
-				state    <= STATE_IDLE_8;
+				state    <= STATE_IDLE_5;
 				command  <= CMD_AUTO_REFRESH;
 				refresh_count <= refresh_count - cycles_per_refresh + 1'd1;
 			end
@@ -250,7 +250,7 @@ always @(posedge clk) begin
 				new_rd   <= 0;
 				save_addr<= addr;
 				save_we  <= new_we;
-				state    <= STATE_OPEN_1;
+				state    <= STATE_OPEN;
 				command  <= CMD_ACTIVE;
 				SDRAM_A  <= addr[22:10];
 				SDRAM_BA <= addr[24:23];
@@ -258,22 +258,21 @@ always @(posedge clk) begin
 		end
 
 		// ACTIVE-to-READ or WRITE delay >20ns (-75)
-		STATE_OPEN_1: state <= STATE_OPEN_2;
-		STATE_OPEN_2: begin
+		STATE_OPEN: begin
 			SDRAM_A     <= {save_we & (new_wtbt ? ~new_wtbt[1] : save_addr[0]), save_we & (new_wtbt ? ~new_wtbt[0] : ~save_addr[0]), 2'b10, save_addr[9:1]};	// Enable auto-precharge
 			state       <= save_we ? STATE_WRITE : STATE_READ;
 		end
 
 		STATE_READ: begin
 			// Wait longer before returning to STATE_IDLE for 4-word burst reads
-			state       <= new_rd_type ? STATE_IDLE_7 : STATE_IDLE_4;
+			state       <= new_rd_type ? STATE_IDLE_5 : STATE_IDLE_2;
 			command     <= CMD_READ;
 			// Schedule reading the data values off the bus
 			data_ready_delay[CAS_LATENCY+3] <= 1;
 		end
 
 		STATE_WRITE: begin
-			state       <= STATE_IDLE_5;
+			state       <= STATE_IDLE_2;
 			command     <= CMD_WRITE;
 			SDRAM_DQ    <= new_wtbt ? new_data : {new_data[7:0], new_data[7:0]};
 			//ready_first <= 1;
