@@ -230,8 +230,8 @@ localparam CONF_STR8 = {
 wire locked;
 wire clk_sys;
 
-// 50MHz in, 5*24=120MHz out
-// CAS latency = 3 (20.8ns)
+// 50MHz in, 4*24=96MHz out
+// CAS latency = 2 (20.8ns)
 pll pll(
 	.refclk(CLK_50M),
 	.rst(0),
