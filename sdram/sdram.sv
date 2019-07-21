@@ -42,12 +42,14 @@ module sdram
 	output            SDRAM_nRAS,  // row address select
 	output            SDRAM_nCAS,  // columns address select
 	output            SDRAM_CKE,   // clock enable
+	input             SDRAM_EN,    // clock enable
 											 //
 	input       [1:0] wtbt,        // 16bit mode:  bit1 - write high byte, bit0 - write low byte,
 											 // 8bit mode:  2'b00 - use addr[0] to decide which byte to write
 											 // Ignored while reading.
 											 //
-	input      [24:0] addr,        // 25 bit address for 8bit mode. addr[0] = 0 for 16bit mode for correct operations.
+	input             sel,
+	input      [25:0] addr,        // 25 bit address for 8bit mode. addr[0] = 0 for 16bit mode for correct operations.
 	output reg [63:0] dout, 		 // data output to cpu
 	input      [15:0] din,         // data input from cpu
 	input             we,          // cpu requests write
@@ -115,10 +117,9 @@ always @(posedge clk) begin
 	reg		  new_rd_type;
 	reg        saved_we = 1;
 	reg        saved_burst;
-	reg [24:0] saved_addr;
+	reg [25:0] saved_addr;
 	state_t    state = STATE_STARTUP;
 
-	command <= CMD_NOP;
 	refresh_count <= refresh_count+1'b1;
 
 	data_ready_delay <= data_ready_delay>>1;
@@ -134,121 +135,131 @@ always @(posedge clk) begin
 
 	SDRAM_DQ   <= 16'bZ;
 
-	case (state)
-		STATE_STARTUP: begin
-			//------------------------------------------------------------------------
-			//-- This is the initial startup state, where we wait for at least 100us
-			//-- before starting the start sequence
-			//-- 
-			//-- The initialisation is sequence is 
-			//--  * de-assert SDRAM_CKE
-			//--  * 100us wait, 
-			//--  * assert SDRAM_CKE
-			//--  * wait at least one cycle, 
-			//--  * PRECHARGE
-			//--  * wait 2 cycles
-			//--  * REFRESH, 
-			//--  * tREF wait
-			//--  * REFRESH, 
-			//--  * tREF wait 
-			//--  * LOAD_MODE_REG 
-			//--  * 2 cycles wait
-			//------------------------------------------------------------------------
-			SDRAM_A    <= 0;
-			SDRAM_BA   <= 0;
+	if(SDRAM_EN) begin
+		command <= CMD_NOP;
+		case (state)
+			STATE_STARTUP: begin
+				//------------------------------------------------------------------------
+				//-- This is the initial startup state, where we wait for at least 100us
+				//-- before starting the start sequence
+				//-- 
+				//-- The initialisation is sequence is 
+				//--  * de-assert SDRAM_CKE
+				//--  * 100us wait, 
+				//--  * assert SDRAM_CKE
+				//--  * wait at least one cycle, 
+				//--  * PRECHARGE
+				//--  * wait 2 cycles
+				//--  * REFRESH, 
+				//--  * tREF wait
+				//--  * REFRESH, 
+				//--  * tREF wait 
+				//--  * LOAD_MODE_REG 
+				//--  * 2 cycles wait
+				//------------------------------------------------------------------------
+				SDRAM_A    <= 0;
+				SDRAM_BA   <= 0;
 
-			// All the commands during the startup are NOPS, except these
-			if(refresh_count == startup_refresh_max-31) begin
-				// ensure all rows are closed
-				command     <= CMD_PRECHARGE;
-				SDRAM_A[10] <= 1;  // all banks
-				SDRAM_BA    <= 2'b00;
-			end else if (refresh_count == startup_refresh_max-23) begin
-				// these refreshes need to be at least tREF (66ns) apart
-				command     <= CMD_AUTO_REFRESH;
-			end else if (refresh_count == startup_refresh_max-15) 
-				command     <= CMD_AUTO_REFRESH;
-			else if (refresh_count == startup_refresh_max-7) begin
-				// Now load the mode register
-				command     <= CMD_LOAD_MODE;
-				SDRAM_A     <= MODE;
+				// All the commands during the startup are NOPS, except these
+				if(refresh_count == startup_refresh_max-31) begin
+					// ensure all rows are closed
+					command     <= CMD_PRECHARGE;
+					SDRAM_A[10] <= 1;  // all banks
+					SDRAM_BA    <= 2'b00;
+				end else if (refresh_count == startup_refresh_max-23) begin
+					// these refreshes need to be at least tREF (66ns) apart
+					command     <= CMD_AUTO_REFRESH;
+				end else if (refresh_count == startup_refresh_max-15) 
+					command     <= CMD_AUTO_REFRESH;
+				else if (refresh_count == startup_refresh_max-7) begin
+					// Now load the mode register
+					command     <= CMD_LOAD_MODE;
+					SDRAM_A     <= MODE;
+				end
+
+				//------------------------------------------------------
+				//-- if startup is complete then go into idle mode,
+				//-- get prepared to accept a new command, and schedule
+				//-- the first refresh cycle
+				//------------------------------------------------------
+				if (!refresh_count) begin
+					state   <= STATE_IDLE;
+					ready <= 1;
+					refresh_count <= 0;
+				end
 			end
 
-			//------------------------------------------------------
-			//-- if startup is complete then go into idle mode,
-			//-- get prepared to accept a new command, and schedule
-			//-- the first refresh cycle
-			//------------------------------------------------------
-			if (!refresh_count) begin
-				state   <= STATE_IDLE;
-				ready <= 1;
-				refresh_count <= 0;
+			STATE_IDLE_5: state <= STATE_IDLE_4;
+			STATE_IDLE_4: state <= STATE_IDLE_3;
+			STATE_IDLE_3: state <= STATE_IDLE_2;
+			STATE_IDLE_2: state <= STATE_IDLE_1;
+			STATE_IDLE_1: begin
+				state      <= STATE_IDLE;
+				// mask possible refresh to reduce colliding.
+				if (refresh_count > cycles_per_refresh) begin
+					//------------------------------------------------------------------------
+					//-- Start the refresh cycle. 
+					//-- This tasks tRFC (66ns), so 7 idle cycles are needed @ 120MHz
+					//------------------------------------------------------------------------
+					state    <= STATE_IDLE_5;
+					command  <= CMD_AUTO_REFRESH;
+					refresh_count <= refresh_count - cycles_per_refresh + 1'd1;
+				end
 			end
+
+			STATE_IDLE: begin
+				if (refresh_count > (cycles_per_refresh << 1)) begin
+					// Priority is to issue a refresh if one is outstanding
+					state <= STATE_IDLE_1;
+				end else if (new_rd | new_we) begin
+					// Start new access cycle
+					new_we   <= 0;
+					new_rd   <= 0;
+					saved_addr<= addr;
+					saved_we  <= new_we;
+					saved_burst<= ~new_we & new_rd_type;
+					state    <= STATE_WAIT;
+					command  <= CMD_ACTIVE;
+					SDRAM_A  <= addr[22:10];
+					SDRAM_BA <= addr[24:23];
+				end
+			end
+
+			STATE_WAIT: state <= STATE_RW;
+
+			STATE_RW: begin
+				SDRAM_A     <= {~saved_we ? 2'b00 : new_wtbt ? ~new_wtbt : {saved_addr[0], ~saved_addr[0]}, 1'b1, saved_addr[25], saved_addr[9:1]};	// Enable auto-precharge
+				state       <= saved_burst ? STATE_IDLE_5 : STATE_IDLE_2;
+				if(saved_we) begin
+					command  <= CMD_WRITE;
+					SDRAM_DQ <= new_wtbt ? new_data : {new_data[7:0], new_data[7:0]};
+					ready    <= 1;
+				end
+				else begin
+					command  <= CMD_READ;
+					data_ready_delay[CAS_LATENCY+BURST_LENGTH-1] <= 1;
+				end
+			end
+		endcase
+
+		if (init) begin
+			state <= STATE_STARTUP;
+			refresh_count <= startup_refresh_max - sdram_startup_cycles;
 		end
 
-		STATE_IDLE_5: state <= STATE_IDLE_4;
-		STATE_IDLE_4: state <= STATE_IDLE_3;
-		STATE_IDLE_3: state <= STATE_IDLE_2;
-		STATE_IDLE_2: state <= STATE_IDLE_1;
-		STATE_IDLE_1: begin
-			state      <= STATE_IDLE;
-			// mask possible refresh to reduce colliding.
-			if (refresh_count > cycles_per_refresh) begin
-            //------------------------------------------------------------------------
-            //-- Start the refresh cycle. 
-            //-- This tasks tRFC (66ns), so 7 idle cycles are needed @ 120MHz
-            //------------------------------------------------------------------------
-				state    <= STATE_IDLE_5;
-				command  <= CMD_AUTO_REFRESH;
-				refresh_count <= refresh_count - cycles_per_refresh + 1'd1;
-			end
-		end
+		old_we <= we;
+		if (we & ~old_we & sel) {ready, new_we, new_data, new_wtbt} <= {1'b0, 1'b1, din, wtbt};
 
-		STATE_IDLE: begin
-			if (refresh_count > (cycles_per_refresh << 1)) begin
-				// Priority is to issue a refresh if one is outstanding
-				state <= STATE_IDLE_1;
-			end else if (new_rd | new_we) begin
-				// Start new access cycle
-				new_we   <= 0;
-				new_rd   <= 0;
-				saved_addr<= addr;
-				saved_we  <= new_we;
-				saved_burst<= ~new_we & new_rd_type;
-				state    <= STATE_WAIT;
-				command  <= CMD_ACTIVE;
-				SDRAM_A  <= addr[22:10];
-				SDRAM_BA <= addr[24:23];
-			end
-		end
-
-		STATE_WAIT: state <= STATE_RW;
-
-		STATE_RW: begin
-			SDRAM_A     <= {~saved_we ? 2'b00 : new_wtbt ? ~new_wtbt : {saved_addr[0], ~saved_addr[0]}, 2'b10, saved_addr[9:1]};	// Enable auto-precharge
-			state       <= saved_burst ? STATE_IDLE_5 : STATE_IDLE_2;
-			if(saved_we) begin
-				command  <= CMD_WRITE;
-				SDRAM_DQ <= new_wtbt ? new_data : {new_data[7:0], new_data[7:0]};
-				ready    <= 1;
-			end
-			else begin
-				command  <= CMD_READ;
-				data_ready_delay[CAS_LATENCY+BURST_LENGTH-1] <= 1;
-			end
-		end
-	endcase
-
-	if (init) begin
-		state <= STATE_STARTUP;
-		refresh_count <= startup_refresh_max - sdram_startup_cycles;
+		old_rd <= rd;
+		if (rd & ~old_rd & sel) {ready, new_rd, new_rd_type} <= {1'b0, 1'b1, rd_type};
 	end
-
-	old_we <= we;
-	if (we & ~old_we) {ready, new_we, new_data, new_wtbt} <= {1'b0, 1'b1, din, wtbt};
-
-	old_rd <= rd;
-	if (rd & ~old_rd) {ready, new_rd, new_rd_type} <= {1'b0, 1'b1, rd_type};
+	else begin
+		ready <= 1;
+		dout <= '0;
+		SDRAM_A <= 'Z;
+		SDRAM_BA <= 'Z;
+		command <= 'Z;
+	end
 end
 
 endmodule

@@ -118,6 +118,33 @@ module emu
 	output        SDRAM_nRAS,
 	output        SDRAM_nWE,
 
+	output        SDRAM2_CLK,
+`ifdef DUAL_SDRAM
+	//
+	// Secondary SDRAM notes:
+	// SDRAM2_EN: 
+	//
+	//    1 - MiSTer is configured for SDRAM2 use, core can use SDRAM2_* signals.
+	//        It doesn't mean the SDRAM module is plugged.
+	//
+	//    0 - MiSter is not configured for SDRAM2 module, the core
+	//        has to set all output SDRAM2_* signals to Z ASAP to avoid signal collision!
+	//
+	// {DQMH,DQML} are mapped to A[12:11]
+	// You need to set A[12:11] appropriately in READ/WRITE commands for correct operations.
+	// in ACTIVATE command the whole A[12:0] can be used as it doesn't affect the input/output of data.
+	// CKE is hardwired to 1 on the module.
+	//
+	output [12:0] SDRAM2_A,
+	output  [1:0] SDRAM2_BA,
+	inout  [15:0] SDRAM2_DQ,
+	output        SDRAM2_nCS,
+	output        SDRAM2_nCAS,
+	output        SDRAM2_nRAS,
+	output        SDRAM2_nWE,
+	input         SDRAM2_EN, 
+`endif
+
 	input         UART_CTS,
 	output        UART_RTS,
 	input         UART_RXD,
@@ -237,6 +264,7 @@ pll pll(
 	.rst(0),
 	.outclk_0(clk_sys),
 	.outclk_1(SDRAM_CLK),	// Phase shifted
+	.outclk_2(SDRAM2_CLK),	// Phase shifted
 	.locked(locked)
 );
 
@@ -359,7 +387,7 @@ wire [24:0] ioctl_addr;
 wire [15:0] ioctl_dout;
 wire        ioctl_download;
 wire  [7:0] ioctl_index;
-reg        ioctl_wait = 0;
+reg         ioctl_wait = 0;
 
 wire SYSTEM_MVS = (SYSTEM_TYPE == 2'd1);
 wire SYSTEM_CDx = SYSTEM_TYPE[1];
@@ -443,8 +471,8 @@ hps_io #(
 
 	wire [15:0] snd_right;
 	wire [15:0] snd_left;
-	wire sdram_ready;	//, ready_fourth;
-	wire  [24:0] sdram_addr;
+	wire        sdram_ready;	//, ready_fourth;
+	wire [26:0] sdram_addr;
 	
 	wire nRESETP, nSYSTEM, CARD_WE, SHADOW, nVEC, nREGEN, nSRAMWEN, PALBNK;
 	wire CD_nRESET_Z80;
@@ -507,9 +535,9 @@ hps_io #(
 	wire nPBUS_OUT_EN;
 	
 	wire [19:0] C_LATCH;
-	reg [3:0] C_LATCH_EXT;
+	reg   [3:0] C_LATCH_EXT;
 	wire [63:0] CR_DOUBLE;
-	wire [25:0] CROM_ADDR;
+	wire [26:0] CROM_ADDR;
 	
 	wire [1:0] FIX_BANK;
 	wire [15:0] S_LATCH;
@@ -712,16 +740,29 @@ hps_io #(
 	wire sdram_we = SYSTEM_CDx ? (ioctl_download & (ioctl_index == INDEX_SPROM)) ? ioctl_wr : SDRAM_WR_PULSE :
 							(ioctl_download & (ioctl_index != INDEX_LOROM) & (ioctl_index != INDEX_M1ROM) & ((ioctl_index < INDEX_VROMS) | (ioctl_index >= INDEX_CROMS))) ? ioctl_wr : 1'b0;
 	
-	wire [24:0] ioctl_addr_offset =
-		(ioctl_index == INDEX_SPROM) ?	{6'b0_0110_0, ioctl_addr[18:0]} :	// System ROM: $0600000~$067FFFF
-		(ioctl_index == INDEX_S1ROM) ?	{6'b0_0110_1, ioctl_addr[18:0]} :	// S1: $0680000~$07FFFFF
-		(ioctl_index == INDEX_SFIXROM) ? {8'b0_0110_001, ioctl_addr[16:0]} :	// SFIX: $0620000~$063FFFF
-		(ioctl_index == INDEX_P1ROM_A) ? {5'b0_0000, ioctl_addr[19:0]} :		// P1 first half or full: $0000000~$00FFFFF
-		(ioctl_index == INDEX_P1ROM_B) ? {6'b0_0000_1, ioctl_addr[18:0]} :	// P1 second half: $0080000~$00FFFFF
-		(ioctl_index == INDEX_P2ROM) ? 	ioctl_addr + 25'h0200000 :				// P2+: $0200000~$05FFFFF
-		(ioctl_index >= INDEX_CROMS) ? 	{ioctl_addr[23:0], 1'b0} + {ioctl_index[5:1], 18'h00000, ioctl_index[0], 1'b0} + 25'h0800000 : // C*: $0800000~$1FFFFFF
-		25'h0000000;
+	wire [26:0] ioctl_addr_offset =
+		(ioctl_index == INDEX_SPROM) ?	{8'b000_0110_0, ioctl_addr[18:0]} :	// System ROM: $0600000~$067FFFF
+		(ioctl_index == INDEX_S1ROM) ?	{8'b000_0110_1, ioctl_addr[18:0]} :	// S1: $0680000~$07FFFFF
+		(ioctl_index == INDEX_SFIXROM) ? {10'b000_0110_001, ioctl_addr[16:0]} :	// SFIX: $0620000~$063FFFF
+		(ioctl_index == INDEX_P1ROM_A) ? {7'b000_0000, ioctl_addr[19:0]} :		// P1 first half or full: $0000000~$00FFFFF
+		(ioctl_index == INDEX_P1ROM_B) ? {8'b000_0000_1, ioctl_addr[18:0]} :	// P1 second half: $0080000~$00FFFFF
+		(ioctl_index == INDEX_P2ROM) ? 	ioctl_addr + 27'h0200000 :				// P2+: $0200000~$05FFFFF
+		(ioctl_index >= INDEX_CROMS) ? 	{1'b0, ioctl_addr[24:0], 1'b0} + {ioctl_index[7:1]-INDEX_CROMS[7:1], 18'h00000, ioctl_index[0], 1'b0} + 27'h0800000 : // C*: $0800000~$1FFFFFF
+		27'h0000000;
+/*	
+	reg [3:0] latch_mask;
+	always @(posedge clk_sys) begin
+		reg old_rst = 0;
 
+		//make sure all lower bits are filled with 1
+		latch_mask <= latch_mask | latch_mask[2:0];
+
+		old_rst <= status[0];
+		if(~old_rst & status[0]) latch_mask <= 0;
+		
+		if(ioctl_wr) latch_mask <= latch_mask | ioctl_addr_offset[26:23];
+	end
+*/
 	sdram_mux SDRAM_MUX(
 		.nRESET(nRESET),
 		.clk_sys(clk_sys),
@@ -746,7 +787,7 @@ hps_io #(
 		
 		.CD_BANK_SPR(CD_BANK_SPR),
 		.P_BANK(P_BANK),
-		.CROM_ADDR(CROM_ADDR[24:0]),
+		.CROM_ADDR(CROM_ADDR),
 		.S_LATCH(S_LATCH),
 		
 		.SDRAM_WR_PULSE(SDRAM_WR_PULSE),	.SDRAM_RD_PULSE(SDRAM_RD_PULSE), .SDRAM_RD_TYPE(sdram_rd_type),
@@ -770,17 +811,66 @@ hps_io #(
 		.sdram_ready(sdram_ready)	//, .ready_fourth(ready_fourth)
 	);
 	
-	sdram ram(
-		.*,					// Connect all nets with the same names (SDRAM_* pins)
+	wire sdram1_ready, sdram2_ready;
+	wire [63:0] sdram1_dout, sdram2_dout;
+
+	sdram ram1(
+		.SDRAM_CKE(SDRAM_CKE),
+		.SDRAM_A(SDRAM_A),
+		.SDRAM_BA(SDRAM_BA),
+		.SDRAM_DQ(SDRAM_DQ),
+		.SDRAM_DQML(SDRAM_DQML),
+		.SDRAM_DQMH(SDRAM_DQMH),
+		.SDRAM_nCS(SDRAM_nCS),
+		.SDRAM_nCAS(SDRAM_nCAS),
+		.SDRAM_nRAS(SDRAM_nRAS),
+		.SDRAM_nWE(SDRAM_nWE),
+		.SDRAM_EN(1),
+
 		.init(~locked),	// Init SDRAM as soon as the PLL is locked
 		.clk(clk_sys),
-		.addr(sdram_addr),
-		.dout(sdram_dout), .din(sdram_din),
+		.addr(sdram_addr[25:0]),
+		.sel(~sdram_addr[26]),
+		.dout(sdram1_dout),
+		.din(sdram_din),
 		.wtbt(wtbt),		// Always used in 16-bit mode except for CD fix data write
-		.we(sdram_we),	.rd(sdram_rd), .rd_type(sdram_rd_type),
-		.ready(sdram_ready)
+		.we(sdram_we),
+		.rd(sdram_rd),
+		.rd_type(sdram_rd_type),
+		.ready(sdram1_ready)
 	);
-	
+
+`ifdef DUAL_SDRAM
+	sdram ram2(
+		.SDRAM_A(SDRAM2_A),
+		.SDRAM_BA(SDRAM2_BA),
+		.SDRAM_DQ(SDRAM2_DQ),
+		.SDRAM_nCS(SDRAM2_nCS),
+		.SDRAM_nCAS(SDRAM2_nCAS),
+		.SDRAM_nRAS(SDRAM2_nRAS),
+		.SDRAM_nWE(SDRAM2_nWE),
+		.SDRAM_EN(SDRAM2_EN),
+
+		.init(~locked),	// Init SDRAM as soon as the PLL is locked
+		.clk(clk_sys),
+		.addr(sdram_addr[25:0]),
+		.sel(sdram_addr[26]),
+		.dout(sdram2_dout),
+		.din(sdram_din),
+		.wtbt(wtbt),		// Always used in 16-bit mode except for CD fix data write
+		.we(sdram_we),
+		.rd(sdram_rd),
+		.rd_type(sdram_rd_type),
+		.ready(sdram2_ready)
+	);
+`else
+	assign sdram2_dout = '0;
+	assign sdram2_ready = 1;
+`endif
+
+	assign sdram_dout  = sdram_addr[26] ? sdram2_dout : sdram1_dout;
+	assign sdram_ready = sdram2_ready & sdram1_ready;
+
 	neo_d0 D0(
 		.CLK_24M(CLK_24M),
 		.nRESET(nRESET), .nRESETP(nRESETP),
@@ -918,7 +1008,7 @@ hps_io #(
 		status[29:28],
 		CROM_ADDR
 	);*/
-	assign CROM_ADDR = {C_LATCH_EXT[1:0] + 2'd1, C_LATCH, 3'b000};
+	assign CROM_ADDR = {C_LATCH_EXT + 2'd1, C_LATCH, 3'b000};
 	
 	zmc ZMC(
 		.nSDRD0(SDRD0),

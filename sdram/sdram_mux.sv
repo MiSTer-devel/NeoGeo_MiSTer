@@ -58,17 +58,17 @@ module sdram_mux(
 	
 	input SPR_EN, FIX_EN,
 	
-	output reg [24:0] sdram_addr,
+	output reg [26:0] sdram_addr,
 	input [63:0] sdram_dout,
 	output [15:0] sdram_din,
 	input sdram_ready, //ready_fourth,
 	
 	input ioctl_download,
-	input [24:0] ioctl_addr_offset,
+	input [26:0] ioctl_addr_offset,
 	
 	input [1:0] P_BANK,
 	input [1:0] CD_BANK_SPR,
-	input [24:0] CROM_ADDR,
+	input [26:0] CROM_ADDR,
 	input [15:0] S_LATCH,
 	input nROMOE, CD_EXT_RD, nPORTOE, nSROMOE,
 	
@@ -143,7 +143,7 @@ module sdram_mux(
 			8'b00000000: sdram_addr = 25'h0000000;
 		endcase
 	end
-	
+
 	always @(posedge clk_sys)
 	begin
 		if (!nRESET)
