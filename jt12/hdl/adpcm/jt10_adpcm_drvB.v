@@ -57,7 +57,7 @@ wire adv;           // advance to next reading
 // end
 // `endif
 
-always @(posedge clk) roe_n <= ~adv;
+always @(posedge clk) roe_n <= ~(adv & cen55);
 
 jt10_adpcmb_cnt u_cnt(
     .rst_n       ( rst_n           ),
