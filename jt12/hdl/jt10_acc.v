@@ -79,8 +79,8 @@ reg acc_en_l, acc_en_r;
 always @(*)
     case( {cur_op,cur_ch} )
         {2'd0,3'd2}: begin // ADPCM-A:
-            acc_input_l = adpcmA_l<<<4;
-            acc_input_r = adpcmA_r<<<4;
+            acc_input_l = (adpcmA_l[15] & ~&adpcmA_l[14:11]) ? 16'hE000 : (~adpcmA_l[15] & |adpcmA_l[14:11]) ? 16'h1FFF : {adpcmA_l[11],adpcmA_l[11],adpcmA_l[11:0],2'd0};
+            acc_input_r = (adpcmA_r[15] & ~&adpcmA_r[14:11]) ? 16'hE000 : (~adpcmA_r[15] & |adpcmA_r[14:11]) ? 16'h1FFF : {adpcmA_r[11],adpcmA_r[11],adpcmA_r[11:0],2'd0};
             `ifndef NOMIX
             acc_en_l    = 1'b1;
             acc_en_r    = 1'b1;
