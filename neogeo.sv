@@ -268,7 +268,7 @@ pll pll(
 	.locked(locked)
 );
 
-wire nRST = ~(ioctl_download | status[0]);
+wire nRST = ~(ioctl_download | status[0] | buttons[1]);
 
 // The watchdog should output nRESET but it makes video sync stop for a moment, so the
 // MiSTer OSD jumps around. Provide an indication for devs that a watchdog reset happened ?
@@ -1288,82 +1288,49 @@ hps_io #(
 	// The ddram request and ack signals work on either edge
 	// To trigger a read request, just set adpcm_rd to ~adpcm_rdack
 	
-	reg [1:0] ADPCMA_OE_SR;
-	reg [1:0] ADPCMB_OE_SR;
 	reg ADPCMA_READ_REQ, ADPCMB_READ_REQ;
-	reg ADPCMA_WAITING, ADPCMB_WAITING;
-	wire [15:0] adpcm_data;
 	reg [24:0] ADPCMA_ADDR_LATCH;	// 32MB
 	reg [24:0] ADPCMB_ADDR_LATCH;	// 32MB
-	reg [7:0] ADPCMA_DATA;
-	reg [7:0] ADPCMB_DATA;
 	
-	always @(posedge clk_sys)
-	begin
+	always @(posedge clk_sys) begin
+		reg [1:0] ADPCMA_OE_SR;
+		reg [1:0] ADPCMB_OE_SR;
 		ADPCMA_OE_SR <= {ADPCMA_OE_SR[0], nSDROE};
-		if (ADPCMA_OE_SR == 2'b10)
-		begin
-			// Trigger ADPCM A data read on nSDROE falling edge
-			ADPCMA_READ_REQ <= 1;
+		// Trigger ADPCM A data read on nSDROE falling edge
+		if (ADPCMA_OE_SR == 2'b10) begin
+			ADPCMA_READ_REQ <= ~ADPCMA_READ_REQ;
+			ADPCMA_ADDR_LATCH <= {1'b0, ADPCMA_BANK, ADPCMA_ADDR};
 		end
 		
+		// Trigger ADPCM A data read on nSDPOE falling edge
 		ADPCMB_OE_SR <= {ADPCMB_OE_SR[0], nSDPOE};
-		if (ADPCMB_OE_SR == 2'b10)
-		begin
-			// Trigger ADPCM A data read on nSDPOE falling edge
-			ADPCMB_READ_REQ <= 1;
-		end
-		
-		if (~ADPCMA_WAITING & ~ADPCMB_WAITING)
-		begin
-			if (ADPCMB_READ_REQ)
-			begin
-				// Prioritize ADPCMB reads because it may run faster than ADPCMA
-				ADPCMB_ADDR_LATCH <= {~use_pcm, ADPCMB_ADDR};
-				adpcm_rd <= ~adpcm_rdack;
-				ADPCMB_READ_REQ <= 0;
-				ADPCMB_WAITING <= 1;
-			end
-			else if (ADPCMA_READ_REQ)
-			begin
-				ADPCMA_ADDR_LATCH <= {1'b0, ADPCMA_BANK, ADPCMA_ADDR};
-				adpcm_rd <= ~adpcm_rdack;
-				ADPCMA_READ_REQ <= 0;
-				ADPCMA_WAITING <= 1;
-			end
-		end
-		
-		if (adpcm_rd == adpcm_rdack)
-		begin
-			if (ADPCMA_WAITING)
-			begin
-				ADPCMA_WAITING <= 0;
-				ADPCMA_DATA <= ADPCMA_ADDR_LATCH[0] ? adpcm_data[15:8] : adpcm_data[7:0];
-			end
-			else if (ADPCMB_WAITING)
-			begin
-				ADPCMB_WAITING <= 0;
-				ADPCMB_DATA <= ADPCMB_ADDR_LATCH[0] ? adpcm_data[15:8] : adpcm_data[7:0];
-			end
+		if (ADPCMB_OE_SR == 2'b10) begin
+			ADPCMB_READ_REQ <= ~ADPCMB_READ_REQ;
+			ADPCMB_ADDR_LATCH <= {~use_pcm, ADPCMB_ADDR};
 		end
 	end
-	
-	wire [24:0] pcm_load_addr = ioctl_addr[24:0] + {ioctl_index[5:0] - 6'd16, 19'h00000};
-	
+
+	wire [7:0] ADPCMA_DATA;
+	wire [7:0] ADPCMB_DATA;
 	ddram DDRAM(
 		.*,
 		
-		.wraddr(pcm_load_addr),
+		.wraddr(ioctl_addr[24:0] + {ioctl_index[5:0] - 6'd16, 19'h00000}),
 		.din(ioctl_dout),
 		.we_req(adpcm_wr),
 		.we_ack(adpcm_wrack),
 		
-		.rdaddr(ADPCMA_WAITING ? ADPCMA_ADDR_LATCH[24:1] : ADPCMB_ADDR_LATCH[24:1]),
-		.dout(adpcm_data),
-		.rd_req(adpcm_rd),
-		.rd_ack(adpcm_rdack)
+		.rdaddr(ADPCMA_ADDR_LATCH),
+		.dout(ADPCMA_DATA),
+		.rd_req(ADPCMA_READ_REQ),
+		.rd_ack(),
+
+		.rdaddr2(ADPCMB_ADDR_LATCH),
+		.dout2(ADPCMB_DATA),
+		.rd_req2(ADPCMB_READ_REQ),
+		.rd_ack2()
 	);
-	
+
 	wire [7:0] YM2610_DOUT;
 	
 	jt10 YM2610(
