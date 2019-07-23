@@ -201,51 +201,36 @@ assign VIDEO_ARY = 8'd7;	// 224/32
 
 `include "build_id.v"
 
-// Common to all systems
-localparam CONF_STR1 = {
+// Conditional modification of the CONF strings chaining according to chosen system type
+// Con Arc CD CDz
+// 00  01  10 11
+// F   F   +  +  ~SYSTEM_CDx;
+// +   +   S  S  SYSTEM_CDx; 
+// O   O   +  +  ~SYSTEM_CDx;
+// +   O   +  +  SYSTEM_MVS; 
+// +   +   O  O  SYSTEM_CDx;   
+
+localparam CONF_STR = {
 	"NEOGEO;;",
-	"-;"
-};
-
-localparam CONF_STR2_CART = {
-	"S,EP1P1,Load romset;"	// F
-};
-localparam CONF_STR2_CD = {
-	"0,ISOBIN,Load ISO CD Image;"	// S
-};
-
-// Common to all systems
-localparam CONF_STR3 = {
 	"-;",
-	"O12,System type,Console,Arcade,CD,CDZ;",
+	"H0FS1,EP1P1,Load romset;",
+	"H1S0,ISOBIN,Load CD Image;",
+	"-;",
+	"O12,System type,Console(AES),Arcade(MVS),CD,CDZ;",
 	"O3,Video mode,NTSC,PAL;",
-	"RC,Save memory card;"
-};
-
-localparam CONF_STR4_CART = {
-	"4,Memory card,Plugged,Unplugged;",	// O
-};
-localparam CONF_STR4_CD = {
-	"AB,Region,US,EU,JP,AS;",	// O
-};
-localparam CONF_STR4B_CD = {
-	"F,CD lid,Opened,Closed;",	// O
-};
-
-localparam CONF_STR5_MVS = {
-	"7,DIP:Settings,OFF,ON;"	// O
-};
-localparam CONF_STR6_MVS = {
-	"8,DIP:Freeplay,OFF,ON;"	// O
-};
-localparam CONF_STR7_MVS = {
-	"9,DIP:Freeze,OFF,ON;",		// O
-};
-
-// Common to all systems
-localparam CONF_STR8 = {
+	"-;",
+	"H0O4,Memory card,Plugged,Unplugged;",
+	"RC,Save memory card;",
+	"H1-;",
+	"H1OAB,Region,US,EU,JP,AS;",
+	"H1OF,CD lid,Opened,Closed;",
+	"H2-;",
+	"H2O7,DIP:Settings,OFF,ON;",
+	"H2O8,DIP:Freeplay,OFF,ON;",
+	"H2O9,DIP:Freeze,OFF,ON;",
 	"-;",
 	"O56,Stereo mix,none,25%,50%,100%;",
+	"-;",
 	"R0,Reset & apply;",
 	"J1,A,B,C,D,Start,Select,Coin,ABC;",	// ABC is a special key to press A+B+C at once, useful for
 	"V,v",`BUILD_DATE								// keyboards that don't allow more than 2 keypresses at once
@@ -392,57 +377,19 @@ reg         ioctl_wait = 0;
 wire SYSTEM_MVS = (SYSTEM_TYPE == 2'd1);
 wire SYSTEM_CDx = SYSTEM_TYPE[1];
 
-// Conditional modification of the CONF strings chaining according to chosen system type
-wire [7:0] char_cart_file = SYSTEM_CDx ? "+" : "F";
-wire [7:0] char_cd_img = SYSTEM_CDx ? "S" : "+";
-wire [7:0] char_cart_option = SYSTEM_CDx ? "+" : "O";
-wire [7:0] char_mvs_option = SYSTEM_MVS ? "O" : "+";
-wire [7:0] char_cd_option = SYSTEM_CDx ? "O" : "+";
-
-//                   Con Arc CD CDz
-// SYSTEM_TYPE       00  01  10 11
-// char_cart_file    F   F   +  +
-// char_cd_img       +   +   S  S
-// char_cart_option  O   O   +  +
-// char_mvs_option   +   O   +  +
-// char_cd_option    +   +   O  O
-
-hps_io #(
-	.STRLEN(
-		($size(CONF_STR1)>>3) +
-		($size(CONF_STR2_CART)>>3) +
-		($size(CONF_STR2_CD)>>3) +
-		($size(CONF_STR3)>>3) +
-		($size(CONF_STR4_CART)>>3) +
-		($size(CONF_STR4_CD)>>3) +
-		($size(CONF_STR4B_CD)>>3) +
-		($size(CONF_STR5_MVS)>>3) +
-		($size(CONF_STR6_MVS)>>3) +
-		($size(CONF_STR7_MVS)>>3) +
-		($size(CONF_STR8)>>3) + 8), .WIDE(1)) hps_io
+hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 (
 	.clk_sys(clk_sys),
 	.HPS_BUS(HPS_BUS),
 
-	.conf_str({
-		CONF_STR1,
-		char_cart_file, CONF_STR2_CART,
-		char_cd_img, CONF_STR2_CD,
-		CONF_STR3,
-		char_cart_option, CONF_STR4_CART,
-		char_cd_option, CONF_STR4_CD,
-		char_cd_option, CONF_STR4B_CD,
-		char_mvs_option, CONF_STR5_MVS,
-		char_mvs_option, CONF_STR6_MVS,
-		char_mvs_option, CONF_STR7_MVS,
-		CONF_STR8
-	}),
+	.conf_str(CONF_STR),
 
 	//.ps2_mouse(ps2_mouse),	// Could be used for The Irritating Maze ?
 	
 	.joystick_0(joystick_0), .joystick_1(joystick_1),
 	.buttons(buttons),			// DE10 buttons ?
 	.status(status),				// status read (32 bits)
+	.status_menumask({~SYSTEM_MVS,~SYSTEM_CDx,SYSTEM_CDx}),
 	.RTC(rtc),
 	
 	// Loading signals
@@ -1119,9 +1066,7 @@ hps_io #(
 		.G0(nCRDC), .G1(nPAL), .DIR(M68K_RW), .WE(nPAL_WE),
 		.CDD({8'hFF, CDD}), .PC(PAL_RAM_DATA)
 	);
-	
-	wire [2:0] joystick_0_hack = joystick_0[11] ? 3'b111 : joystick_0[6:4];
-	
+
 	neo_c1 C1(
 		.M68K_ADDR(M68K_ADDR[21:17]),
 		.M68K_DATA(M68K_DATA[15:8]), .A22Z(A22Z), .A23Z(A23Z),
@@ -1135,8 +1080,8 @@ hps_io #(
 		.nLSPOE(nLSPOE), .nLSPWE(nLSPWE),
 		.nCRDO(nCRDO), .nCRDW(nCRDW), .nCRDC(nCRDC),
 		.nSDW(nSDW),
-		.P1_IN(~{joystick_0[9:7], joystick_0_hack, joystick_0[0], joystick_0[1], joystick_0[2], joystick_0[3]}),
-		.P2_IN(~{joystick_1[9:4], joystick_1[0], joystick_1[1], joystick_1[2], joystick_1[3]}),
+		.P1_IN(~{joystick_0[9:4] | {3{joystick_0[11]}}, joystick_0[0], joystick_0[1], joystick_0[2], joystick_0[3]}),
+		.P2_IN(~{joystick_1[9:4] | {3{joystick_1[11]}}, joystick_1[0], joystick_1[1], joystick_1[2], joystick_1[3]}),
 		.nCD1(nCD1), .nCD2(nCD2),
 		.nWP(0),			// Memory card is never write-protected
 		.nROMWAIT(1), .nPWAIT0(1), .nPWAIT1(1), .PDTACK(1),
