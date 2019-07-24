@@ -342,6 +342,7 @@ assign CLK_24M = diva ^ divb;	// Glitch-less divide-by-5
 wire [2:0] img_mounted;
 wire [2:0] sd_rd;
 wire [2:0] sd_wr;
+assign sd_wr[1:0] = 0;
 
 wire sd_ack, sd_buff_wr, img_readonly;
 
@@ -874,13 +875,12 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 	wire WRAM_WR_L = (~nWWL | TRASHING);	// ~SYSTEM_CDx &  TESTING
 	wire WRAM_WR_U = (~nWWU | TRASHING);	// ~SYSTEM_CDx &  TESTING
 	
-	m68k_ram WRAML(WRAM_ADDR, CLK_24M, WRAM_DIN[7:0], WRAM_WR_L, WRAML_OUT);
-	m68k_ram WRAMU(WRAM_ADDR, CLK_24M, WRAM_DIN[15:8], WRAM_WR_U, WRAMU_OUT);
-	
-	// Work RAM or CD extended RAM read
-	assign M68K_DATA[7:0] = nWRL ? 8'bzzzzzzzz : SYSTEM_CDx ? PROM_DATA[7:0] : WRAML_OUT;
-	assign M68K_DATA[15:8] = nWRU ? 8'bzzzzzzzz : SYSTEM_CDx ? PROM_DATA[15:8] : WRAMU_OUT;
+	spram #(15) WRAML(.clock(CLK_24M), .address(WRAM_ADDR), .data(WRAM_DIN[7:0]),  .wren(WRAM_WR_L), .q(WRAML_OUT));
+	spram #(15) WRAMU(.clock(CLK_24M), .address(WRAM_ADDR), .data(WRAM_DIN[15:8]), .wren(WRAM_WR_U), .q(WRAMU_OUT));
 
+	// Work RAM or CD extended RAM read
+	assign M68K_DATA[7:0]  = nWRL ? 8'bzzzzzzzz : SYSTEM_CDx ? PROM_DATA[7:0]  : WRAML_OUT;
+	assign M68K_DATA[15:8] = nWRU ? 8'bzzzzzzzz : SYSTEM_CDx ? PROM_DATA[15:8] : WRAMU_OUT;
 	
 	
 	// Backup RAM
@@ -1122,39 +1122,43 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 		.DOTA(DOTA), .DOTB(DOTB)
 	);
 	
-	// LO ROM address switch
-	wire lo_loading = ioctl_download & (ioctl_index == INDEX_LOROM);
-	wire [15:0] LO_ADDR = lo_loading ? ioctl_addr[16:1] : PBUS[15:0];
-	
-	lo_rom LO(LO_ADDR, ~clk_sys, ioctl_dout[7:0], lo_loading & ioctl_wr, LO_ROM_DATA);
-	
+	dpram #(16) LO(
+		.clock_a(clk_sys),
+		.address_a(ioctl_addr[16:1]),
+		.data_a(ioctl_dout[7:0]),
+		.wren_a(ioctl_download & (ioctl_index == INDEX_LOROM) & ioctl_wr),
+		.clock_b(clk_sys),
+		.address_b(PBUS[15:0]),
+		.q_b(LO_ROM_DATA)
+	);
+
 	// VCS is normally used as the LO ROM's nOE but the NeoGeo relies on the fact that the LO ROM
 	// will still have its output active for a short moment (~50ns) after nOE goes high
 	// nPBUS_OUT_EN is used internally by LSPC2 but it's broken out here to use the additional
 	// half mclk cycle it provides compared to VCS. This makes sure LO_ROM_DATA is valid when latched.
 	assign PBUS[23:16] = nPBUS_OUT_EN ? LO_ROM_DATA : 8'bzzzzzzzz;
 	
-	fast_vram UFV(
-		FAST_VRAM_ADDR,
-		clk_sys,	//~CLK_24M,		// Is just CLK ok ?
-		FAST_VRAM_DATA_OUT,
-		~CWE,
-		FAST_VRAM_DATA_IN
+	spram #(11,16) UFV(
+		.clock(clk_sys),	//~CLK_24M,		// Is just CLK ok ?
+		.address(FAST_VRAM_ADDR),
+		.data(FAST_VRAM_DATA_OUT),
+		.wren(~CWE),
+		.q(FAST_VRAM_DATA_IN)
 	);
 	
-	slow_vram USV(
-		SLOW_VRAM_ADDR,
-		clk_sys,	//~CLK_24M,		// Is just CLK ok ?
-		SLOW_VRAM_DATA_OUT,
-		~BWE,
-		SLOW_VRAM_DATA_IN
+	spram #(15,16) USV(
+		.clock(clk_sys),	//~CLK_24M,		// Is just CLK ok ?
+		.address(SLOW_VRAM_ADDR),
+		.data(SLOW_VRAM_DATA_OUT),
+		.wren(~BWE),
+		.q(SLOW_VRAM_DATA_IN)
 	);
-	
+
 	wire [18:11] MA;
 	wire [7:0] Z80_RAM_DATA;
 
-	z80_ram Z80RAM(SDA[10:0], CLK_4M, SDD_OUT, ~(nZRAMCS | nSDMWR), Z80_RAM_DATA);		// Fast enough ?
-	
+	spram #(11) Z80RAM(.clock(CLK_4M), .address(SDA[10:0]), .data(SDD_OUT), .wren(~(nZRAMCS | nSDMWR)), .q(Z80_RAM_DATA));	// Fast enough ?
+
 	assign SDD_IN = (~nSDZ80R) ? SDD_RD_C1 :
 						(~nSDMRD & ~nSDROM) ? M1_ROM_DATA :
 						(~nSDMRD & ~nZRAMCS) ? Z80_RAM_DATA :
@@ -1363,9 +1367,15 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 		.PA(PAL_RAM_ADDR),
 		.EN_FIX(FIX_EN)
 	);
-	
-	pal_ram PALRAM({PALBNK, PAL_RAM_ADDR}, CLK_24M, M68K_DATA, ~nPAL_WE, PAL_RAM_DATA);	// Was CLK_12M
-	
+
+	spram #(13,16) PALRAM(
+		.clock(CLK_24M), 	// Was CLK_12M
+		.address({PALBNK, PAL_RAM_ADDR}),
+		.data(M68K_DATA),
+		.wren(~nPAL_WE),
+		.q(PAL_RAM_DATA)
+	);
+
 	// DAC latches
 	reg ce_pix;
 	always @(posedge clk_sys) begin

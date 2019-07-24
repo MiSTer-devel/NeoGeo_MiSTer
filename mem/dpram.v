@@ -1,4 +1,4 @@
-module dpram #(parameter DATAWIDTH=8, ADDRWIDTH=8, NUMWORDS=1<<ADDRWIDTH, MEM_INIT_FILE="")
+module dpram #(parameter ADDRWIDTH=8, DATAWIDTH=8, NUMWORDS=1<<ADDRWIDTH, MEM_INIT_FILE="")
 (
 	input	                 clock_a,
 	input	 [ADDRWIDTH-1:0] address_a,
@@ -66,5 +66,26 @@ defparam
 	altsyncram_component.read_during_write_mode_mixed_ports = "DONT_CARE",
 	altsyncram_component.read_during_write_mode_port_a = "NEW_DATA_NO_NBE_READ",
 	altsyncram_component.read_during_write_mode_port_b = "NEW_DATA_NO_NBE_READ";
+
+endmodule
+
+module spram #(parameter ADDRWIDTH=8, DATAWIDTH=8, NUMWORDS=1<<ADDRWIDTH)
+(
+	input	                 clock,
+	input	 [ADDRWIDTH-1:0] address,
+	input	 [DATAWIDTH-1:0] data,
+	input	                 wren,
+	output [DATAWIDTH-1:0] q
+);
+
+dpram #(ADDRWIDTH, DATAWIDTH, NUMWORDS) ram
+(
+	.clock_a(clock),
+	.clock_b(clock),
+	.address_a(address),
+	.data_a(data),
+	.wren_a(wren),
+	.q_a(q)
+);
 
 endmodule

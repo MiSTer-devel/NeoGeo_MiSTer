@@ -89,11 +89,12 @@ module linebuffer(
 	always @(*)
 		ADDR_LATCH <= WE ? ADDR_COUNTER : ADDR_LATCH;
 
-	b1_ram UR(
-		ADDR_LATCH,
-		CLK,
-		DATA_IN,
-		~WE,
-		DATA_OUT);
+	spram #(8,12) UR(
+		.clock(CLK),
+		.address(ADDR_LATCH),
+		.data(DATA_IN),
+		.wren(~WE),
+		.q(DATA_OUT)
+	);
 		
 endmodule
