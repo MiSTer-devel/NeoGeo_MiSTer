@@ -231,6 +231,11 @@ localparam CONF_STR = {
 	"-;",
 	"O56,Stereo mix,none,25%,50%,100%;",
 	"-;",
+`ifdef DUAL_SDRAM
+	"OD,Primary SDRAM,32MB,64MB;",
+`else
+	"OD,SDRAM,32MB,64MB;",
+`endif
 	"R0,Reset & apply;",
 	"J1,A,B,C,D,Start,Select,Coin,ABC;",	// ABC is a special key to press A+B+C at once, useful for
 	"V,v",`BUILD_DATE								// keyboards that don't allow more than 2 keypresses at once
@@ -717,6 +722,10 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 		.sdram_ready(sdram_ready)	//, .ready_fourth(ready_fourth)
 	);
 	
+	reg  sdr_pri_64;
+	wire sdr_pri_sel = ~sdram_addr[26] & (~sdram_addr[25] | sdr_pri_64);
+	always @(posedge clk_sys) if (~nRST) sdr_pri_64 <= status[13];
+
 	wire sdram1_ready, sdram2_ready;
 	wire [63:0] sdram1_dout, sdram2_dout;
 
@@ -736,7 +745,7 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 		.init(~locked),	// Init SDRAM as soon as the PLL is locked
 		.clk(clk_sys),
 		.addr(sdram_addr[25:0]),
-		.sel(~sdram_addr[26]),
+		.sel(sdr_pri_sel),
 		.dout(sdram1_dout),
 		.din(sdram_din),
 		.wtbt(wtbt),		// Always used in 16-bit mode except for CD fix data write
@@ -760,7 +769,7 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 		.init(~locked),	// Init SDRAM as soon as the PLL is locked
 		.clk(clk_sys),
 		.addr(sdram_addr[25:0]),
-		.sel(sdram_addr[26]),
+		.sel(~sdr_pri_sel),
 		.dout(sdram2_dout),
 		.din(sdram_din),
 		.wtbt(wtbt),		// Always used in 16-bit mode except for CD fix data write
@@ -774,7 +783,7 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 	assign sdram2_ready = 1;
 `endif
 
-	assign sdram_dout  = sdram_addr[26] ? sdram2_dout : sdram1_dout;
+	assign sdram_dout  = sdr_pri_sel ? sdram1_dout : sdram2_dout;
 	assign sdram_ready = sdram2_ready & sdram1_ready;
 
 	neo_d0 D0(
