@@ -48,7 +48,12 @@ module ddram
 	input     [27:0] rdaddr2,
 	output reg [7:0] dout2,
 	input            rd_req2,
-	output reg       rd_ack2 
+	output reg       rd_ack2, 
+
+	input     [27:0] rdaddr3,
+	output reg [7:0] dout3,
+	input            rd_req3,
+	output reg       rd_ack3 
 );
 
 assign DDRAM_BURSTCNT = ram_burst;
@@ -59,14 +64,14 @@ assign DDRAM_DIN      = ram_data;
 assign DDRAM_WE       = ram_write;
 
 reg  [7:0] ram_burst;
-reg [63:0] ram_q, next_q, ram_q2, next_q2;
+reg [63:0] ram_q, next_q, ram_q2, next_q2, ram_q3, next_q3;
 reg [63:0] ram_data;
-reg [27:0] ram_address, cache_addr, cache_addr2;
+reg [27:0] ram_address, cache_addr, cache_addr2, cache_addr3;
 reg        ram_read = 0;
 reg        ram_write = 0;
 
 reg [1:0]  state  = 0;
-reg        ch = 0; 
+reg [1:0]  ch = 0; 
 
 always @(posedge DDRAM_CLK) begin
 
@@ -132,36 +137,71 @@ always @(posedge DDRAM_CLK) begin
 						state       <= 2;
 					end 
 				end 
+				else if(rd_req3 != rd_ack3) begin
+					if(cache_addr3[27:3] == rdaddr3[27:3]) begin
+						rd_ack3     <= rd_req3;
+						dout3       <= ram_q3[{rdaddr3[2:0],3'b000} +:8];
+					end
+					else if((cache_addr3[27:3]+1'd1) == rdaddr3[27:3]) begin
+						rd_ack3     <= rd_req3;
+						ram_q3      <= next_q3;
+						dout3       <= next_q3[{rdaddr3[2:0],3'b000} +:8];
+						cache_addr3 <= {rdaddr3[27:3],3'b000};
+						ram_address <= {rdaddr3[27:3]+1'd1,3'b000};
+						ram_read    <= 1;
+						ram_burst   <= 1;
+						ch 			<= 2;
+						state       <= 3;
+					end
+					else begin
+						ram_address <= {rdaddr3[27:3],3'b000};
+						cache_addr3 <= {rdaddr3[27:3],3'b000};
+						ram_read    <= 1;
+						ram_burst   <= 2;
+						ch 			<= 2;
+						state       <= 2;
+					end 
+				end 
 
 			1: begin
 					cache_addr <= '1;
 					cache_addr2 <= '1; 
+					cache_addr3 <= '1; 
 					cache_addr[3:0] <= 0;
 					cache_addr2[3:0] <= 0; 
+					cache_addr3[3:0] <= 0; 
 					we_ack <= we_req;
 					state  <= 0;
 				end
-		
+
 			2: if(DDRAM_DOUT_READY) begin
-					if (~ch) begin
+					if (ch==0) begin
 						ram_q  <= DDRAM_DOUT;
-						dout   <= DDRAM_DOUT[{rdaddr[2:0],  3'b000} +:8];
+						dout   <= DDRAM_DOUT[{rdaddr[2:0],3'b000} +:8];
 						rd_ack <= rd_req;
 					end
-					else begin
+					else if (ch==1) begin
 						ram_q2  <= DDRAM_DOUT;
 						dout2   <= DDRAM_DOUT[{rdaddr2[2:0],3'b000} +:8];
 						rd_ack2 <= rd_req2;
+					end 
+					else begin
+						ram_q3  <= DDRAM_DOUT;
+						dout3   <= DDRAM_DOUT[{rdaddr3[2:0],3'b000} +:8];
+						rd_ack3 <= rd_req3;
 					end 
 					state  <= 3;
 				end
 
 			3: if(DDRAM_DOUT_READY) begin
-					if (~ch) begin
+					if (ch==0) begin
 						next_q <= DDRAM_DOUT;
 					end
-					else begin
+					else if (ch==1) begin
 						next_q2 <= DDRAM_DOUT;
+					end 
+					else begin
+						next_q3 <= DDRAM_DOUT;
 					end 
 					state  <= 0;
 				end

@@ -1151,15 +1151,8 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 	);
 	
 	wire [18:11] MA;
-	wire [7:0] M1_ROM_DATA;
 	wire [7:0] Z80_RAM_DATA;
-	
-	// M1 ROM address switch
-	wire m1_loading = ioctl_download & (ioctl_index == INDEX_M1ROM);
-	wire [16:0] M1_ADDR = m1_loading ? ioctl_addr[17:1] : {MA[16:11], SDA[10:0]};
-	
-	z80_rom M1(M1_ADDR, ~clk_sys, ioctl_dout[7:0], m1_loading & ioctl_wr, M1_ROM_DATA);
-	
+
 	z80_ram Z80RAM(SDA[10:0], CLK_4M, SDD_OUT, ~(nZRAMCS | nSDMWR), Z80_RAM_DATA);		// Fast enough ?
 	
 	assign SDD_IN = (~nSDZ80R) ? SDD_RD_C1 :
@@ -1169,13 +1162,31 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 						8'b00000000;
 	
 	wire Z80_nRESET = SYSTEM_CDx ? nRESET & CD_nRESET_Z80 : nRESET;
+
+	wire [7:0] M1_ROM_DATA;
+	reg nZ80WAIT;
+	reg z80rd_req;
+	wire z80rd_ack;
+	wire z80_rom_rd = ~(nSDMRD | nSDROM);
+	always @(posedge clk_sys) begin
+		reg old_rd, old_rd1;
+		reg old_clk;
+		
+		old_rd <= z80_rom_rd;
+		if(old_rd == z80_rom_rd) old_rd1 <= old_rd;
+		
+		if(~old_rd1 & old_rd) z80rd_req <= ~z80rd_req;
+		
+		old_clk <= CLK_4M;
+		if(old_clk & ~CLK_4M) nZ80WAIT <= ~(z80rd_req ^ z80rd_ack);
+	end
 	
 	cpu_z80 Z80CPU(
 		.CLK_4M(CLK_4M),
 		.nRESET(Z80_nRESET),
 		.SDA(SDA), .SDD_IN(SDD_IN), .SDD_OUT(SDD_OUT),
 		.nIORQ(nIORQ),	.nMREQ(nMREQ),	.nRD(nSDRD), .nWR(nSDWR),
-		.nINT(nZ80INT), .nNMI(nZ80NMI)
+		.nINT(nZ80INT), .nNMI(nZ80NMI), .nWAIT(nZ80WAIT)
 	);
 	
 	wire [19:0] ADPCMA_ADDR;
@@ -1201,27 +1212,28 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 	reg old_download, old_reset;
 	wire adpcm_wrack, adpcm_rdack;
 	
-	wire pcm_loading = ioctl_download & (ioctl_index >= INDEX_VROMS) & (ioctl_index < INDEX_CROMS);
+	wire ddr_loading = ioctl_download & (((ioctl_index >= INDEX_VROMS) & (ioctl_index < INDEX_CROMS)) | (ioctl_index == INDEX_M1ROM));
 	
 	// Copied from Genesis_MiSTer/Genesis.sv
 	always @(posedge clk_sys)
 	begin
 		
-		old_download <= pcm_loading;
+		old_download <= ddr_loading;
 		old_reset <= nRESET;
 
 		if (old_reset & ~nRESET) ioctl_wait <= 0;
 		
-		if (old_download & ~pcm_loading)
+		if (old_download & ~ddr_loading)
 			ioctl_wait <= 0;	// Needed ?
 
-		if (~old_download & pcm_loading) begin
+		if (~old_download & ddr_loading) begin
 			adpcm_wr <= 0;
-		end else if (pcm_loading)
+		end else if (ddr_loading)
 		begin
 			if (ioctl_wr) begin
 				ioctl_wait <= 1;
 				adpcm_wr <= ~adpcm_wr;
+				ddr_waddr <= (ioctl_index == INDEX_M1ROM) ? {1'b1,ioctl_addr[24:0]} : ioctl_addr[24:0] + {ioctl_index[5:0] - 6'd16, 19'h00000};
 			end else if (ioctl_wait & (adpcm_wr == adpcm_wrack)) begin
 				ioctl_wait <= 0;
 			end
@@ -1257,10 +1269,11 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 
 	wire [7:0] ADPCMA_DATA;
 	wire [7:0] ADPCMB_DATA;
+	reg [27:0] ddr_waddr;
 	ddram DDRAM(
 		.*,
 		
-		.wraddr(ioctl_addr[24:0] + {ioctl_index[5:0] - 6'd16, 19'h00000}),
+		.wraddr(ddr_waddr),
 		.din(ioctl_dout),
 		.we_req(adpcm_wr),
 		.we_ack(adpcm_wrack),
@@ -1273,7 +1286,12 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 		.rdaddr2(ADPCMB_ADDR_LATCH),
 		.dout2(ADPCMB_DATA),
 		.rd_req2(ADPCMB_READ_REQ),
-		.rd_ack2()
+		.rd_ack2(),
+
+		.rdaddr3({7'b10_0000_0,MA,SDA[10:0]}),
+		.dout3(M1_ROM_DATA),
+		.rd_req3(z80rd_req),
+		.rd_ack3(z80rd_ack)
 	);
 
 	wire [7:0] YM2610_DOUT;

@@ -1,4 +1,3 @@
-set_global_assignment -name QIP_FILE [file join $::quartus(qip_path) z80_rom.qip ]
 set_global_assignment -name QIP_FILE [file join $::quartus(qip_path) z80_ram.qip ]
 set_global_assignment -name QIP_FILE [file join $::quartus(qip_path) slow_vram.qip ]
 set_global_assignment -name QIP_FILE [file join $::quartus(qip_path) pal_ram.qip ]
