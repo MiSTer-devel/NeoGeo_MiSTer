@@ -289,50 +289,21 @@ begin
 	end
 end
 
-wire CLK_24M;
-reg [2:0] counter_p = 0;	// 0~4
-reg diva, divb;
-reg nRST_PREV;
+reg [1:0] counter_p = 0;
 reg [1:0] SYSTEM_TYPE;
 
-always @(posedge clk_sys)
-begin
+always @(posedge clk_sys) begin
+	reg nRST_PREV;
 	nRST_PREV <= nRST;
-	
-	if ({nRST_PREV, nRST} == 2'b01)
-	begin
-		// Rising edge of nRST
-		counter_p <= 3'd0;
-		diva <= 1'd0;
-	end
-	else
-	begin
-		if (counter_p == 3'd3)
-			counter_p <= 3'd0;
-		else
-			counter_p <= counter_p + 3'd1;
-		
-		if (counter_p == 3'd0)
-			diva <= ~diva;
-	end
+
+	if ({nRST_PREV, nRST} == 2'b01) counter_p <= 0;
+	else counter_p <= counter_p + 1'd1;
 end
 
-always @(negedge clk_sys)
-begin	
-	if ({nRST_PREV, nRST} == 2'b01)
-	begin
-		// Rising edge of nRST
-		SYSTEM_TYPE <= status[2:1];	// Latch the system type on reset
-		divb <= 1'd0;
-	end
-	else
-	begin
-		if (counter_p == 3'd2)
-			divb <= ~divb;
-	end
-end
+wire CLK_24M = counter_p[1];
 
-assign CLK_24M = diva ^ divb;	// Glitch-less divide-by-5
+always @(posedge clk_sys) if (~nRST) SYSTEM_TYPE <= status[2:1];	// Latch the system type on reset
+
 
 //////////////////   HPS I/O   ///////////////////
 
