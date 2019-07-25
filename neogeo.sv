@@ -246,6 +246,7 @@ localparam CONF_STR = {
 
 wire locked;
 wire clk_sys;
+wire CLK_24M = counter_p[1];
 
 // 50MHz in, 4*24=96MHz out
 // CAS latency = 2 (20.8ns)
@@ -258,56 +259,24 @@ pll pll(
 	.locked(locked)
 );
 
-wire nRST = ~(ioctl_download | status[0] | buttons[1]);
-
 // The watchdog should output nRESET but it makes video sync stop for a moment, so the
 // MiSTer OSD jumps around. Provide an indication for devs that a watchdog reset happened ?
-//wire nRESET = nRST;
-reg nRESET;
-reg nRST_PREV_24M;
-reg [15:0] TRASH_ADDR;
-reg TRASHING;
 
-always @(posedge CLK_24M)
-begin
-	nRST_PREV_24M <= nRST;
-	// nRST rising edge: start RAM trashing
-	if (~nRST_PREV_24M & nRST)
-	begin
-		TRASHING <= 1;
-		TRASH_ADDR <= 16'h0000;
-	end
-	// nRST falling edge: put system in reset
-	if (nRST_PREV_24M & ~nRST)
-		nRESET <= 0;
-	
-	if (TRASHING)
-	begin
-		if (TRASH_ADDR == 16'hFFFF)
-		begin
-			// Trashing done: release system reset
-			TRASHING <= 0;
-			nRESET <= 1;
-		end
-		else
-			TRASH_ADDR <= TRASH_ADDR + 1'b1;
+reg [14:0] TRASH_ADDR;
+reg  [1:0] SYSTEM_TYPE;
+
+reg nRESET;
+always @(posedge CLK_24M) begin
+	nRESET <= &TRASH_ADDR;
+	if (~&TRASH_ADDR) TRASH_ADDR <= TRASH_ADDR + 1'b1;
+	if (ioctl_download | status[0] | buttons[1]) begin
+		TRASH_ADDR <= 0;
+		SYSTEM_TYPE <= status[2:1];	// Latch the system type on reset
 	end
 end
 
 reg [1:0] counter_p = 0;
-reg [1:0] SYSTEM_TYPE;
-
-always @(posedge clk_sys) begin
-	reg nRST_PREV;
-	nRST_PREV <= nRST;
-
-	if ({nRST_PREV, nRST} == 2'b01) counter_p <= 0;
-	else counter_p <= counter_p + 1'd1;
-end
-
-wire CLK_24M = counter_p[1];
-
-always @(posedge clk_sys) if (~nRST) SYSTEM_TYPE <= status[2:1];	// Latch the system type on reset
+always @(posedge clk_sys) counter_p <= counter_p + 1'd1;
 
 
 //////////////////   HPS I/O   ///////////////////
@@ -724,7 +693,7 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 	
 	reg  sdr_pri_64;
 	wire sdr_pri_sel = ~sdram_addr[26] & (~sdram_addr[25] | sdr_pri_64);
-	always @(posedge clk_sys) if (~nRST) sdr_pri_64 <= status[13];
+	always @(posedge clk_sys) if (~nRESET) sdr_pri_64 <= status[13];
 
 	wire sdram1_ready, sdram2_ready;
 	wire [63:0] sdram1_dout, sdram2_dout;
@@ -849,14 +818,31 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 	assign M68K_DATA = (nROMOE & nSROMOE & |{nPORTOE, cart_chip}) ? 16'bzzzzzzzzzzzzzzzz : PROM_DATA;
 	
 	// 68k work RAM
-	wire [14:0] WRAM_ADDR = TRASHING ? TRASH_ADDR[14:0] : M68K_ADDR[15:1];
-	wire [15:0] WRAM_DIN = TRASHING ? TRASH_ADDR[15:0] : M68K_DATA;
-	
-	wire WRAM_WR_L = (~nWWL | TRASHING);	// ~SYSTEM_CDx &  TESTING
-	wire WRAM_WR_U = (~nWWU | TRASHING);	// ~SYSTEM_CDx &  TESTING
-	
-	spram #(15) WRAML(.clock(CLK_24M), .address(WRAM_ADDR), .data(WRAM_DIN[7:0]),  .wren(WRAM_WR_L), .q(WRAML_OUT));
-	spram #(15) WRAMU(.clock(CLK_24M), .address(WRAM_ADDR), .data(WRAM_DIN[15:8]), .wren(WRAM_WR_U), .q(WRAMU_OUT));
+	dpram #(15) WRAML(
+		.clock_a(CLK_24M),
+		.address_a(M68K_ADDR[15:1]),
+		.data_a(M68K_DATA[7:0]),
+		.wren_a(~nWWL),
+		.q_a(WRAML_OUT),
+
+		.clock_b(CLK_24M),
+		.address_b(TRASH_ADDR),
+		.data_b(TRASH_ADDR[7:0]),
+		.wren_b(~nRESET)
+	);
+
+	dpram #(15) WRAMU(
+		.clock_a(CLK_24M),
+		.address_a(M68K_ADDR[15:1]),
+		.data_a(M68K_DATA[15:8]),
+		.wren_a(~nWWU),
+		.q_a(WRAMU_OUT),
+
+		.clock_b(CLK_24M),
+		.address_b(TRASH_ADDR),
+		.data_b(TRASH_ADDR[7:0]),
+		.wren_b(~nRESET)
+	);
 
 	// Work RAM or CD extended RAM read
 	assign M68K_DATA[7:0]  = nWRL ? 8'bzzzzzzzz : SYSTEM_CDx ? PROM_DATA[7:0]  : WRAML_OUT;
