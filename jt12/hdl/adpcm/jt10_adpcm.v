@@ -50,7 +50,7 @@ assign pcm = { {16-sigw{x1[sigw-1]}}, x1 } <<< shift;
 // has room for it
 always @(*) begin
     casez( data[2:0] )
-        3'b0??: step_next = step1==6'd0 ? 6'd0 : (step1-1);
+        3'b0??: step_next = step1==6'd0 ? 6'd0 : (step1-1'd1);
         3'b100: step_next = step1+6'd2;
         3'b101: step_next = step1+6'd5;
         3'b110: step_next = step1+6'd7;
@@ -103,14 +103,14 @@ always @( posedge clk or negedge rst_n )
         step3     <= step2;
         chon3     <= chon2;
         // III
-        sign4     <= sign3;
+        //sign4     <= sign3;
         inc4      <= sign3 ? ~inc3_long + 1'd1 : inc3_long;
         x4        <= x3;
         step4     <= step3;
         chon4     <= chon3;
         // IV
-        sign5     <= sign4;
-        xsign5    <= x4[sigw-1];
+        //sign5     <= sign4;
+        //xsign5    <= x4[sigw-1];
         x5        <= chon4 ? x4 + inc4 : x4;
         step5     <= step4;
         // V

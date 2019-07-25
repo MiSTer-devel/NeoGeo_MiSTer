@@ -164,7 +164,7 @@ module fast_cycle(
 		else
 			{J194_Q, J102_E175_Q} <= {J231_Q, J87_G152_Q};
 	end
-	wire O112B_OUT = O109A_OUT;		// 2x inverter
+	//wire O112B_OUT = O109A_OUT;		// 2x inverter
 	/*FDSCell G152(PARSE_INDEX_INC_CLK, PARSE_INDEX[3:0], G152_Q);
 	//assign #5 G152_Q_DELAYED = G152_Q;	// 4x BD3
 	always @(posedge CLK_24M)	// TESTING - ok, solves issue

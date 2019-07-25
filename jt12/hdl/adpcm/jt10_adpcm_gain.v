@@ -50,7 +50,7 @@ always @(*)
         default: up_ch_dec = 6'd0;
     endcase
 
-wire [5:0] en_ch2 = { en_ch[4:0], en_ch[5] }; // shift the bits to fit in the pipeline slot correctly
+//wire [5:0] en_ch2 = { en_ch[4:0], en_ch[5] }; // shift the bits to fit in the pipeline slot correctly
 
 reg  [6:0] db5;
 always @(*)

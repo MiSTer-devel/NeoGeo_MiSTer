@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+// altera message_off 10240
 module LT4(
 	input nG,
 	input [3:0] D,

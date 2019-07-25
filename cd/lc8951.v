@@ -23,6 +23,8 @@
 // The LC8953-LC8951 handshake signals aren't implemented, no functional need for
 // that as it's all automatic while the 68k waits
 
+// altera message_off 10036 10240
+
 module lc8951(
 	input nRESET,
 	input CLK_12M,

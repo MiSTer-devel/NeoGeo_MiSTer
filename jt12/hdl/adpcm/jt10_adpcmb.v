@@ -38,8 +38,8 @@ reg [stepw-1:0] step1;
 reg [stepw+1:0] next_step3;
 assign pcm = x1[xw-1:xw-16];
 
-wire [xw-1:0] limpos = 32767;
-wire [xw-1:0] limneg = -32768;
+wire [xw-1:0] limpos = {1'b0, {xw-1{1'b1}}};
+wire [xw-1:0] limneg = {1'b1, {xw-1{1'b0}}};
 
 reg  [18:0] d2l;
 reg  [xw-1:0] d3,d4;
