@@ -213,7 +213,7 @@ assign VIDEO_ARY = 8'd7;	// 224/32
 localparam CONF_STR = {
 	"NEOGEO;;",
 	"-;",
-	"H0FS1,EP1P1,Load romset;",
+	"H0FS1,*,Load ROM set;",
 	"H1S0,ISOBIN,Load CD Image;",
 	"-;",
 	"O12,System type,Console(AES),Arcade(MVS),CD,CDZ;",
