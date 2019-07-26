@@ -648,7 +648,7 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 		(ioctl_index >= INDEX_CROMS) ? 	CROM_LOAD_ADDR + 27'h0800000 :      // C*: $0800000~...MAX
 		27'h0000000;
 
-	reg [26:0] P2ROM_MASK, CROM_MASK, VROM_MASK, MROM_MASK;
+	reg [26:0] P2ROM_MASK, CROM_MASK, V1ROM_MASK, V2ROM_MASK, MROM_MASK;
 	always_ff @(posedge clk_sys) begin
 		reg old_rst;
 
@@ -657,20 +657,25 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 		if(status[0]) begin
 			P2ROM_MASK <= P2ROM_MASK | P2ROM_MASK[26:1];
 			CROM_MASK  <= CROM_MASK  | CROM_MASK[26:1];
-			VROM_MASK  <= VROM_MASK  | VROM_MASK[26:1];
+			V1ROM_MASK <= V1ROM_MASK | V1ROM_MASK[26:1];
+			V2ROM_MASK <= V2ROM_MASK | V2ROM_MASK[26:1];
 			MROM_MASK  <= MROM_MASK  | MROM_MASK[26:1];
 		end
 
 		if(ioctl_wr) begin
 			     if(ioctl_index >= INDEX_CROMS) CROM_MASK  <= CROM_MASK  | CROM_LOAD_ADDR;
-			else if(ioctl_index >= INDEX_VROMS) VROM_MASK  <= VROM_MASK  | VROM_LOAD_ADDR;
+			else if(ioctl_index >= INDEX_VROMS) begin
+				if(~VROM_LOAD_ADDR[24]) 			V1ROM_MASK <= V1ROM_MASK | VROM_LOAD_ADDR;
+				else  									V2ROM_MASK <= V2ROM_MASK | VROM_LOAD_ADDR;
+			end
 			else if(ioctl_index == INDEX_M1ROM) MROM_MASK  <= MROM_MASK  | ioctl_addr;
 			else if(ioctl_index == INDEX_P2ROM) P2ROM_MASK <= P2ROM_MASK | ioctl_addr;
 		end
 
 		if(~old_rst & status[0]) begin
 			CROM_MASK  <= 0;
-			VROM_MASK  <= 0;
+			V1ROM_MASK <= 0;
+			V2ROM_MASK <= 0;
 			MROM_MASK  <= 0;
 			P2ROM_MASK <= 0;
 		end
@@ -1259,14 +1264,14 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 		// Trigger ADPCM A data read on nSDROE falling edge
 		if (ADPCMA_OE_SR == 2'b10) begin
 			ADPCMA_READ_REQ <= ~ADPCMA_READ_REQ;
-			ADPCMA_ADDR_LATCH <= {1'b0, ADPCMA_BANK, ADPCMA_ADDR} & VROM_MASK[24:0];
+			ADPCMA_ADDR_LATCH <= {ADPCMA_BANK, ADPCMA_ADDR} & V1ROM_MASK[23:0];
 		end
 		
 		// Trigger ADPCM A data read on nSDPOE falling edge
 		ADPCMB_OE_SR <= {ADPCMB_OE_SR[0], nSDPOE};
 		if (ADPCMB_OE_SR == 2'b10) begin
 			ADPCMB_READ_REQ <= ~ADPCMB_READ_REQ;
-			ADPCMB_ADDR_LATCH <= {~use_pcm, ADPCMB_ADDR & VROM_MASK[23:0]};
+			ADPCMB_ADDR_LATCH <= {~use_pcm, ADPCMB_ADDR & (use_pcm ? V1ROM_MASK[23:0] : V2ROM_MASK[23:0])};
 		end
 	end
 
