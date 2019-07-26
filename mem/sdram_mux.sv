@@ -66,7 +66,7 @@ module sdram_mux(
 	input ioctl_download,
 	input [26:0] ioctl_addr_offset,
 	
-	input [1:0] P_BANK,
+	input [26:0] P2ROM_ADDR,
 	input [1:0] CD_BANK_SPR,
 	input [26:0] CROM_ADDR,
 	input [15:0] S_LATCH,
@@ -80,54 +80,51 @@ module sdram_mux(
 
 	reg M68K_RD_REQ, SROM_RD_REQ, CROM_RD_REQ, CD_WR_REQ;
 	reg M68K_RD_RUN, SROM_RD_RUN, CROM_RD_RUN, CD_WR_RUN;
-	
+
 	reg nDS_PREV, nAS_PREV, DMA_WR_OUT_PREV;
 	reg [1:0] SDRAM_READY_SR;
 	//reg [1:0] SDRAM_READY_FOURTH_SR;
 	reg [1:0] SDRAM_M68K_SIG_SR;
 	reg [1:0] SDRAM_CROM_SIG_SR;
 	reg [1:0] SDRAM_SROM_SIG_SR;
-	
+
 	reg [24:0] CD_REMAP_TR_ADDR;
-	
+
 	reg SDRAM_WR_BYTE_MODE;
-	
-	//wire [22:0] P2ROM_ADDR = DMA_RUNNING ? {3'd3, DMA_ADDR_IN[19:0]} : {P_BANK + 3'd3, M68K_ADDR[19:1], 1'b0};
-	wire [22:0] P2ROM_ADDR = {P_BANK + 3'd2, M68K_ADDR[19:1], 1'b0};
-	
+
 	assign wtbt = (ioctl_download | ~CD_WR_RUN) ? 2'b11 : SDRAM_WR_BYTE_MODE ? 2'b00 : 2'b11;
-	
+
 	assign sdram_din = ioctl_download ? ioctl_dout :
 								CD_WR_RUN ? DMA_RUNNING ? DMA_DATA_OUT : M68K_DATA : 16'h0000;
-	
+
 	// Only allow DMA to read from $000000~$1FFFFF
 	wire SDRAM_M68K_SIG = DMA_RUNNING ? CD_EXT_RD : ~&{nSROMOE, nROMOE, nPORTOE} | CD_EXT_RD;
-	
+
 	// SDRAM address mux
 	// sdram_addr LSB is = 0 in word mode
 	always_comb begin 
 		casez ({ioctl_download, CD_WR_RUN, ~nROMOE & M68K_RD_RUN, CD_EXT_RD & M68K_RD_RUN, ~nPORTOE & M68K_RD_RUN, ~nSROMOE & M68K_RD_RUN, SROM_RD_RUN, CROM_RD_RUN})
 			// HPS loading pass-through
 			8'b1zzzzzzz: sdram_addr = ioctl_addr_offset;
-			
+
 			// CD transfer
 			8'b01zzzzzz: sdram_addr = CD_REMAP_TR_ADDR;
-			
+
 			// P1 ROM $0000000~$00FFFFF
 			8'b001zzzzz: sdram_addr = {5'b0_0000, M68K_ADDR[19:1], 1'b0};
-			
+
 			// Work RAM (cart) $0100000~$010FFFF, or Extended RAM (CD) $0100000~$01FFFFF
 			8'b0001zzzz: sdram_addr = SYSTEM_CDx ? DMA_RUNNING ? {5'b0_0001, DMA_ADDR_IN[19:0]} : {5'b0_0001, M68K_ADDR[19:1], 1'b0} :
 															{9'b0_0001_0000, M68K_ADDR[15:1], 1'b0};
-			
+
 			// P2 ROM (cart) $0200000~$05FFFFF bankswitched
-			8'b00001zzz: sdram_addr = {2'b0_0, P2ROM_ADDR};
-			
+			8'b00001zzz: sdram_addr = P2ROM_ADDR + 27'h0200000;
+
 			// System ROM (CD)	$0600000~$067FFFF
 			// System ROM (cart)	$0600000~$061FFFF
 			8'b000001zz: sdram_addr = SYSTEM_CDx ? {6'b0_0110_0, M68K_ADDR[18:1], 1'b0} :
 															{8'b0_0110_000, M68K_ADDR[16:1], 1'b0};
-			
+
 			// SFIX ROM (CD)		$0680000~$069FFFF
 			// S1 ROM (cart)		$0680000~$06FFFFF
 			// SFIX ROM (cart)	$0620000~$063FFFF
@@ -135,12 +132,12 @@ module sdram_mux(
 												(nSYSTEM_G) ?
 												{6'b0_0110_1, FIX_BANK, S_LATCH[15:4], S_LATCH[2:0], ~S_LATCH[3], 1'b0} :
 												{8'b0_0110_001, S_LATCH[15:4], S_LATCH[2:0], ~S_LATCH[3], 1'b0};
-			
-			// C ROMs Bytes $0800000~$1FFFFFF
-			8'b00000001: sdram_addr = CROM_ADDR;
-			
+
+			// C ROMs Bytes $0800000~$7FFFFFF
+			8'b00000001: sdram_addr = CROM_ADDR + 27'h800000;
+
 			// Default
-			8'b00000000: sdram_addr = 25'h0000000;
+			8'b00000000: sdram_addr = 27'h0000000;
 		endcase
 	end
 

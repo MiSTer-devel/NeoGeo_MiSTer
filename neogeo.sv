@@ -186,7 +186,7 @@ assign VIDEO_ARY = 8'd7;	// 224/32
 // status bit definition:
 // 31       23       15       7
 // --AA-PSS -------- L--CGGDD DEEMVTTR
-// R:	status[0]		Reset, used by the HPS, keep it there
+//  :	status[0]		System Reset, used by the HPS, keep it there
 // T:	status[2:1]		System type, 0=Console, 1=Arcade, 2=CD, 3=CDZ
 // V: status[3]		Video mode
 // M: status[4]		Memory card presence
@@ -195,6 +195,8 @@ assign VIDEO_ARY = 8'd7;	// 224/32
 // G:	status[11:10]	Neo CD region
 // C:	status[12]		Save memory card & backup RAM
 // L:	status[12]		CD lid state (DEBUG)
+//  :	status[13]		Primary SDRAM size 32MB/64MB
+//  :	status[14]		Manual Reset
 // S:	status[25:24]	Special chip type, 0=None, 1=PRO-CT0, 2=Link MCU, 3=NEO-CMC
 // P:	status[26]		Use PCM chip or not
 // A: status[29:28]	Sprite tile # remap hack, 0=no remap, 1=kof95, 2=whp, 3=kizuna
@@ -236,7 +238,7 @@ localparam CONF_STR = {
 `else
 	"OD,SDRAM,32MB,64MB;",
 `endif
-	"R0,Reset & apply;",
+	"RE,Reset & apply;",  // decouple manual reset from system reset 
 	"J1,A,B,C,D,Start,Select,Coin,ABC;",	// ABC is a special key to press A+B+C at once, useful for
 	"V,v",`BUILD_DATE								// keyboards that don't allow more than 2 keypresses at once
 };
@@ -269,7 +271,7 @@ reg nRESET;
 always @(posedge CLK_24M) begin
 	nRESET <= &TRASH_ADDR;
 	if (~&TRASH_ADDR) TRASH_ADDR <= TRASH_ADDR + 1'b1;
-	if (ioctl_download | status[0] | buttons[1]) begin
+	if (ioctl_download | status[0] | status[14] | buttons[1]) begin
 		TRASH_ADDR <= 0;
 		SYSTEM_TYPE <= status[2:1];	// Latch the system type on reset
 	end
@@ -633,6 +635,9 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 	wire sdram_we = SYSTEM_CDx ? (ioctl_download & (ioctl_index == INDEX_SPROM)) ? ioctl_wr : SDRAM_WR_PULSE :
 							(ioctl_download & (ioctl_index != INDEX_LOROM) & (ioctl_index != INDEX_M1ROM) & ((ioctl_index < INDEX_VROMS) | (ioctl_index >= INDEX_CROMS))) ? ioctl_wr : 1'b0;
 	
+	wire [26:0] CROM_LOAD_ADDR = ({1'b0, ioctl_addr[24:0], 1'b0} + {ioctl_index[7:1]-INDEX_CROMS[7:1], 18'h00000, ioctl_index[0], 1'b0});
+	wire [26:0] VROM_LOAD_ADDR = ({2'b00,ioctl_addr[24:0]} + {ioctl_index[7:0] - INDEX_VROMS[7:0], 19'h00000});
+
 	wire [26:0] ioctl_addr_offset =
 		(ioctl_index == INDEX_SPROM) ?	{8'b000_0110_0, ioctl_addr[18:0]} :	// System ROM: $0600000~$067FFFF
 		(ioctl_index == INDEX_S1ROM) ?	{8'b000_0110_1, ioctl_addr[18:0]} :	// S1: $0680000~$07FFFFF
@@ -640,8 +645,36 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 		(ioctl_index == INDEX_P1ROM_A) ? {7'b000_0000, ioctl_addr[19:0]} :		// P1 first half or full: $0000000~$00FFFFF
 		(ioctl_index == INDEX_P1ROM_B) ? {8'b000_0000_1, ioctl_addr[18:0]} :	// P1 second half: $0080000~$00FFFFF
 		(ioctl_index == INDEX_P2ROM) ? 	ioctl_addr + 27'h0200000 :				// P2+: $0200000~$05FFFFF
-		(ioctl_index >= INDEX_CROMS) ? 	{1'b0, ioctl_addr[24:0], 1'b0} + {ioctl_index[7:1]-INDEX_CROMS[7:1], 18'h00000, ioctl_index[0], 1'b0} + 27'h0800000 : // C*: $0800000~$1FFFFFF
+		(ioctl_index >= INDEX_CROMS) ? 	CROM_LOAD_ADDR + 27'h0800000 :      // C*: $0800000~...MAX
 		27'h0000000;
+
+	reg [26:0] P2ROM_MASK, CROM_MASK, VROM_MASK, MROM_MASK;
+	always_ff @(posedge clk_sys) begin
+		reg old_rst;
+
+		old_rst <= status[0];
+
+		if(status[0]) begin
+			P2ROM_MASK <= P2ROM_MASK | P2ROM_MASK[26:1];
+			CROM_MASK  <= CROM_MASK  | CROM_MASK[26:1];
+			VROM_MASK  <= VROM_MASK  | VROM_MASK[26:1];
+			MROM_MASK  <= MROM_MASK  | MROM_MASK[26:1];
+		end
+
+		if(ioctl_wr) begin
+			     if(ioctl_index >= INDEX_CROMS) CROM_MASK  <= CROM_MASK  | CROM_LOAD_ADDR;
+			else if(ioctl_index >= INDEX_VROMS) VROM_MASK  <= VROM_MASK  | VROM_LOAD_ADDR;
+			else if(ioctl_index == INDEX_M1ROM) MROM_MASK  <= MROM_MASK  | ioctl_addr;
+			else if(ioctl_index == INDEX_P2ROM) P2ROM_MASK <= P2ROM_MASK | ioctl_addr;
+		end
+
+		if(~old_rst & status[0]) begin
+			CROM_MASK  <= 0;
+			VROM_MASK  <= 0;
+			MROM_MASK  <= 0;
+			P2ROM_MASK <= 0;
+		end
+	end
 
 	sdram_mux SDRAM_MUX(
 		.nRESET(nRESET),
@@ -666,7 +699,7 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 		.PCK1(PCK1), .PCK2(PCK2),
 		
 		.CD_BANK_SPR(CD_BANK_SPR),
-		.P_BANK(P_BANK),
+		.P2ROM_ADDR({P_BANK, M68K_ADDR[19:1], 1'b0} & P2ROM_MASK),
 		.CROM_ADDR(CROM_ADDR),
 		.S_LATCH(S_LATCH),
 		
@@ -908,8 +941,8 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 		status[29:28],
 		CROM_ADDR
 	);*/
-	assign CROM_ADDR = {C_LATCH_EXT + 2'd1, C_LATCH, 3'b000};
-	
+	assign CROM_ADDR = {C_LATCH_EXT, C_LATCH, 3'b000} & CROM_MASK;
+
 	zmc ZMC(
 		.nSDRD0(SDRD0),
 		.SDA_L(SDA[1:0]), .SDA_U(SDA[15:8]),
@@ -1203,7 +1236,7 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 			if (ioctl_wr) begin
 				ioctl_wait <= 1;
 				adpcm_wr <= ~adpcm_wr;
-				ddr_waddr <= (ioctl_index == INDEX_M1ROM) ? {1'b1,ioctl_addr[24:0]} : ioctl_addr[24:0] + {ioctl_index[5:0] - 6'd16, 19'h00000};
+				ddr_waddr <= (ioctl_index == INDEX_M1ROM) ? {1'b1,ioctl_addr[24:0]} : VROM_LOAD_ADDR;
 			end else if (ioctl_wait & (adpcm_wr == adpcm_wrack)) begin
 				ioctl_wait <= 0;
 			end
@@ -1226,14 +1259,14 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 		// Trigger ADPCM A data read on nSDROE falling edge
 		if (ADPCMA_OE_SR == 2'b10) begin
 			ADPCMA_READ_REQ <= ~ADPCMA_READ_REQ;
-			ADPCMA_ADDR_LATCH <= {1'b0, ADPCMA_BANK, ADPCMA_ADDR};
+			ADPCMA_ADDR_LATCH <= {1'b0, ADPCMA_BANK, ADPCMA_ADDR} & VROM_MASK[24:0];
 		end
 		
 		// Trigger ADPCM A data read on nSDPOE falling edge
 		ADPCMB_OE_SR <= {ADPCMB_OE_SR[0], nSDPOE};
 		if (ADPCMB_OE_SR == 2'b10) begin
 			ADPCMB_READ_REQ <= ~ADPCMB_READ_REQ;
-			ADPCMB_ADDR_LATCH <= {~use_pcm, ADPCMB_ADDR};
+			ADPCMB_ADDR_LATCH <= {~use_pcm, ADPCMB_ADDR & VROM_MASK[23:0]};
 		end
 	end
 
@@ -1258,7 +1291,7 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 		.rd_req2(ADPCMB_READ_REQ),
 		.rd_ack2(),
 
-		.rdaddr3({7'b10_0000_0,MA,SDA[10:0]}),
+		.rdaddr3({7'b10_0000_0,MA & MROM_MASK[18:11],SDA[10:0]}),
 		.dout3(M1_ROM_DATA),
 		.rd_req3(z80rd_req),
 		.rd_ack3(z80rd_ack)
