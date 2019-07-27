@@ -104,41 +104,38 @@ module sdram_mux(
 	// SDRAM address mux
 	// sdram_addr LSB is = 0 in word mode
 	always_comb begin 
-		casez ({ioctl_download, CD_WR_RUN, ~nROMOE & M68K_RD_RUN, CD_EXT_RD & M68K_RD_RUN, ~nPORTOE & M68K_RD_RUN, ~nSROMOE & M68K_RD_RUN, SROM_RD_RUN, CROM_RD_RUN})
+		casez ({ioctl_download, CD_WR_RUN, CD_EXT_RD & M68K_RD_RUN, ~nROMOE & M68K_RD_RUN, ~nPORTOE & M68K_RD_RUN, ~nSROMOE & M68K_RD_RUN, SROM_RD_RUN}) //, CROM_RD_RUN})
 			// HPS loading pass-through
-			8'b1zzzzzzz: sdram_addr = ioctl_addr_offset;
+			7'b1zzzzzz: sdram_addr = ioctl_addr_offset;
 
 			// CD transfer
-			8'b01zzzzzz: sdram_addr = CD_REMAP_TR_ADDR;
-
-			// P1 ROM $0000000~$00FFFFF
-			8'b001zzzzz: sdram_addr = {5'b0_0000, M68K_ADDR[19:1], 1'b0};
+			7'b01zzzzz: sdram_addr = CD_REMAP_TR_ADDR;
 
 			// Work RAM (cart) $0100000~$010FFFF, or Extended RAM (CD) $0100000~$01FFFFF
-			8'b0001zzzz: sdram_addr = SYSTEM_CDx ? DMA_RUNNING ? {5'b0_0001, DMA_ADDR_IN[19:0]} : {5'b0_0001, M68K_ADDR[19:1], 1'b0} :
-															{9'b0_0001_0000, M68K_ADDR[15:1], 1'b0};
+			7'b001zzzz: sdram_addr = ~SYSTEM_CDx  ? {9'b0_0001_0000, M68K_ADDR[15:1], 1'b0} :
+		                             DMA_RUNNING ? {5'b0_0001,      DMA_ADDR_IN[19:0]}     :
+											                {5'b0_0001,      M68K_ADDR[19:1], 1'b0} ;
 
-			// P2 ROM (cart) $0400000~$07FFFFF bankswitched
-			8'b00001zzz: sdram_addr = P2ROM_ADDR + 27'h0400000;
+			// P1 ROM $0200000~$02FFFFF
+			7'b0001zzz: sdram_addr =                {5'b0_0010,      M68K_ADDR[19:1], 1'b0};
 
-			// System ROM (CD)	$0200000~$027FFFF
-			// System ROM (cart)	$0200000~$021FFFF
-			8'b000001zz: sdram_addr = SYSTEM_CDx ? {6'b0_0010_0,   M68K_ADDR[18:1], 1'b0} :
-															   {8'b0_0010_000, M68K_ADDR[16:1], 1'b0};
+			// P2 ROM (cart) $0300000~... bankswitched
+			7'b00001zz: sdram_addr =                27'h0300000 + P2ROM_ADDR;
 
-			// SFIX ROM (CD)		$0680000~$069FFFF
-			// S1 ROM (cart)		$0680000~$06FFFFF
-			// SFIX ROM (cart)	$0620000~$063FFFF
-			8'b0000001z: sdram_addr = SYSTEM_CDx ? {8'b0_0010_100, S_LATCH[15:4], S_LATCH[2:0], ~S_LATCH[3], 1'b0} :
-												(nSYSTEM_G) ?
-												{6'b0_0010_1, FIX_BANK, S_LATCH[15:4], S_LATCH[2:0], ~S_LATCH[3], 1'b0} :
-												{8'b0_0010_001, S_LATCH[15:4], S_LATCH[2:0], ~S_LATCH[3], 1'b0};
+			// System ROM (CD)	$0000000~$007FFFF
+			// System ROM (cart)	$0000000~$001FFFF
+			7'b000001z: sdram_addr = SYSTEM_CDx   ? {6'b0_0000_0,    M68K_ADDR[18:1], 1'b0} :
+															    {8'b0_0000_000,  M68K_ADDR[16:1], 1'b0} ;
 
-			// C ROMs Bytes $0800000~$7FFFFFF
-			8'b00000001: sdram_addr = CROM_ADDR;
+			// SFIX ROM (CD)		$0080000~$009FFFF
+			// S1 ROM (cart)		$0080000~$00FFFFF
+			// SFIX ROM (cart)	$0020000~$003FFFF
+			7'b0000001: sdram_addr = SYSTEM_CDx   ? {8'b0_0000_100,  S_LATCH[15:4], S_LATCH[2:0], ~S_LATCH[3], 1'b0} :
+												nSYSTEM_G  ? {6'b0_0000_1,    FIX_BANK, S_LATCH[15:4], S_LATCH[2:0], ~S_LATCH[3], 1'b0} :
+												             {8'b0_0000_001,  S_LATCH[15:4], S_LATCH[2:0], ~S_LATCH[3], 1'b0};
 
-			// Default
-			8'b00000000: sdram_addr = 27'h0000000;
+			// Default: C ROMs Bytes $0800000~$7FFFFFF
+			7'b0000000: sdram_addr =                CROM_ADDR;
 		endcase
 	end
 
@@ -183,10 +180,10 @@ module sdram_mux(
 				
 				// Convert and latch address
 				casez({CD_EXT_WR, CD_TR_AREA})
-					4'b1_???: CD_REMAP_TR_ADDR <= DMA_RUNNING ? {4'b0_001, DMA_ADDR_OUT[20:1], 1'b0} : {4'b0_001, M68K_ADDR[20:1], ~nLDS};	// EXT zone SDRAM
+					4'b1_???: CD_REMAP_TR_ADDR <= DMA_RUNNING ? {1'b0, 4'h3 + DMA_ADDR_OUT[20], DMA_ADDR_OUT[19:1], 1'b0} : {1'b0, 4'h3 + M68K_ADDR[20], M68K_ADDR[19:1], ~nLDS};	// EXT zone SDRAM
 					4'b0_000: CD_REMAP_TR_ADDR <= DMA_RUNNING ? {3'b0_10, CD_BANK_SPR, DMA_ADDR_OUT[19:7], DMA_ADDR_OUT[5:2], ~DMA_ADDR_OUT[6], ~DMA_ADDR_OUT[1], 1'b0} : {3'b0_10, CD_BANK_SPR, M68K_ADDR[19:7], M68K_ADDR[5:2], ~M68K_ADDR[6], ~M68K_ADDR[1], 1'b0};	// Sprites SDRAM
 					//4'b0_001: CD_REMAP_TR_ADDR <= {4'b0_000, CD_BANK_PCM, CD_TR_WR_ADDR, 1'b0};		// ADPCM DDRAM
-					4'b0_101: CD_REMAP_TR_ADDR <= DMA_RUNNING ? {8'b0_0000_100, DMA_ADDR_OUT[17:6], DMA_ADDR_OUT[3:1], ~DMA_ADDR_OUT[5], ~DMA_ADDR_OUT[4]} : {8'b0_0000_100, M68K_ADDR[17:6], M68K_ADDR[3:1], ~M68K_ADDR[5], ~M68K_ADDR[4]};	// Fix SDRAM
+					4'b0_101: CD_REMAP_TR_ADDR <= DMA_RUNNING ? {8'b0_0010_100, DMA_ADDR_OUT[17:6], DMA_ADDR_OUT[3:1], ~DMA_ADDR_OUT[5], ~DMA_ADDR_OUT[4]} : {8'b0_0010_100, M68K_ADDR[17:6], M68K_ADDR[3:1], ~M68K_ADDR[5], ~M68K_ADDR[4]};	// Fix SDRAM
 					//4'b0_100: CD_REMAP_TR_ADDR <= {8'b0_0000_000, CD_TR_WR_ADDR[16:1], 1'b0};		// Z80 BRAM
 					default: CD_REMAP_TR_ADDR <= 25'h0AAAAAA;		// DEBUG
 				endcase

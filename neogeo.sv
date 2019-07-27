@@ -316,7 +316,7 @@ wire [31:0] status;
 wire [64:0] rtc;
 
 wire        ioctl_wr;
-wire [24:0] ioctl_addr;
+wire [26:0] ioctl_addr;
 wire [15:0] ioctl_dout;
 wire        ioctl_download;
 wire  [7:0] ioctl_index;
@@ -477,6 +477,7 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 	parameter INDEX_P2ROM = 6;
 	parameter INDEX_S1ROM = 8;
 	parameter INDEX_M1ROM = 9;
+	parameter INDEX_CROM0 = 15;
 	parameter INDEX_VROMS = 16;
 	parameter INDEX_CROMS = 64;
 	
@@ -635,18 +636,19 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 	wire sdram_we = SYSTEM_CDx ? (ioctl_download & (ioctl_index == INDEX_SPROM)) ? ioctl_wr : SDRAM_WR_PULSE :
 							(ioctl_download & (ioctl_index != INDEX_LOROM) & (ioctl_index != INDEX_M1ROM) & ((ioctl_index < INDEX_VROMS) | (ioctl_index >= INDEX_CROMS))) ? ioctl_wr : 1'b0;
 	
-	wire [26:0] CROM_LOAD_ADDR = ({1'b0, ioctl_addr[24:0], 1'b0} + {ioctl_index[7:1]-INDEX_CROMS[7:1], 18'h00000, ioctl_index[0], 1'b0});
-	wire [26:0] VROM_LOAD_ADDR = ({2'b00,ioctl_addr[24:0]} + {ioctl_index[7:0] - INDEX_VROMS[7:0], 19'h00000});
+	wire [26:0] CROM_LOAD_ADDR = ({ioctl_addr[25:0], 1'b0} + {ioctl_index[7:1]-INDEX_CROMS[7:1], 18'h00000, ioctl_index[0], 1'b0});
+	wire [26:0] VROM_LOAD_ADDR = ({1'b0, ioctl_addr[25:0]} + {ioctl_index[7:0]-INDEX_VROMS[7:0], 19'h00000});
 
 	wire [26:0] ioctl_addr_offset =
-		(ioctl_index == INDEX_SPROM)   ?	{ 8'b000_0010_0,      ioctl_addr[18:0]} : // System ROM: $0200000~$027FFFF
-		(ioctl_index == INDEX_S1ROM)   ?	{ 8'b000_0010_1,      ioctl_addr[18:0]} : // S1: $0280000~$03FFFFF
-		(ioctl_index == INDEX_SFIXROM) ? {10'b000_0010_001,    ioctl_addr[16:0]} : // SFIX: $0220000~$023FFFF
-		(ioctl_index == INDEX_P1ROM_A) ? { 7'b000_0000,        ioctl_addr[19:0]} : // P1 first half or full: $0000000~$00FFFFF
-		(ioctl_index == INDEX_P1ROM_B) ? { 8'b000_0000_1,      ioctl_addr[18:0]} : // P1 second half: $0080000~$00FFFFF
-		(ioctl_index == INDEX_P2ROM)   ?  27'h0400000        + ioctl_addr        : // P2+: $0400000~$07FFFFF
-		(ioctl_index >= INDEX_CROMS)   ? {CROM_START, 20'd0} + CROM_LOAD_ADDR    : // C*: $0800000~...MAX
-		27'h0000000;
+		(ioctl_index == INDEX_SPROM)   ?	{ 8'b000_0000_0,      ioctl_addr[18:0]} : // System ROM: $0000000~$007FFFF
+		(ioctl_index == INDEX_SFIXROM) ? {10'b000_0000_001,    ioctl_addr[16:0]} : // SFIX:       $0020000~$003FFFF (in sys ROM)
+		(ioctl_index == INDEX_S1ROM)   ?	{ 8'b000_0000_1,      ioctl_addr[18:0]} : // S1:         $0080000~$00FFFFF
+		(ioctl_index == INDEX_P1ROM_A) ?  27'h0200000        + ioctl_addr        : // P1+:        $0200000~...
+		(ioctl_index == INDEX_P1ROM_B) ? { 8'b000_0010_1,      ioctl_addr[18:0]} : // P1:         $0280000~$02FFFFF (secondary 512KB)
+		(ioctl_index == INDEX_P2ROM)   ?  27'h0300000        + ioctl_addr        : // P2+:        $0300000~...
+		(ioctl_index == INDEX_CROM0)   ? {CROM_START, 20'd0} + ioctl_addr        : // C:          end of P, consolidated CROM
+		(ioctl_index >= INDEX_CROMS)   ? {CROM_START, 20'd0} + CROM_LOAD_ADDR    : // C*:         end of P
+		27'h0100000; // undefined case, use work RAM address to make sure no ROM gets overwritten
 
 	reg  [6:0] CROM_START;
 	reg [26:0] P2ROM_MASK, CROM_MASK, V1ROM_MASK, V2ROM_MASK, MROM_MASK;
@@ -665,13 +667,16 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 		end
 
 		if(ioctl_wr) begin
-			     if(ioctl_index >= INDEX_CROMS) CROM_MASK  <= CROM_MASK  | CROM_LOAD_ADDR;
+			     if(ioctl_index >= INDEX_CROMS)  CROM_MASK  <= CROM_MASK  | CROM_LOAD_ADDR;
 			else if(ioctl_index >= INDEX_VROMS) begin
-				if(~VROM_LOAD_ADDR[24]) 			V1ROM_MASK <= V1ROM_MASK | VROM_LOAD_ADDR;
-				else  									V2ROM_MASK <= V2ROM_MASK | VROM_LOAD_ADDR;
+				if(~VROM_LOAD_ADDR[24]) 			 V1ROM_MASK <= V1ROM_MASK | VROM_LOAD_ADDR;
+				else  									 V2ROM_MASK <= V2ROM_MASK | VROM_LOAD_ADDR;
 			end
-			else if(ioctl_index == INDEX_M1ROM) MROM_MASK  <= MROM_MASK  | ioctl_addr;
-			else if(ioctl_index == INDEX_P2ROM) P2ROM_MASK <= P2ROM_MASK | ioctl_addr;
+			else if(ioctl_index == INDEX_CROM0)  CROM_MASK  <= CROM_MASK  | ioctl_addr;
+			else if(ioctl_index == INDEX_M1ROM)  MROM_MASK  <= MROM_MASK  | ioctl_addr;
+			else if(ioctl_index == INDEX_P2ROM || ioctl_index == INDEX_P1ROM_A) begin
+				if(ioctl_addr_offset[26:20] >= 3) P2ROM_MASK <= P2ROM_MASK | (ioctl_addr_offset - 27'h0300000);
+			end
 		end
 
 		if(~old_rst & status[0]) begin
@@ -680,12 +685,12 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 			V2ROM_MASK <= 0;
 			MROM_MASK  <= 0;
 			P2ROM_MASK <= 0;
-			CROM_START <= 0;
+			CROM_START <= 3;
 		end
 		
 		old_download <= ioctl_download;
-		if(old_download && ~ioctl_download && ioctl_index == INDEX_P2ROM) begin
-			CROM_START <= ioctl_addr[24:20] + 4'd4;
+		if(old_download && ~ioctl_download && (ioctl_index == INDEX_P2ROM || ioctl_index == INDEX_P1ROM_A)) begin
+			if(CROM_START < ioctl_addr_offset[26:20]) CROM_START <= ioctl_addr_offset[26:20];
 		end
 	end
 
@@ -713,7 +718,7 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 		
 		.CD_BANK_SPR(CD_BANK_SPR),
 		.P2ROM_ADDR({P_BANK, M68K_ADDR[19:1], 1'b0} & P2ROM_MASK),
-		.CROM_ADDR({CROM_ADDR[26:20] + CROM_START, CROM_ADDR[19:0]}),
+		.CROM_ADDR({CROM_ADDR[26:20] + (SYSTEM_CDx ? 7'd8 : CROM_START), CROM_ADDR[19:0]}),
 		.S_LATCH(S_LATCH),
 		
 		.SDRAM_WR_PULSE(SDRAM_WR_PULSE),	.SDRAM_RD_PULSE(SDRAM_RD_PULSE), .SDRAM_RD_TYPE(sdram_rd_type),
