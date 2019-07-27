@@ -639,13 +639,13 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 	wire [26:0] VROM_LOAD_ADDR = ({2'b00,ioctl_addr[24:0]} + {ioctl_index[7:0] - INDEX_VROMS[7:0], 19'h00000});
 
 	wire [26:0] ioctl_addr_offset =
-		(ioctl_index == INDEX_SPROM) ?	{8'b000_0110_0, ioctl_addr[18:0]} :	// System ROM: $0600000~$067FFFF
-		(ioctl_index == INDEX_S1ROM) ?	{8'b000_0110_1, ioctl_addr[18:0]} :	// S1: $0680000~$07FFFFF
-		(ioctl_index == INDEX_SFIXROM) ? {10'b000_0110_001, ioctl_addr[16:0]} :	// SFIX: $0620000~$063FFFF
-		(ioctl_index == INDEX_P1ROM_A) ? {7'b000_0000, ioctl_addr[19:0]} :		// P1 first half or full: $0000000~$00FFFFF
-		(ioctl_index == INDEX_P1ROM_B) ? {8'b000_0000_1, ioctl_addr[18:0]} :	// P1 second half: $0080000~$00FFFFF
-		(ioctl_index == INDEX_P2ROM) ? 	ioctl_addr + 27'h0200000 :				// P2+: $0200000~$05FFFFF
-		(ioctl_index >= INDEX_CROMS) ? 	CROM_LOAD_ADDR + 27'h0800000 :      // C*: $0800000~...MAX
+		(ioctl_index == INDEX_SPROM) ?	{ 8'b000_0010_0,   ioctl_addr[18:0]} : // System ROM: $0200000~$027FFFF
+		(ioctl_index == INDEX_S1ROM) ?	{ 8'b000_0010_1,   ioctl_addr[18:0]} : // S1: $0280000~$03FFFFF
+		(ioctl_index == INDEX_SFIXROM) ? {10'b000_0010_001, ioctl_addr[16:0]} : // SFIX: $0220000~$023FFFF
+		(ioctl_index == INDEX_P1ROM_A) ? { 7'b000_0000,     ioctl_addr[19:0]} : // P1 first half or full: $0000000~$00FFFFF
+		(ioctl_index == INDEX_P1ROM_B) ? { 8'b000_0000_1,   ioctl_addr[18:0]} : // P1 second half: $0080000~$00FFFFF
+		(ioctl_index == INDEX_P2ROM) ? 	 27'h0400000 +     ioctl_addr        : // P2+: $0400000~$07FFFFF
+		(ioctl_index >= INDEX_CROMS) ? 	 27'h0800000 +     CROM_LOAD_ADDR    : // C*: $0800000~...MAX
 		27'h0000000;
 
 	reg [26:0] P2ROM_MASK, CROM_MASK, V1ROM_MASK, V2ROM_MASK, MROM_MASK;

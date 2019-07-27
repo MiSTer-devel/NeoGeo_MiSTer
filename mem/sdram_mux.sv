@@ -117,21 +117,21 @@ module sdram_mux(
 			8'b0001zzzz: sdram_addr = SYSTEM_CDx ? DMA_RUNNING ? {5'b0_0001, DMA_ADDR_IN[19:0]} : {5'b0_0001, M68K_ADDR[19:1], 1'b0} :
 															{9'b0_0001_0000, M68K_ADDR[15:1], 1'b0};
 
-			// P2 ROM (cart) $0200000~$05FFFFF bankswitched
-			8'b00001zzz: sdram_addr = P2ROM_ADDR + 27'h0200000;
+			// P2 ROM (cart) $0400000~$07FFFFF bankswitched
+			8'b00001zzz: sdram_addr = P2ROM_ADDR + 27'h0400000;
 
-			// System ROM (CD)	$0600000~$067FFFF
-			// System ROM (cart)	$0600000~$061FFFF
-			8'b000001zz: sdram_addr = SYSTEM_CDx ? {6'b0_0110_0, M68K_ADDR[18:1], 1'b0} :
-															{8'b0_0110_000, M68K_ADDR[16:1], 1'b0};
+			// System ROM (CD)	$0200000~$027FFFF
+			// System ROM (cart)	$0200000~$021FFFF
+			8'b000001zz: sdram_addr = SYSTEM_CDx ? {6'b0_0010_0,   M68K_ADDR[18:1], 1'b0} :
+															   {8'b0_0010_000, M68K_ADDR[16:1], 1'b0};
 
 			// SFIX ROM (CD)		$0680000~$069FFFF
 			// S1 ROM (cart)		$0680000~$06FFFFF
 			// SFIX ROM (cart)	$0620000~$063FFFF
-			8'b0000001z: sdram_addr = SYSTEM_CDx ? {8'b0_0110_100, S_LATCH[15:4], S_LATCH[2:0], ~S_LATCH[3], 1'b0} :
+			8'b0000001z: sdram_addr = SYSTEM_CDx ? {8'b0_0010_100, S_LATCH[15:4], S_LATCH[2:0], ~S_LATCH[3], 1'b0} :
 												(nSYSTEM_G) ?
-												{6'b0_0110_1, FIX_BANK, S_LATCH[15:4], S_LATCH[2:0], ~S_LATCH[3], 1'b0} :
-												{8'b0_0110_001, S_LATCH[15:4], S_LATCH[2:0], ~S_LATCH[3], 1'b0};
+												{6'b0_0010_1, FIX_BANK, S_LATCH[15:4], S_LATCH[2:0], ~S_LATCH[3], 1'b0} :
+												{8'b0_0010_001, S_LATCH[15:4], S_LATCH[2:0], ~S_LATCH[3], 1'b0};
 
 			// C ROMs Bytes $0800000~$7FFFFFF
 			8'b00000001: sdram_addr = CROM_ADDR + 27'h800000;
