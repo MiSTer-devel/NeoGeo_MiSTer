@@ -385,7 +385,7 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 	wire [15:0] FX68K_DATAOUT;
 	wire IPL0, IPL1;
 	wire FC0, FC1, FC2;
-	reg [1:0] P_BANK;
+	reg [3:0] P_BANK;
 	
 	// RTC stuff
 	wire RTC_DOUT, RTC_DIN, RTC_CLK, RTC_STROBE, RTC_TP;
@@ -639,18 +639,20 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 	wire [26:0] VROM_LOAD_ADDR = ({2'b00,ioctl_addr[24:0]} + {ioctl_index[7:0] - INDEX_VROMS[7:0], 19'h00000});
 
 	wire [26:0] ioctl_addr_offset =
-		(ioctl_index == INDEX_SPROM) ?	{ 8'b000_0010_0,   ioctl_addr[18:0]} : // System ROM: $0200000~$027FFFF
-		(ioctl_index == INDEX_S1ROM) ?	{ 8'b000_0010_1,   ioctl_addr[18:0]} : // S1: $0280000~$03FFFFF
-		(ioctl_index == INDEX_SFIXROM) ? {10'b000_0010_001, ioctl_addr[16:0]} : // SFIX: $0220000~$023FFFF
-		(ioctl_index == INDEX_P1ROM_A) ? { 7'b000_0000,     ioctl_addr[19:0]} : // P1 first half or full: $0000000~$00FFFFF
-		(ioctl_index == INDEX_P1ROM_B) ? { 8'b000_0000_1,   ioctl_addr[18:0]} : // P1 second half: $0080000~$00FFFFF
-		(ioctl_index == INDEX_P2ROM) ? 	 27'h0400000 +     ioctl_addr        : // P2+: $0400000~$07FFFFF
-		(ioctl_index >= INDEX_CROMS) ? 	 27'h0800000 +     CROM_LOAD_ADDR    : // C*: $0800000~...MAX
+		(ioctl_index == INDEX_SPROM)   ?	{ 8'b000_0010_0,      ioctl_addr[18:0]} : // System ROM: $0200000~$027FFFF
+		(ioctl_index == INDEX_S1ROM)   ?	{ 8'b000_0010_1,      ioctl_addr[18:0]} : // S1: $0280000~$03FFFFF
+		(ioctl_index == INDEX_SFIXROM) ? {10'b000_0010_001,    ioctl_addr[16:0]} : // SFIX: $0220000~$023FFFF
+		(ioctl_index == INDEX_P1ROM_A) ? { 7'b000_0000,        ioctl_addr[19:0]} : // P1 first half or full: $0000000~$00FFFFF
+		(ioctl_index == INDEX_P1ROM_B) ? { 8'b000_0000_1,      ioctl_addr[18:0]} : // P1 second half: $0080000~$00FFFFF
+		(ioctl_index == INDEX_P2ROM)   ?  27'h0400000        + ioctl_addr        : // P2+: $0400000~$07FFFFF
+		(ioctl_index >= INDEX_CROMS)   ? {CROM_START, 20'd0} + CROM_LOAD_ADDR    : // C*: $0800000~...MAX
 		27'h0000000;
 
+	reg  [6:0] CROM_START;
 	reg [26:0] P2ROM_MASK, CROM_MASK, V1ROM_MASK, V2ROM_MASK, MROM_MASK;
 	always_ff @(posedge clk_sys) begin
 		reg old_rst;
+		reg old_download;
 
 		old_rst <= status[0];
 
@@ -678,6 +680,12 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 			V2ROM_MASK <= 0;
 			MROM_MASK  <= 0;
 			P2ROM_MASK <= 0;
+			CROM_START <= 0;
+		end
+		
+		old_download <= ioctl_download;
+		if(old_download && ~ioctl_download && ioctl_index == INDEX_P2ROM) begin
+			CROM_START <= ioctl_addr[24:20] + 4'd4;
 		end
 	end
 
@@ -705,7 +713,7 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 		
 		.CD_BANK_SPR(CD_BANK_SPR),
 		.P2ROM_ADDR({P_BANK, M68K_ADDR[19:1], 1'b0} & P2ROM_MASK),
-		.CROM_ADDR(CROM_ADDR),
+		.CROM_ADDR({CROM_ADDR[26:20] + CROM_START, CROM_ADDR[19:0]}),
 		.S_LATCH(S_LATCH),
 		
 		.SDRAM_WR_PULSE(SDRAM_WR_PULSE),	.SDRAM_RD_PULSE(SDRAM_RD_PULSE), .SDRAM_RD_TYPE(sdram_rd_type),
@@ -959,9 +967,9 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 	always @(posedge nPORTWEL or negedge nRESET)
 	begin
 		if (!nRESET)
-			P_BANK <= 2'd0;
+			P_BANK <= 0;
 		else
-			if (!SYSTEM_CDx) P_BANK <= M68K_DATA[1:0];
+			if (!SYSTEM_CDx) P_BANK <= M68K_DATA[3:0];
 	end
 	
 	// PRO-CT0 used as security chip

@@ -67,6 +67,7 @@ module sdram_mux(
 	input [26:0] ioctl_addr_offset,
 	
 	input [26:0] P2ROM_ADDR,
+
 	input [1:0] CD_BANK_SPR,
 	input [26:0] CROM_ADDR,
 	input [15:0] S_LATCH,
@@ -134,7 +135,7 @@ module sdram_mux(
 												{8'b0_0010_001, S_LATCH[15:4], S_LATCH[2:0], ~S_LATCH[3], 1'b0};
 
 			// C ROMs Bytes $0800000~$7FFFFFF
-			8'b00000001: sdram_addr = CROM_ADDR + 27'h800000;
+			8'b00000001: sdram_addr = CROM_ADDR;
 
 			// Default
 			8'b00000000: sdram_addr = 27'h0000000;
