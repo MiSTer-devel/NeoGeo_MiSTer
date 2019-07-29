@@ -218,7 +218,7 @@ localparam CONF_STR = {
 	"H0FS1,*,Load ROM set;",
 	"H1S0,ISOBIN,Load CD Image;",
 	"-;",
-	"O12,System type,Console(AES),Arcade(MVS),CD,CDZ;",
+	"O12,System type,Console(AES),Arcade(MVS);", //,CD,CDZ;",
 	"O3,Video mode,NTSC,PAL;",
 	"-;",
 	"H0O4,Memory card,Plugged,Unplugged;",
