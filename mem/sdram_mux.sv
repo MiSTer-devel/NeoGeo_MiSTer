@@ -21,163 +21,169 @@
 // SDRAM mux/demux logic
 
 module sdram_mux(
-	input nRESET,
-	input clk_sys,
-	
-	input nAS,
-	input nLDS,
-	input nUDS,
-	
-	input [15:0] SDRAM_DQ,	// TESTING
-	
-	input [2:0] CD_TR_AREA,
-	input CD_EXT_WR,
-	
-	input DMA_RUNNING,
-	input DMA_WR_OUT,
-	input [23:0] DMA_ADDR_IN,
-	input [23:0] DMA_ADDR_OUT,
-	input [15:0] DMA_DATA_OUT,
-	output reg DMA_SDRAM_BUSY,
-	
-	input [20:1] M68K_ADDR,
-	input [15:0] M68K_DATA,
-	
-	input PCK1, PCK2,
-	input CD_WR_SDRAM_SIG,
-	
-	output reg SDRAM_WR_PULSE,
-	output reg SDRAM_RD_PULSE,
-	output reg SDRAM_RD_TYPE,
-	
-	output reg [15:0] PROM_DATA,
-	output reg [63:0] CR_DOUBLE,	// 16 pixels
-	output reg [15:0] SROM_DATA,	// 4 pixels
-	output reg PROM_DATA_READY,
-	input [1:0] FIX_BANK,
-	
-	input SPR_EN, FIX_EN,
-	
-	output reg [26:0] sdram_addr,
-	input [63:0] sdram_dout,
-	output [15:0] sdram_din,
-	input sdram_ready, //ready_fourth,
-	
-	input ioctl_download,
-	input [26:0] ioctl_addr_offset,
-	
-	input [26:0] P2ROM_ADDR,
+	input             CLK,
 
-	input [1:0] CD_BANK_SPR,
-	input [26:0] CROM_ADDR,
-	input [15:0] S_LATCH,
-	input nROMOE, CD_EXT_RD, nPORTOE, nSROMOE,
-	
-	input nSYSTEM_G, SYSTEM_CDx,
-	
-	output [1:0] wtbt,
-	input [15:0] ioctl_dout
+	input             nRESET,
+	input             nSYSTEM_G,
+	input             SYSTEM_CDx,
+
+	input      [20:1] M68K_ADDR,
+	input      [15:0] M68K_DATA,
+	input             nAS,
+	input             nLDS,
+	input             nUDS,
+	input             DATA_TYPE,
+	input             nROMOE,
+	input             nPORTOE,
+	input             nSROMOE,
+	input      [26:0] P2ROM_ADDR,
+	output reg [15:0] PROM_DATA,
+	output reg        PROM_DATA_READY,
+
+	input             PCK2,
+	input      [15:0] S_LATCH,
+	input       [1:0] FIX_BANK,
+	input             FIX_EN,
+	output reg [15:0] SROM_DATA,	// 4 pixels
+
+	input             PCK1,
+	input      [26:0] CROM_ADDR,
+	input             SPR_EN,
+	output reg [63:0] CR_DOUBLE,	// 16 pixels
+
+	output reg        SDRAM_WR,
+	output reg        SDRAM_RD,
+	output reg        SDRAM_BURST,
+	output reg [26:1] SDRAM_ADDR,
+	input      [63:0] SDRAM_DOUT,
+	output     [15:0] SDRAM_DIN,
+	input             SDRAM_READY,
+	output      [1:0] SDRAM_BS,
+
+	input             DL_EN,
+	input      [15:0] DL_DATA,
+	input      [26:0] DL_ADDR,
+	input             DL_WR,
+
+	input             DMA_RUNNING,
+	input             DMA_WR_OUT,
+	input      [23:0] DMA_ADDR_IN,
+	input      [23:0] DMA_ADDR_OUT,
+	input      [15:0] DMA_DATA_OUT,
+	output reg        DMA_SDRAM_BUSY,
+	input       [2:0] CD_TR_AREA,
+	input             CD_EXT_WR,
+	input             CD_EXT_RD,
+	input       [1:0] CD_BANK_SPR,
+	input             CD_WR_SDRAM_SIG
 );
 
-	reg M68K_RD_REQ, SROM_RD_REQ, CROM_RD_REQ, CD_WR_REQ;
-	reg M68K_RD_RUN, SROM_RD_RUN, CROM_RD_RUN, CD_WR_RUN;
-
-	reg nDS_PREV, nAS_PREV, DMA_WR_OUT_PREV;
-	reg [1:0] SDRAM_READY_SR;
-	//reg [1:0] SDRAM_READY_FOURTH_SR;
-	reg [1:0] SDRAM_M68K_SIG_SR;
-	reg [1:0] SDRAM_CROM_SIG_SR;
-	reg [1:0] SDRAM_SROM_SIG_SR;
+	localparam P2ROM_OFFSET = 27'h0300000;
 
 	reg [24:0] CD_REMAP_TR_ADDR;
+	reg [15:0] wr_data;
+	reg        SDRAM_WR_BYTE_MODE;
+	reg [26:1] dl_addr;
+	reg [15:0] dl_data;
 
-	reg SDRAM_WR_BYTE_MODE;
+	assign SDRAM_BS = (DL_EN | ~SDRAM_WR_BYTE_MODE) ? 2'b11 : {CD_REMAP_TR_ADDR[0],~CD_REMAP_TR_ADDR[0]};
+	assign SDRAM_DIN = DL_EN ? dl_data : wr_data;
 
-	assign wtbt = (ioctl_download | ~CD_WR_RUN) ? 2'b11 : SDRAM_WR_BYTE_MODE ? 2'b00 : 2'b11;
-
-	assign sdram_din = ioctl_download ? ioctl_dout :
-								CD_WR_RUN ? DMA_RUNNING ? DMA_DATA_OUT : M68K_DATA : 16'h0000;
-
-	// Only allow DMA to read from $000000~$1FFFFF
-	wire SDRAM_M68K_SIG = DMA_RUNNING ? CD_EXT_RD : ~&{nSROMOE, nROMOE, nPORTOE} | CD_EXT_RD;
+	reg M68K_RD_RUN, SROM_RD_RUN, CROM_RD_RUN, CD_WR_RUN;
 
 	// SDRAM address mux
-	// sdram_addr LSB is = 0 in word mode
 	always_comb begin 
-		casez ({ioctl_download, CD_WR_RUN, CD_EXT_RD & M68K_RD_RUN, ~nROMOE & M68K_RD_RUN, ~nPORTOE & M68K_RD_RUN, ~nSROMOE & M68K_RD_RUN, SROM_RD_RUN}) //, CROM_RD_RUN})
+		casez ({DL_EN, CD_WR_RUN, SROM_RD_RUN, M68K_RD_RUN, CD_EXT_RD, ~nROMOE, ~nPORTOE})
 			// HPS loading pass-through
-			7'b1zzzzzz: sdram_addr = ioctl_addr_offset;
+			7'b1zzzzzz: SDRAM_ADDR = dl_addr;
 
 			// CD transfer
-			7'b01zzzzz: sdram_addr = CD_REMAP_TR_ADDR;
-
-			// Work RAM (cart) $0100000~$010FFFF, or Extended RAM (CD) $0100000~$01FFFFF
-			7'b001zzzz: sdram_addr = ~SYSTEM_CDx  ? {9'b0_0001_0000, M68K_ADDR[15:1], 1'b0} :
-		                             DMA_RUNNING ? {5'b0_0001,      DMA_ADDR_IN[19:0]}     :
-											                {5'b0_0001,      M68K_ADDR[19:1], 1'b0} ;
-
-			// P1 ROM $0200000~$02FFFFF
-			7'b0001zzz: sdram_addr =                {5'b0_0010,      M68K_ADDR[19:1], 1'b0};
-
-			// P2 ROM (cart) $0300000~... bankswitched
-			7'b00001zz: sdram_addr =                27'h0300000 + P2ROM_ADDR;
-
-			// System ROM (CD)	$0000000~$007FFFF
-			// System ROM (cart)	$0000000~$001FFFF
-			7'b000001z: sdram_addr = SYSTEM_CDx   ? {6'b0_0000_0,    M68K_ADDR[18:1], 1'b0} :
-															    {8'b0_0000_000,  M68K_ADDR[16:1], 1'b0} ;
+			7'b01zzzzz: SDRAM_ADDR = CD_REMAP_TR_ADDR[24:1];
 
 			// SFIX ROM (CD)		$0080000~$009FFFF
 			// S1 ROM (cart)		$0080000~$00FFFFF
 			// SFIX ROM (cart)	$0020000~$003FFFF
-			7'b0000001: sdram_addr = SYSTEM_CDx   ? {8'b0_0000_100,  S_LATCH[15:4], S_LATCH[2:0], ~S_LATCH[3], 1'b0} :
-												nSYSTEM_G  ? {6'b0_0000_1,    FIX_BANK, S_LATCH[15:4], S_LATCH[2:0], ~S_LATCH[3], 1'b0} :
-												             {8'b0_0000_001,  S_LATCH[15:4], S_LATCH[2:0], ~S_LATCH[3], 1'b0};
+			7'b001zzzz: SDRAM_ADDR = SYSTEM_CDx  ? {8'b0_0000_100,         S_LATCH[15:4], S_LATCH[2:0], ~S_LATCH[3]}:
+												nSYSTEM_G ? {6'b0_0000_1, FIX_BANK, S_LATCH[15:4], S_LATCH[2:0], ~S_LATCH[3]}:
+												            {8'b0_0000_001,         S_LATCH[15:4], S_LATCH[2:0], ~S_LATCH[3]};
 
-			// Default: C ROMs Bytes $0800000~$7FFFFFF
-			7'b0000000: sdram_addr =                CROM_ADDR;
+			// Work RAM (cart) $0100000~$010FFFF, or Extended RAM (CD) $0100000~$01FFFFF
+			7'b00011zz: SDRAM_ADDR = ~SYSTEM_CDx ? {9'b0_0001_0000, M68K_ADDR[15:1]}   :
+		                            DMA_RUNNING ? {5'b0_0001,      DMA_ADDR_IN[19:1]} :
+											               {5'b0_0001,      M68K_ADDR[19:1]}   ;
+
+			// P1 ROM $0200000~$02FFFFF
+			7'b000101z: SDRAM_ADDR =               {5'b0_0010,      M68K_ADDR[19:1]};
+
+			// P2 ROM (cart) $0300000~... bankswitched
+			7'b0001001: SDRAM_ADDR =               P2ROM_OFFSET[26:1] + P2ROM_ADDR[26:1];
+
+			// System ROM (CD)	$0000000~$007FFFF
+			// System ROM (cart)	$0000000~$001FFFF
+			7'b0001000: SDRAM_ADDR = SYSTEM_CDx  ? {6'b0_0000_0,    M68K_ADDR[18:1]} :
+															   {8'b0_0000_000,  M68K_ADDR[16:1]} ;
+
+			// C ROMs Bytes $0800000~$7FFFFFF
+			default:    SDRAM_ADDR =               CROM_ADDR[26:1];
 		endcase
 	end
 
-	always @(posedge clk_sys)
-	begin
-		if (!nRESET)
-		begin
+	reg SDRAM_M68K_SIG_SR;
+	reg SDRAM_CROM_SIG_SR;
+	reg SDRAM_SROM_SIG_SR;
+
+	// Only allow DMA to read from $000000~$1FFFFF
+	wire SDRAM_M68K_SIG = CD_EXT_RD | (~DMA_RUNNING & ~&{nSROMOE, nROMOE, nPORTOE});
+
+	wire REQ_M68K_RD = (~SDRAM_M68K_SIG_SR & SDRAM_M68K_SIG);
+	wire REQ_CROM_RD = (SDRAM_CROM_SIG_SR & ~PCK1) & SPR_EN;
+	wire REQ_SROM_RD = (SDRAM_SROM_SIG_SR & ~PCK2) & FIX_EN;
+
+	always @(posedge CLK) begin
+		reg M68K_RD_REQ, SROM_RD_REQ, CROM_RD_REQ, CD_WR_REQ;
+		reg nDS_PREV, nAS_PREV, DMA_WR_OUT_PREV;
+		reg old_ready;
+
+		if(DL_WR & DL_EN) begin
+			dl_addr <= DL_ADDR[26:1];
+			dl_data <= DL_DATA;
+			SDRAM_WR <= 1;
+		end
+		
+		old_ready <= SDRAM_READY;
+		if(old_ready & ~SDRAM_READY) begin
+			SDRAM_WR <= 0;
+			SDRAM_RD <= 0;
+		end
+
+		nAS_PREV <= nAS;
+		nDS_PREV <= nLDS & nUDS;
+		DMA_WR_OUT_PREV <= DMA_WR_OUT;
+
+		SDRAM_M68K_SIG_SR <= SDRAM_M68K_SIG;
+		SDRAM_CROM_SIG_SR <= PCK1;
+		SDRAM_SROM_SIG_SR <= PCK2;
+
+		if (!nRESET) begin
 			CROM_RD_REQ <= 0;
 			SROM_RD_REQ <= 0;
 			M68K_RD_REQ <= 0;
-			CD_WR_REQ <= 0;
-			
+			CD_WR_REQ   <= 0;
+
 			CROM_RD_RUN <= 0;
 			SROM_RD_RUN <= 0;
 			M68K_RD_RUN <= 0;
-			CD_WR_RUN <= 0;
-			
-			SDRAM_WR_BYTE_MODE <= 0;
+			CD_WR_RUN   <= 0;
+
 			DMA_SDRAM_BUSY <= 0;
-			
-			nDS_PREV <= 1;
-			DMA_WR_OUT_PREV <= 0;
 		end
-		else
-		begin
-			nAS_PREV <= nAS;
-			
-			if ({nAS_PREV, nAS} == 2'b01)
-				PROM_DATA_READY <= 0;
-			
-			if (!DMA_RUNNING)
-				DMA_SDRAM_BUSY <= 0;
-			
+		else begin
+			if (~nAS_PREV & nAS) PROM_DATA_READY <= 0;
+			if (~DMA_RUNNING) DMA_SDRAM_BUSY <= 0;
+
 			// Detect 68k or DMA write requests
 			// Detect falling edge of nLDS or nUDS, or rising edge of DMA_WR_OUT while CD_WR_SDRAM_SIG is high
-			nDS_PREV <= nLDS & nUDS;
-			DMA_WR_OUT_PREV <= DMA_WR_OUT;
-			if (((nDS_PREV & ~(nLDS & nUDS)) | (~DMA_WR_OUT_PREV & DMA_WR_OUT)) & CD_WR_SDRAM_SIG)
-			begin
-				if (DMA_RUNNING)
-					DMA_SDRAM_BUSY <= 1;
-				
+			if (((nDS_PREV & ~(nLDS & nUDS)) | (~DMA_WR_OUT_PREV & DMA_WR_OUT)) & CD_WR_SDRAM_SIG) begin
 				// Convert and latch address
 				casez({CD_EXT_WR, CD_TR_AREA})
 					4'b1_???: CD_REMAP_TR_ADDR <= DMA_RUNNING ? {1'b0, 4'h3 + DMA_ADDR_OUT[20], DMA_ADDR_OUT[19:1], 1'b0} : {1'b0, 4'h3 + M68K_ADDR[20], M68K_ADDR[19:1], ~nLDS};	// EXT zone SDRAM
@@ -187,190 +193,84 @@ module sdram_mux(
 					//4'b0_100: CD_REMAP_TR_ADDR <= {8'b0_0000_000, CD_TR_WR_ADDR[16:1], 1'b0};		// Z80 BRAM
 					default: CD_REMAP_TR_ADDR <= 25'h0AAAAAA;		// DEBUG
 				endcase
-				
-				SDRAM_WR_BYTE_MODE <= DMA_RUNNING ? 1'b0 :	// DMA writes are always done in words
-											((CD_TR_AREA == 3'd5) & ~CD_EXT_WR) | (CD_EXT_WR & (nLDS ^ nUDS));	// Fix or extended RAM data
-				
+
+				// DMA writes are always done in words
+				SDRAM_WR_BYTE_MODE <= (((CD_TR_AREA == 3'd5) & ~CD_EXT_WR) | (CD_EXT_WR & (nLDS ^ nUDS))) & ~DMA_RUNNING;	// Fix or extended RAM data
+
+				// TODO: make sure wr_data gets correct data according to selected byte
+				wr_data <= DMA_RUNNING ? DMA_DATA_OUT : M68K_DATA;
 				// In DMA, start if: nothing is running, no LSPC read (priority case C)
 				// Out of DMA, start if: nothing is running (priority case B)
 				// TO TEST
-				if (~|{M68K_RD_RUN, CROM_RD_RUN, SROM_RD_RUN, M68K_RD_REQ, CROM_RD_REQ, SROM_RD_REQ} & sdram_ready)
-				begin
-					if (DMA_RUNNING)
-					begin
-						if ((SDRAM_CROM_SIG_SR != 2'b01) & (SDRAM_SROM_SIG_SR != 2'b01))
-						begin
-							// Start write cycle right now
-							CD_WR_RUN <= 1;
-							SDRAM_WR_PULSE <= 1;
-						end
-						else
-							CD_WR_REQ <= 1;	// Set request flag for later
-					end
-					else
-					begin
-						// Start write cycle right now
-						CD_WR_RUN <= 1;
-						SDRAM_WR_PULSE <= 1;
-					end
-				end
-				else
-					CD_WR_REQ <= 1;	// Set request flag for later
+				CD_WR_REQ <= 1;
 			end
-			
+
 			// Detect 68k read requests
 			// Detect rising edge of SDRAM_M68K_SIG
-			// TODO: Does this really need 2 FFs ?
-			SDRAM_M68K_SIG_SR <= {SDRAM_M68K_SIG_SR[0], SDRAM_M68K_SIG};
-			if ((SDRAM_M68K_SIG_SR == 2'b01))	// & M68K_CACHE_MISS)
-			begin
-				// In DMA, start if: nothing is running, no LSPC read (priority case C)
-				// Out of DMA, start if: nothing is running (priority case A)
-				// TO TEST
-				if (~|{CD_WR_RUN, CROM_RD_RUN, SROM_RD_RUN, CD_WR_RUN, CROM_RD_REQ, SROM_RD_REQ} & sdram_ready)
-				begin
-					if (DMA_RUNNING)
-					begin
-						DMA_SDRAM_BUSY <= 1;
-						
-						if ((SDRAM_CROM_SIG_SR != 2'b01) & (SDRAM_SROM_SIG_SR != 2'b01))
-						begin
-							// Start read cycle right now
-							M68K_RD_RUN <= 1;
-							SDRAM_RD_PULSE <= 1;
-							SDRAM_RD_TYPE <= 0;	// Single read
-						end
-						else
-							M68K_RD_REQ <= 1;	// Set request flag for later
-					end
-					else
-					begin
-						// Start read cycle right now
-						M68K_RD_RUN <= 1;
-						SDRAM_RD_PULSE <= 1;
-						SDRAM_RD_TYPE <= 0;	// Single read
-					end
-				end
-				else
-					M68K_RD_REQ <= 1;	// Set request flag for later
-			end
-			
+			if (REQ_M68K_RD) M68K_RD_REQ <= 1;
+
 			// Detect sprite data read requests
 			// Detect rising edge of PCK1B
-			// TODO: Does this really need 2 FFs ?
-			SDRAM_CROM_SIG_SR <= {SDRAM_CROM_SIG_SR[0], ~PCK1};
-			if ((SDRAM_CROM_SIG_SR == 2'b01) & SPR_EN)
-			begin
-				// In DMA, start if: nothing is running (priority case C)
-				// Out of DMA, start if: nothing is running, no 68k read or write (priority cases A and B)
-				// TODO
-				if (~|{M68K_RD_RUN, SROM_RD_RUN, CD_WR_RUN, M68K_RD_REQ, SROM_RD_REQ} & sdram_ready)
-				begin
-					// Start C ROM read cycle right now
-					CROM_RD_RUN <= 1;
-					SDRAM_RD_PULSE <= 1;
-					SDRAM_RD_TYPE <= 1;	// Burst read
-				end
-				else
-					CROM_RD_REQ <= 1;	// Set request flag for later
-			end
-			
+			if (REQ_CROM_RD) CROM_RD_REQ <= 1;
+
 			// Detect fix data read requests
 			// Detect rising edge of PCK2B
-			// TODO: Does this really need 2 FFs ?
 			// See dev_notes.txt about why there's only one read for FIX graphics
 			// regardless of the S2H1 signal
-			SDRAM_SROM_SIG_SR <= {SDRAM_SROM_SIG_SR[0], ~PCK2};
-			if ((SDRAM_SROM_SIG_SR == 2'b01) & FIX_EN)
-			begin
-				// In DMA, start if: nothing is running (priority case C)
-				// Out of DMA, start if: nothing is running, no 68k read or write (priority cases A and B)
-				// TODO
-				if (~|{M68K_RD_RUN, CROM_RD_RUN, CD_WR_RUN, M68K_RD_REQ, CROM_RD_REQ} & sdram_ready)
-				begin
-					// Start S ROM read cycle right now
-					SROM_RD_RUN <= 1;
-					SDRAM_RD_PULSE <= 1;
-					SDRAM_RD_TYPE <= 0;	// Single read
+			if (REQ_SROM_RD) SROM_RD_REQ <= 1;
+
+			if (SDRAM_READY & ~SDRAM_RD & ~SDRAM_WR) begin
+
+				// Terminate running access, if needed
+				// Having two non-nested IF statements with the & in the condition
+				// prevents synthesis from chaining too many muxes and causing
+				// timing analysis to fail
+				if (CD_WR_RUN)	begin
+					CD_WR_RUN      <= 0;
+					DMA_SDRAM_BUSY <= 0;
 				end
-				else
-					SROM_RD_REQ <= 1;	// Set request flag for later
-			end
-			
-			if (SDRAM_WR_PULSE)
-				SDRAM_WR_PULSE <= 0;
-			
-			if (SDRAM_RD_PULSE)
-				SDRAM_RD_PULSE <= 0;
-			
-			if (sdram_ready & ~SDRAM_RD_PULSE & ~SDRAM_WR_PULSE)
-			begin
+				if (SROM_RD_RUN) begin
+					SROM_DATA      <= SDRAM_DOUT[63:48];
+					SROM_RD_RUN    <= 0;
+				end
+				if (M68K_RD_RUN) begin
+					PROM_DATA      <= SDRAM_DOUT[63:48];
+					PROM_DATA_READY<= 1;
+					M68K_RD_RUN    <= 0;
+					DMA_SDRAM_BUSY <= 0;
+				end
+				if (CROM_RD_RUN) begin
+					CR_DOUBLE      <= SDRAM_DOUT;
+					CROM_RD_RUN    <= 0;
+				end
+
 				// Start requested access, if needed
-				if (CD_WR_REQ && !CROM_RD_RUN && !M68K_RD_RUN && !SROM_RD_RUN)
-				begin
-					CD_WR_REQ <= 0;
-					CD_WR_RUN <= 1;
-					SDRAM_WR_PULSE <= 1;
+				if (M68K_RD_REQ | REQ_M68K_RD) begin
+					M68K_RD_REQ    <= 0;
+					M68K_RD_RUN    <= 1;
+					SDRAM_RD       <= 1;
+					SDRAM_BURST    <= 0;
+					DMA_SDRAM_BUSY <= DMA_RUNNING;
 				end
-				else if (CROM_RD_REQ && !CD_WR_RUN && !M68K_RD_RUN && !SROM_RD_RUN)
-				begin
-					CROM_RD_REQ <= 0;
-					if (SPR_EN)
-					begin
-						CROM_RD_RUN <= 1;
-						SDRAM_RD_PULSE <= 1;
-						SDRAM_RD_TYPE <= 1;	// Burst read
-					end
+				else if (CROM_RD_REQ | REQ_CROM_RD) begin
+					CROM_RD_REQ    <= 0;
+					CROM_RD_RUN    <= 1;
+					SDRAM_RD       <= 1;
+					SDRAM_BURST    <= 1;
 				end
-				else if (SROM_RD_REQ && !CD_WR_RUN && !M68K_RD_RUN && !CROM_RD_RUN)
-				begin
-					SROM_RD_REQ <= 0;
-					if (FIX_EN)
-					begin
-						SROM_RD_RUN <= 1;
-						SDRAM_RD_PULSE <= 1;
-						SDRAM_RD_TYPE <= 0;	// Single read
-					end
+				else if (SROM_RD_REQ | REQ_SROM_RD) begin
+					SROM_RD_REQ    <= 0;
+					SROM_RD_RUN    <= 1;
+					SDRAM_RD       <= 1;
+					SDRAM_BURST    <= 0;
 				end
-				else if (M68K_RD_REQ && !CD_WR_RUN && !SROM_RD_RUN && !CROM_RD_RUN)
-				begin
-					M68K_RD_REQ <= 0;
-					M68K_RD_RUN <= 1;
-					SDRAM_RD_PULSE <= 1;
-					SDRAM_RD_TYPE <= 0;	// Single read
+				else if (CD_WR_REQ) begin
+					CD_WR_REQ      <= 0;
+					CD_WR_RUN      <= 1;
+					SDRAM_WR       <= 1;
+					DMA_SDRAM_BUSY <= DMA_RUNNING;
 				end
-			end
-			
-			// Terminate running access, if needed
-			// Having two non-nested IF statements with the & in the condition
-			// prevents synthesis from chaining too many muxes and causing
-			// timing analysis to fail
-			SDRAM_READY_SR <= {SDRAM_READY_SR[0], sdram_ready};
-			if ((SDRAM_READY_SR == 2'b01) & CD_WR_RUN)
-			begin
-				CD_WR_RUN <= 0;
-				DMA_SDRAM_BUSY <= 0;
-			end
-			if ((SDRAM_READY_SR == 2'b01) & SROM_RD_RUN)
-			begin
-				SROM_DATA <= sdram_dout[63:48];
-				SROM_RD_RUN <= 0;
-			end
-			// TESTING
-			//if ((~SDRAM_READY_SR[0] & sdram_ready) & M68K_RD_RUN)	// 2020bb crashes with this
-			if ((SDRAM_READY_SR == 2'b01) & M68K_RD_RUN)
-			begin
-				PROM_DATA <= sdram_dout[63:48];
-				PROM_DATA_READY <= 1;
-				M68K_RD_RUN <= 0;
-				DMA_SDRAM_BUSY <= 0;
-			end
-			if ((SDRAM_READY_SR == 2'b01) & CROM_RD_RUN)
-			begin
-				CR_DOUBLE <= sdram_dout;
-				CROM_RD_RUN <= 0;
 			end
 		end
 	end
-	
 endmodule

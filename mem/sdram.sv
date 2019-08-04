@@ -30,8 +30,7 @@ module sdram
 (
 	input             init,        // reset to initialize RAM
 	input             clk,         // clock ~100MHz
-											 //
-											 // SDRAM_* - signals to the MT48LC16M16 chip
+
 	inout  reg [15:0] SDRAM_DQ,    // 16 bit bidirectional data bus
 	output reg [12:0] SDRAM_A,     // 13 bit multiplexed address bus
 	output            SDRAM_DQML,  // two byte masks
@@ -43,19 +42,16 @@ module sdram
 	output            SDRAM_nCAS,  // columns address select
 	output            SDRAM_CKE,   // clock enable
 	input             SDRAM_EN,    // clock enable
-											 //
-	input       [1:0] wtbt,        // 16bit mode:  bit1 - write high byte, bit0 - write low byte,
-											 // 8bit mode:  2'b00 - use addr[0] to decide which byte to write
-											 // Ignored while reading.
-											 //
+
 	input             sel,
-	input      [25:0] addr,        // 25 bit address for 8bit mode. addr[0] = 0 for 16bit mode for correct operations.
-	output reg [63:0] dout, 		 // data output to cpu
+	input      [25:1] addr,        // 25 bit address for 8bit mode. addr[0] = 0 for 16bit mode for correct operations.
+	output reg [63:0] dout,        // data output to cpu
 	input      [15:0] din,         // data input from cpu
-	input             we,          // cpu requests write
-	input             rd,          // cpu requests read
-	input					rd_type,		 // 0=Single read, 1=Four-word burst read
-	output reg			ready
+	input             wr,          // request write
+	input       [1:0] bs,          // bit1 - write high byte, bit0 - write low byte, Ignored while reading.
+	input             rd,          // request read
+	input             burst,       // 0 = Single read, 1 = Four-word burst read
+	output reg        ready
 );
 
 assign SDRAM_nCS  = command[3];
@@ -107,17 +103,12 @@ typedef enum
 } state_t;
 
 always @(posedge clk) begin
-	reg old_we, old_rd;
 	reg [CAS_LATENCY+BURST_LENGTH-1:0] data_ready_delay;
 
-	reg [15:0] new_data;
-	reg  [1:0] new_wtbt;
-	reg        new_we;
-	reg        new_rd;
-	reg		  new_rd_type;
-	reg        saved_we = 1;
+	reg        saved_wr;
 	reg        saved_burst;
-	reg [25:0] saved_addr;
+	reg [12:0] cas_addr;
+	reg [15:0] saved_data;
 	state_t    state = STATE_STARTUP;
 
 	refresh_count <= refresh_count+1'b1;
@@ -133,7 +124,7 @@ always @(posedge clk) begin
 	if(data_ready_delay[3] & ~saved_burst) ready <= 1;
 	if(data_ready_delay[3] & ~saved_burst) data_ready_delay <= 0;
 
-	SDRAM_DQ   <= 16'bZ;
+	SDRAM_DQ <= 16'bZ;
 
 	if(SDRAM_EN) begin
 		command <= CMD_NOP;
@@ -211,28 +202,31 @@ always @(posedge clk) begin
 				if (refresh_count > (cycles_per_refresh << 1)) begin
 					// Priority is to issue a refresh if one is outstanding
 					state <= STATE_IDLE_1;
-				end else if (new_rd | new_we) begin
-					// Start new access cycle
-					new_we   <= 0;
-					new_rd   <= 0;
-					saved_addr<= addr;
-					saved_we  <= new_we;
-					saved_burst<= ~new_we & new_rd_type;
-					state    <= STATE_WAIT;
-					command  <= CMD_ACTIVE;
-					SDRAM_A  <= addr[22:10];
-					SDRAM_BA <= addr[24:23];
+				end else if (rd | wr) begin
+					if(sel) begin
+						{cas_addr[12:9],SDRAM_BA,SDRAM_A,cas_addr[8:0]} <= {~wr ? 2'b00 : ~bs, 1'b1, addr};
+						saved_data <= din;
+						saved_wr   <= wr;
+						saved_burst<= ~wr & burst;
+						command    <= CMD_ACTIVE;
+						state      <= STATE_WAIT;
+						ready      <= 0;
+					end
+					else if (refresh_count > cycles_per_refresh) begin
+						// Other SDRAM is requested, so we can refresh now
+						state <= STATE_IDLE_1;
+					end
 				end
 			end
 
 			STATE_WAIT: state <= STATE_RW;
 
 			STATE_RW: begin
-				SDRAM_A     <= {~saved_we ? 2'b00 : new_wtbt ? ~new_wtbt : {saved_addr[0], ~saved_addr[0]}, 1'b1, saved_addr[25], saved_addr[9:1]};	// Enable auto-precharge
-				state       <= saved_burst ? STATE_IDLE_5 : STATE_IDLE_2;
-				if(saved_we) begin
+				state   <= saved_burst ? STATE_IDLE_5 : STATE_IDLE_2;
+				SDRAM_A <= cas_addr;
+				if(saved_wr) begin
 					command  <= CMD_WRITE;
-					SDRAM_DQ <= new_wtbt ? new_data : {new_data[7:0], new_data[7:0]};
+					SDRAM_DQ <= saved_data;
 					ready    <= 1;
 				end
 				else begin
@@ -246,12 +240,6 @@ always @(posedge clk) begin
 			state <= STATE_STARTUP;
 			refresh_count <= startup_refresh_max - sdram_startup_cycles;
 		end
-
-		old_we <= we;
-		if (we & ~old_we & sel) {ready, new_we, new_data, new_wtbt} <= {1'b0, 1'b1, din, wtbt};
-
-		old_rd <= rd;
-		if (rd & ~old_rd & sel) {ready, new_rd, new_rd_type} <= {1'b0, 1'b1, rd_type};
 	end
 	else begin
 		ready <= 1;

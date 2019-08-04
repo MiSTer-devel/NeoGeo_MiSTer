@@ -322,7 +322,6 @@ wire [26:0] ioctl_addr;
 wire [15:0] ioctl_dout;
 wire        ioctl_download;
 wire  [7:0] ioctl_index;
-reg         ioctl_wait = 0;
 
 wire SYSTEM_MVS = (SYSTEM_TYPE == 2'd1);
 wire SYSTEM_CDx = SYSTEM_TYPE[1];
@@ -349,7 +348,7 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 	.ioctl_dout(ioctl_dout),
 	.ioctl_download(ioctl_download),
 	.ioctl_index(ioctl_index),
-	.ioctl_wait(ioctl_wait),
+	.ioctl_wait(ddram_wait),
 	
 	.sd_lba(sd_req_type ? CD_sd_lba : sd_lba),
 	.sd_rd(sd_rd), .sd_wr(sd_wr),
@@ -369,8 +368,6 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 
 	wire [15:0] snd_right;
 	wire [15:0] snd_left;
-	wire        sdram_ready;	//, ready_fourth;
-	wire [26:0] sdram_addr;
 	
 	wire nRESETP, nSYSTEM, CARD_WE, SHADOW, nVEC, nREGEN, nSRAMWEN, PALBNK;
 	wire CD_nRESET_Z80;
@@ -581,19 +578,15 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 	wire [15:0] DMA_DATA_OUT;
 	wire [23:0] DMA_ADDR_IN;
 	wire [23:0] DMA_ADDR_OUT;
-	wire [1:0] wtbt;
 	
 	wire DMA_SDRAM_BUSY;
-	wire SDRAM_WR_PULSE;
-	wire SDRAM_RD_PULSE;
-	wire sdram_rd_type;
 	wire PROM_DATA_READY;
 
 	cd_sys cdsystem(
 		.nRESET(nRESET),
 		.clk_sys(clk_sys), .CLK_68KCLK(CLK_68KCLK),
 		.M68K_ADDR(M68K_ADDR), .M68K_DATA(M68K_DATA), .A22Z(A22Z), .A23Z(A23Z),
-		.nLDS(nLDS), .nUDS(nUDS), .M68K_RW(M68K_RW), .nAS(nAS), .nDTACK(nDTACK),
+		.nLDS(nLDS), .nUDS(nUDS), .M68K_RW(M68K_RW), .nAS(nAS), .nDTACK(nDTACK_ADJ),
 		.nBR(nBR), .nBG(nBG), .nBGACK(nBGACK),
 		.SYSTEM_TYPE(SYSTEM_TYPE),
 		.CD_REGION(CD_REGION),
@@ -631,13 +624,14 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 	wire CD_EXT_RD = DMA_RUNNING ? (SYSTEM_CDx & (DMA_ADDR_IN[23:21] == 3'd0) & DMA_RD_OUT) :		// DMA reads from $000000~$1FFFFF
 											(SYSTEM_CDx & (~nWRL | ~nWRU));											// CPU reads from $100000~$1FFFFF
 	
+	wire        sdram_ready;
+	wire [26:1] sdram_addr;
 	wire [63:0] sdram_dout;
 	wire [15:0] sdram_din;
-	wire sdram_rd = ioctl_download ? 1'b0 : SDRAM_RD_PULSE;
 	
 	// ioctl_download is used to load the system ROM on CD systems, we need it !
-	wire sdram_we = SYSTEM_CDx ? (ioctl_download & (ioctl_index == INDEX_SPROM)) ? ioctl_wr : SDRAM_WR_PULSE :
-							(ioctl_download & (ioctl_index != INDEX_LOROM) & (ioctl_index != INDEX_M1ROM) & ((ioctl_index < INDEX_VROMS) | (ioctl_index >= INDEX_CROMS))) ? ioctl_wr : 1'b0;
+	wire ioctl_en = SYSTEM_CDx ? (ioctl_index == INDEX_SPROM) :
+						(ioctl_index != INDEX_LOROM && ioctl_index != INDEX_M1ROM && (ioctl_index < INDEX_VROMS || ioctl_index >= INDEX_CROMS));
 	
 	wire [26:0] CROM_LOAD_ADDR = ({ioctl_addr[25:0], 1'b0} + {ioctl_index[7:1]-INDEX_CROMS[7:1], 18'h00000, ioctl_index[0], 1'b0});
 	wire [26:0] VROM_LOAD_ADDR = ({1'b0, ioctl_addr[25:0]} + {ioctl_index[7:0]-INDEX_VROMS[7:0], 19'h00000});
@@ -697,52 +691,66 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 		end
 	end
 
+	wire SDRAM_WR;
+	wire SDRAM_RD;
+	wire SDRAM_BURST;
+	wire [1:0] SDRAM_BS;
+
 	sdram_mux SDRAM_MUX(
+		.CLK(clk_sys),
 		.nRESET(nRESET),
-		.clk_sys(clk_sys),
+		.nSYSTEM_G(nSYSTEM_G),
+		.SYSTEM_CDx(SYSTEM_CDx),
 		
-		.M68K_ADDR(M68K_ADDR), .M68K_DATA(M68K_DATA),
-		.nAS(nAS), .nLDS(nLDS), .nUDS(nUDS),
-		
-		.SDRAM_DQ(SDRAM_DQ),
-		
+		.M68K_ADDR(M68K_ADDR),
+		.M68K_DATA(M68K_DATA),
+		.nAS(nAS | (FC1 == FC0)),
+		.nLDS(nLDS),
+		.nUDS(nUDS),
+		.nROMOE(nROMOE),
+		.nPORTOE(nPORTOE),
+		.nSROMOE(nSROMOE),
+		.DATA_TYPE(~FC1 & FC0), // 0 - program, 1 - data, 
+		.P2ROM_ADDR({P_BANK, M68K_ADDR[19:1], 1'b0} & P2ROM_MASK),
+		.PROM_DATA(PROM_DATA),
+		.PROM_DATA_READY(PROM_DATA_READY),
+
 		.CD_TR_AREA(CD_TR_AREA),
 		.CD_EXT_RD(CD_EXT_RD),
 		.CD_EXT_WR(CD_EXT_WR),
-		
+		.CD_WR_SDRAM_SIG(CD_WR_SDRAM_SIG),
+		.CD_BANK_SPR(CD_BANK_SPR),
+
 		.DMA_ADDR_OUT(DMA_ADDR_OUT), .DMA_ADDR_IN(DMA_ADDR_IN),
 		.DMA_DATA_OUT(DMA_DATA_OUT),
 		.DMA_WR_OUT(DMA_WR_OUT),
 		.DMA_RUNNING(DMA_RUNNING),
 		.DMA_SDRAM_BUSY(DMA_SDRAM_BUSY),
-		
-		.CD_WR_SDRAM_SIG(CD_WR_SDRAM_SIG),
-		.PCK1(PCK1), .PCK2(PCK2),
-		
-		.CD_BANK_SPR(CD_BANK_SPR),
-		.P2ROM_ADDR({P_BANK, M68K_ADDR[19:1], 1'b0} & P2ROM_MASK),
+
+		.PCK1(PCK1),
+		.SPR_EN(SPR_EN),
 		.CROM_ADDR({CROM_ADDR[26:20] + (SYSTEM_CDx ? 7'd8 : CROM_START), CROM_ADDR[19:0]}),
+		.CR_DOUBLE(CR_DOUBLE),
+
+		.PCK2(PCK2),
 		.S_LATCH(S_LATCH),
-		
-		.SDRAM_WR_PULSE(SDRAM_WR_PULSE),	.SDRAM_RD_PULSE(SDRAM_RD_PULSE), .SDRAM_RD_TYPE(sdram_rd_type),
-		
-		.SROM_DATA(SROM_DATA), .PROM_DATA(PROM_DATA), .CR_DOUBLE(CR_DOUBLE),
-		.PROM_DATA_READY(PROM_DATA_READY),
 		.FIX_BANK(FIX_BANK),
-		
-		.SPR_EN(SPR_EN), .FIX_EN(FIX_EN),
-		
-		.ioctl_download(ioctl_download),
-		.ioctl_addr_offset(ioctl_addr_offset),
-		.ioctl_dout(ioctl_dout),
-		
-		.nSYSTEM_G(nSYSTEM_G), .SYSTEM_CDx(SYSTEM_CDx),
-		.nROMOE(nROMOE), .nPORTOE(nPORTOE), .nSROMOE(nSROMOE),
-		
-		.sdram_addr(sdram_addr),
-		.sdram_dout(sdram_dout), .sdram_din(sdram_din),
-		.wtbt(wtbt),
-		.sdram_ready(sdram_ready)	//, .ready_fourth(ready_fourth)
+		.FIX_EN(FIX_EN),
+		.SROM_DATA(SROM_DATA),
+
+		.DL_EN(ioctl_download & ioctl_en),
+		.DL_ADDR(ioctl_addr_offset),
+		.DL_DATA(ioctl_dout),
+		.DL_WR(ioctl_wr),
+
+		.SDRAM_ADDR(sdram_addr),
+		.SDRAM_DOUT(sdram_dout),
+		.SDRAM_DIN(sdram_din),
+		.SDRAM_WR(SDRAM_WR),
+		.SDRAM_RD(SDRAM_RD),
+		.SDRAM_BURST(SDRAM_BURST),
+		.SDRAM_BS(SDRAM_BS),
+		.SDRAM_READY(sdram_ready)
 	);
 	
 	reg  sdr_pri_64;
@@ -767,14 +775,14 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 
 		.init(~locked),	// Init SDRAM as soon as the PLL is locked
 		.clk(clk_sys),
-		.addr(sdram_addr[25:0]),
+		.addr(sdram_addr[25:1]),
 		.sel(sdr_pri_sel),
 		.dout(sdram1_dout),
 		.din(sdram_din),
-		.wtbt(wtbt),		// Always used in 16-bit mode except for CD fix data write
-		.we(sdram_we),
-		.rd(sdram_rd),
-		.rd_type(sdram_rd_type),
+		.bs(SDRAM_BS),
+		.wr(SDRAM_WR),
+		.rd(SDRAM_RD),
+		.burst(SDRAM_BURST),
 		.ready(sdram1_ready)
 	);
 
@@ -791,14 +799,14 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 
 		.init(~locked),	// Init SDRAM as soon as the PLL is locked
 		.clk(clk_sys),
-		.addr(sdram_addr[25:0]),
+		.addr(sdram_addr[25:1]),
 		.sel(~sdr_pri_sel),
 		.dout(sdram2_dout),
 		.din(sdram_din),
-		.wtbt(wtbt),		// Always used in 16-bit mode except for CD fix data write
-		.we(sdram_we),
-		.rd(sdram_rd),
-		.rd_type(sdram_rd_type),
+		.bs(SDRAM_BS),
+		.wr(SDRAM_WR),
+		.rd(SDRAM_RD),
+		.burst(SDRAM_BURST),
 		.ready(sdram2_ready)
 	);
 `else
@@ -841,7 +849,7 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 	
 	// Because of the SDRAM latency, nDTACK is handled differently for ROM zones
 	// If the address is in a ROM zone, PROM_DATA_READY is used to extend the normal nDTACK output by NEO-C1
-	wire nDTACK_ADJ = ~&{nSROMOE, nROMOE, nPORTOE} ? ~PROM_DATA_READY | nDTACK : nDTACK;
+	wire nDTACK_ADJ = ~&{nSROMOE, nROMOE, nPORTOE, ~CD_EXT_RD} ? ~PROM_DATA_READY | nDTACK : nDTACK;
 	
 	cpu_68k M68KCPU(
 		.CLK_24M(CLK_24M),
@@ -1117,17 +1125,15 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 	);
 
 	// This is used to split burst-read sprite gfx data in half at the right time
-	reg [2:0] LOAD_SR;
+	reg LOAD_SR;
 	reg CA4_REG;
 	
 	// CA4's polarity depends on the tile's h-flip attribute
 	// Normal: CA4 high, then low
 	// Flipped: CA4 low, then high
-	always @(posedge clk_sys)
-	begin
-		LOAD_SR <= {LOAD_SR[1:0], LOAD};
-		if (LOAD_SR == 3'b011)
-			CA4_REG <= CA4;
+	always @(posedge CLK_24M) begin
+		LOAD_SR <= LOAD;
+		if (~LOAD_SR & LOAD) CA4_REG <= CA4;
 	end
 	
 	// CR_DOUBLE: [8px left] [8px right]
@@ -1147,7 +1153,7 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 		.address_a(ioctl_addr[16:1]),
 		.data_a(ioctl_dout[7:0]),
 		.wren_a(ioctl_download & (ioctl_index == INDEX_LOROM) & ioctl_wr),
-		.clock_b(clk_sys),
+		.clock_b(CLK_24M),
 		.address_b(PBUS[15:0]),
 		.q_b(LO_ROM_DATA)
 	);
@@ -1159,7 +1165,7 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 	assign PBUS[23:16] = nPBUS_OUT_EN ? LO_ROM_DATA : 8'bzzzzzzzz;
 	
 	spram #(11,16) UFV(
-		.clock(clk_sys),	//~CLK_24M,		// Is just CLK ok ?
+		.clock(CLK_24M),	//~CLK_24M,		// Is just CLK ok ?
 		.address(FAST_VRAM_ADDR),
 		.data(FAST_VRAM_DATA_OUT),
 		.wren(~CWE),
@@ -1167,7 +1173,7 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 	);
 	
 	spram #(15,16) USV(
-		.clock(clk_sys),	//~CLK_24M,		// Is just CLK ok ?
+		.clock(CLK_24M),	//~CLK_24M,		// Is just CLK ok ?
 		.address(SLOW_VRAM_ADDR),
 		.data(SLOW_VRAM_DATA_OUT),
 		.wren(~BWE),
@@ -1237,6 +1243,7 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 	wire adpcm_wrack, adpcm_rdack;
 	
 	wire ddr_loading = ioctl_download & (((ioctl_index >= INDEX_VROMS) & (ioctl_index < INDEX_CROMS)) | (ioctl_index == INDEX_M1ROM));
+	reg ddram_wait = 0;
 	
 	// Copied from Genesis_MiSTer/Genesis.sv
 	always @(posedge clk_sys)
@@ -1245,21 +1252,21 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 		old_download <= ddr_loading;
 		old_reset <= nRESET;
 
-		if (old_reset & ~nRESET) ioctl_wait <= 0;
+		if (old_reset & ~nRESET) ddram_wait <= 0;
 		
 		if (old_download & ~ddr_loading)
-			ioctl_wait <= 0;	// Needed ?
+			ddram_wait <= 0;	// Needed ?
 
 		if (~old_download & ddr_loading) begin
 			adpcm_wr <= 0;
 		end else if (ddr_loading)
 		begin
 			if (ioctl_wr) begin
-				ioctl_wait <= 1;
+				ddram_wait <= 1;
 				adpcm_wr <= ~adpcm_wr;
 				ddr_waddr <= (ioctl_index == INDEX_M1ROM) ? {1'b1,ioctl_addr[24:0]} : VROM_LOAD_ADDR;
-			end else if (ioctl_wait & (adpcm_wr == adpcm_wrack)) begin
-				ioctl_wait <= 0;
+			end else if (ddram_wait & (adpcm_wr == adpcm_wrack)) begin
+				ddram_wait <= 0;
 			end
 		end
 	end
