@@ -173,15 +173,12 @@ assign AUDIO_MIX = status[5:4];
 assign AUDIO_L = snd_left;
 assign AUDIO_R = snd_right;
 
-assign VGA_SL = 0;
-assign VGA_F1 = 0;
-
 assign LED_USER  = ioctl_download;
 assign LED_DISK  = 0;
 assign LED_POWER = 0;
 
-assign VIDEO_ARX = 8'd10;	// 320/32
-assign VIDEO_ARY = 8'd7;	// 224/32
+assign VIDEO_ARX = status[17] ? 8'd16 : 8'd10;	// 320/32
+assign VIDEO_ARY = status[17] ? 8'd9  : 8'd7;	// 224/32
 
 // status bit definition:
 // 31       23       15       7
@@ -197,6 +194,7 @@ assign VIDEO_ARY = 8'd7;	// 224/32
 // L:	status[12]		CD lid state (DEBUG)
 //  :	status[13]		Primary SDRAM size 32MB/64MB
 //  :	status[14]		Manual Reset
+//  :	status[20:15]  OSD options
 // S:	status[25:24]	Special chip type, 0=None, 1=PRO-CT0, 2=Link MCU, 3=NEO-CMC
 // P:	status[26]		Use PCM chip or not
 // A: status[29:28]	Sprite tile # remap hack, 0=no remap, 1=kof95, 2=whp, 3=kizuna
@@ -231,6 +229,9 @@ localparam CONF_STR = {
 	"H2O8,DIP:Freeplay,OFF,ON;",
 	"H2O9,DIP:Freeze,OFF,ON;",
 	"-;",
+	"OG,Width,320px,304px;",
+	"OH,Aspect Ratio,Original,Wide;",
+	"OIK,Scandoubler Fx,None,HQ2x,CRT 25%,CRT 50%,CRT 75%;",
 	"O56,Stereo mix,none,25%,50%,100%;",
 	"-;",
 `ifdef DUAL_SDRAM
@@ -238,6 +239,7 @@ localparam CONF_STR = {
 `else
 	"OD,SDRAM,32MB,64MB;",
 `endif
+	"-;",
 	"RE,Reset & apply;",  // decouple manual reset from system reset 
 	"J1,A,B,C,D,Start,Select,Coin,ABC;",	// ABC is a special key to press A+B+C at once, useful for
 	"V,v",`BUILD_DATE								// keyboards that don't allow more than 2 keypresses at once
@@ -332,6 +334,7 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 
 	.conf_str(CONF_STR),
 
+	.forced_scandoubler(forced_scandoubler),
 	//.ps2_mouse(ps2_mouse),	// Could be used for The Irritating Maze ?
 	
 	.joystick_0(joystick_0), .joystick_1(joystick_1),
@@ -1395,24 +1398,38 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 
 	// DAC latches
 	reg ce_pix;
+	reg [2:0] HBlank;
+	reg HBlank304;
 	always @(posedge clk_sys) begin
 		reg old_clk;
-	
+		reg [9:0] pxcnt;
+
 		ce_pix <= 0;
 		old_clk <= CLK_6MB;
 		if(~old_clk & CLK_6MB) begin
 			ce_pix <= 1;
-			PAL_RAM_REG <= VIDEO_EN ? PAL_RAM_DATA : 16'h0000;
+			PAL_RAM_REG <= (nRESET && VIDEO_EN && ((pxcnt >= 7 && pxcnt < 311) || ~status[16])) ? PAL_RAM_DATA : 16'h0000;
+		end
+
+		if(ce_pix) begin
+			HBlank <= (HBlank<<1) | CHBL;
+			
+			pxcnt <= pxcnt + 1'b1;
+			if(HBlank[1:0] == 2'b10) pxcnt <= 0;
 		end
 	end
 
 	assign CLK_VIDEO = clk_sys;
-	assign CE_PIXEL = ce_pix;
+	assign VGA_SL = scale ? scale[1:0] - 1'd1 : 2'd0;
+	assign VGA_F1 = 0;
+
+	wire [2:0] scale = status[20:18];
+
+	wire [7:0] r,g,b;
+	wire hs,vs,hblank,vblank;
 
 	video_cleaner cideo_cleaner
 	(
-		.*,
-
 		.clk_vid(clk_sys),
 		.ce_pix(ce_pix),
 
@@ -1422,11 +1439,41 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 
 		.HSync(HSync),
 		.VSync(VSync),
-		.HBlank(CHBL),
+		.HBlank(HBlank[2]),
 		.VBlank(~nBNKB),
 
-		.HBlank_out(),
-		.VBlank_out()
+		.VGA_R(r),
+		.VGA_G(g),
+		.VGA_B(b),
+		.VGA_VS(vs),
+		.VGA_HS(hs),
+		.HBlank_out(hblank),
+		.VBlank_out(vblank)
+	);
+	
+	video_mixer #(.LINE_LENGTH(320), .HALF_DEPTH(0)) video_mixer
+	(
+		.*,
+
+		.clk_sys(CLK_VIDEO),
+		.ce_pix(ce_pix),
+		.ce_pix_out(CE_PIXEL),
+
+		.scanlines(0),
+		.scandoubler(scale || forced_scandoubler),
+		.hq2x(scale==1),
+
+		.mono(0),
+
+		.R(r),
+		.G(g),
+		.B(b),
+
+		// Positive pulses.
+		.HSync(hs),
+		.VSync(vs),
+		.HBlank(hblank),
+		.VBlank(vblank)
 	);
 
 endmodule
