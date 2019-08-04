@@ -67,11 +67,10 @@ fx68k FX68K(
 		.BGn(nBG),
 		.BRn(nBR),
 		.BGACKn(nBGACK),
-		//.oRESETn(nDTACK),
 		
 		.DTACKn(nDTACK),
 		
-		.VPAn(~IPL2 | nAS),		// Is this enough ?
+		.VPAn(~IPL2 | nAS | ~&{FC2,FC1,FC0}), //VPA must be fired only in IACK cycle!
 		.BERRn(1'b1),
 		
 		.IPL0n(IPL0),
