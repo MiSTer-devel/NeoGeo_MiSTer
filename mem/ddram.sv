@@ -44,7 +44,7 @@ module ddram
 	output reg [7:0] dout,
 	input            rd_req,
 	output reg       rd_ack,
-	
+
 	input     [27:0] rdaddr2,
 	output reg [7:0] dout2,
 	input            rd_req2,
@@ -53,7 +53,13 @@ module ddram
 	input     [27:0] rdaddr3,
 	output reg [7:0] dout3,
 	input            rd_req3,
-	output reg       rd_ack3 
+	output reg       rd_ack3,
+
+	input     [27:0] cpaddr,
+	output reg[63:0] cpdout,
+	output reg       cpwr,
+	input            cpreq,
+	output           cpbusy
 );
 
 assign DDRAM_BURSTCNT = ram_burst;
@@ -70,11 +76,14 @@ reg [27:0] ram_address, cache_addr, cache_addr2, cache_addr3;
 reg        ram_read = 0;
 reg        ram_write = 0;
 
-reg [1:0]  state  = 0;
+reg [2:0]  state  = 0;
 reg [1:0]  ch = 0; 
 
 always @(posedge DDRAM_CLK) begin
+	reg old_cpreq;
+	reg [6:0] cpcnt;
 
+	cpwr <= 0;
 	if(!DDRAM_BUSY) begin
 		ram_write <= 0;
 		ram_read  <= 0;
@@ -161,7 +170,18 @@ always @(posedge DDRAM_CLK) begin
 						ch 			<= 2;
 						state       <= 2;
 					end 
-				end 
+				end else begin
+					cpbusy         <= 0;
+					old_cpreq <= cpreq;
+					if(~old_cpreq & cpreq) begin
+						ram_address <= {cpaddr[27:3],3'b000};
+						ram_burst   <= 128;
+						ram_read    <= 1;
+						state       <= 4;
+						cpcnt       <= 127;
+						cpbusy      <= 1;
+					end
+				end
 
 			1: begin
 					cache_addr <= '1;
@@ -204,6 +224,13 @@ always @(posedge DDRAM_CLK) begin
 						next_q3 <= DDRAM_DOUT;
 					end 
 					state  <= 0;
+				end
+
+			4: if(DDRAM_DOUT_READY) begin
+					cpwr   <= 1;
+					cpcnt  <= cpcnt - 1'd1;
+					cpdout <= DDRAM_DOUT;
+					if(!cpcnt) state <= 0;
 				end
 		endcase
 	end

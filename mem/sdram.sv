@@ -51,7 +51,14 @@ module sdram
 	input       [1:0] bs,          // bit1 - write high byte, bit0 - write low byte, Ignored while reading.
 	input             rd,          // request read
 	input             burst,       // 0 = Single read, 1 = Four-word burst read
-	output reg        ready
+	output reg        ready,
+
+	input             cpsel,
+	input      [25:1] cpaddr,
+	input      [15:0] cpdin,
+	output reg        cprd,
+	input             cpreq,
+	output reg        cpbusy
 );
 
 assign SDRAM_nCS  = command[3];
@@ -89,18 +96,18 @@ localparam CMD_LOAD_MODE       = 4'b0000;
 reg [13:0] refresh_count = startup_refresh_max - sdram_startup_cycles;
 reg  [3:0] command = CMD_INHIBIT;
 
-typedef enum
-{
-	STATE_STARTUP,
-	STATE_WAIT,
-	STATE_RW,
-	STATE_IDLE,
-	STATE_IDLE_1,
-	STATE_IDLE_2,
-	STATE_IDLE_3,
-	STATE_IDLE_4,
-	STATE_IDLE_5
-} state_t;
+localparam STATE_STARTUP =  0;
+localparam STATE_WAIT    =  1;
+localparam STATE_RW      =  2;
+localparam STATE_WAITCP  =  3;
+localparam STATE_CP      =  4;
+localparam STATE_IDLE    =  5;
+localparam STATE_IDLE_1  =  6;
+localparam STATE_IDLE_2  =  7;
+localparam STATE_IDLE_3  =  8;
+localparam STATE_IDLE_4  =  9;
+localparam STATE_IDLE_5  = 10;
+
 
 always @(posedge clk) begin
 	reg [CAS_LATENCY+BURST_LENGTH-1:0] data_ready_delay;
@@ -109,7 +116,9 @@ always @(posedge clk) begin
 	reg        saved_burst;
 	reg [12:0] cas_addr;
 	reg [15:0] saved_data;
-	state_t    state = STATE_STARTUP;
+	reg  [8:0] cpcnt;
+	reg        old_cpreq = 0;
+	reg  [3:0] state = STATE_STARTUP;
 
 	refresh_count <= refresh_count+1'b1;
 
@@ -178,6 +187,7 @@ always @(posedge clk) begin
 					ready <= 1;
 					refresh_count <= 0;
 				end
+				cpbusy <= 0;
 			end
 
 			STATE_IDLE_5: state <= STATE_IDLE_4;
@@ -217,10 +227,22 @@ always @(posedge clk) begin
 						state <= STATE_IDLE_1;
 					end
 				end
+				else begin
+					cpbusy <= 0;
+					cprd   <= 0;
+					old_cpreq <= cpreq;
+					if(~old_cpreq & cpreq & cpsel) begin
+						{cas_addr[12:9],SDRAM_BA,SDRAM_A,cas_addr[8:0]} <= {2'b00, 1'b0, cpaddr};
+						cpbusy  <= 1;
+						cpcnt   <= 511;
+						command <= CMD_ACTIVE;
+						state   <= STATE_WAITCP;
+						cprd    <= 1;
+					end
+				end
 			end
 
 			STATE_WAIT: state <= STATE_RW;
-
 			STATE_RW: begin
 				state   <= saved_burst ? STATE_IDLE_5 : STATE_IDLE_2;
 				SDRAM_A <= cas_addr;
@@ -234,6 +256,22 @@ always @(posedge clk) begin
 					data_ready_delay[CAS_LATENCY+BURST_LENGTH-1] <= 1;
 				end
 			end
+			
+			STATE_WAITCP: begin
+				state <= STATE_CP;
+			end
+
+			STATE_CP: begin
+				SDRAM_A       <= {2'b00, !cpcnt, cas_addr[9:0]};
+				cas_addr[8:0] <= cas_addr[8:0] + 1'd1;
+				cpcnt         <= cpcnt - 1'd1;
+				command       <= CMD_WRITE;
+				SDRAM_DQ      <= cpdin;
+				if(!cpcnt) begin
+					state      <= STATE_IDLE_2;
+					cprd       <= 0;
+				end
+			end
 		endcase
 
 		if (init) begin
@@ -243,6 +281,8 @@ always @(posedge clk) begin
 	end
 	else begin
 		ready <= 1;
+		cpbusy <= 0;
+		cprd <= 0;
 		dout <= '0;
 		SDRAM_A <= 'Z;
 		SDRAM_BA <= 'Z;

@@ -176,6 +176,11 @@ module sdram_mux(
 			CD_WR_RUN   <= 0;
 
 			DMA_SDRAM_BUSY <= 0;
+			
+			if(~DL_EN) begin
+				SDRAM_WR <= 0;
+				SDRAM_RD <= 0;
+			end
 		end
 		else begin
 			if (~nAS_PREV & nAS) PROM_DATA_READY <= 0;
