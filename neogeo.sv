@@ -783,7 +783,8 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 	);
 	
 	reg  sdr_pri_64;
-	wire sdr_pri_sel = ~sdram_addr[26] & (~sdram_addr[25] | sdr_pri_64);
+	wire sdr_pri_sel   = ~sdram_addr[26] & (~sdram_addr[25] | sdr_pri_64);
+	wire sdr_pri_cpsel = ~sdr_cpaddr[26] & (~sdr_cpaddr[25] | sdr_pri_64);
 	always @(posedge clk_sys) if (~nRESET) sdr_pri_64 <= status[13];
 
 	wire sdram1_ready, sdram2_ready;
@@ -814,7 +815,7 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 		.burst(SDRAM_BURST),
 		.ready(sdram1_ready),
 
-		.cpsel(~sdr_cpaddr[26]),
+		.cpsel(sdr_pri_cpsel),
 		.cpaddr(sdr_cpaddr[25:1]),
 		.cpdin(sdr_cpdin),
 		.cprd(sdr1_cprd),
@@ -845,7 +846,7 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 		.burst(SDRAM_BURST),
 		.ready(sdram2_ready),
 
-		.cpsel(sdr_cpaddr[26]),
+		.cpsel(~sdr_pri_cpsel),
 		.cpaddr(sdr_cpaddr[25:1]),
 		.cpdin(sdr_cpdin),
 		.cprd(sdr2_cprd),
@@ -1428,41 +1429,27 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 		end
 
 		case(state)
-			0: begin
+			0: if(~memcp_wait) begin
 					ddr_cpreq <= 0;
 					sdr_cpreq <= 0;
-					cur_off <= 0;
-					if(memcp_wait) begin
-						ddr_cpreq <= 1;
-						state <= 1;
-					end
+					cur_off   <= 0;
+				end
+				else if((~sdr2_en && ~sdr_pri_cpsel) || (cur_off >= cp_size)) memcp_wait <= 0;
+				else begin
+					ddr_cpreq <= 1;
+					state     <= 1;
 				end
 
 			1: if(ddr_cpbusy) ddr_cpreq <= 0;
 				else if(~ddr_cpreq & ~ddr_cpbusy) begin
-					if(~sdr2_en & sdr_cpaddr[26]) begin
-						memcp_wait <= 0;
-						state <= 0;
-					end
-					else begin
-						sdr_cpreq <= 1;
-						state <= 2;
-					end
+					sdr_cpreq <= 1;
+					state <= 2;
 				end
 
 			2: if(sdr_cpbusy) sdr_cpreq <= 0;
 				else if(~sdr_cpreq & ~sdr_cpbusy) begin
 					cur_off <= cur_off + 27'd1024;
-					state <= 3;
-				end
-
-			3: if(cur_off >= cp_size) begin
-					memcp_wait <= 0;
 					state <= 0;
-				end
-				else begin
-					ddr_cpreq <= 1;
-					state <= 1;
 				end
 		endcase
 
