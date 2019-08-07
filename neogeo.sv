@@ -685,8 +685,8 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 			
 			if(ioctl_index == INDEX_MEMCP && ioctl_addr == 6) begin
 				if(cp_idx >= INDEX_VROMS) begin
-					if(cp_idx < (INDEX_VROMS+32)) V1ROM_MASK <= V1ROM_MASK | (cp_size-1'd1);
-					else  								V2ROM_MASK <= V2ROM_MASK | (cp_size-1'd1);
+					if(cp_idx < (INDEX_VROMS+32)) V1ROM_MASK <= V1ROM_MASK | (cp_end[23:0]-1'd1);
+					else  								V2ROM_MASK <= V2ROM_MASK | (cp_end[23:0]-1'd1);
 				end
 				else if(cp_idx == INDEX_CROM0)  CROM_MASK  <= CROM_MASK  | (cp_size-1'd1);
 				else if(cp_idx == INDEX_M1ROM)  MROM_MASK  <= MROM_MASK  | (cp_size-1'd1);
@@ -1022,6 +1022,7 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 	assign CROM_ADDR = {C_LATCH_EXT, C_LATCH, 3'b000} & CROM_MASK;
 
 	zmc ZMC(
+		.nRESET(nRESET),
 		.nSDRD0(SDRD0),
 		.SDA_L(SDA[1:0]), .SDA_U(SDA[15:8]),
 		.MA(MA)

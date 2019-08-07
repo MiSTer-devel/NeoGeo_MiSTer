@@ -19,6 +19,7 @@
 //============================================================================
 
 module zmc(
+	input nRESET,
 	input nSDRD0,
 	input [1:0] SDA_L,
 	input [15:8] SDA_U,
@@ -42,14 +43,22 @@ module zmc(
 			(SDA_U[15:13] == 3'b110) ? {WINDOW_2, SDA_U[12:11]} :	// C000~DFFF
 			{WINDOW_3, SDA_U[13:11]};										// 8000~BFFF
 	
-	always @(posedge nSDRD0)
+	always @(posedge nSDRD0, negedge nRESET)
 	begin
-		case (SDA_L)
-			0: WINDOW_0 <= SDA_U[15:8];
-			1: WINDOW_1 <= SDA_U[14:8];
-			2: WINDOW_2 <= SDA_U[13:8];
-			3: WINDOW_3 <= SDA_U[12:8];
-		endcase
+		if(!nRESET) begin
+			WINDOW_0 <= 'h1E;
+			WINDOW_1 <= 'h0E;
+			WINDOW_2 <= 'h06;
+			WINDOW_3 <= 'h02;
+		end
+		else begin
+			case (SDA_L)
+				0: WINDOW_0 <= SDA_U[15:8];
+				1: WINDOW_1 <= SDA_U[14:8];
+				2: WINDOW_2 <= SDA_U[13:8];
+				3: WINDOW_3 <= SDA_U[12:8];
+			endcase
+		end
 	end
-	
+
 endmodule
