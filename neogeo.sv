@@ -195,9 +195,11 @@ assign VIDEO_ARY = status[17] ? 8'd9  : 8'd7;	// 224/32
 //  :	status[13]		Primary SDRAM size 32MB/64MB
 //  :	status[14]		Manual Reset
 //  :	status[20:15]  OSD options
-// S:	status[25:24]	Special chip type, 0=None, 1=PRO-CT0, 2=Link MCU, 3=NEO-CMC
-// P:	status[26]		Use PCM chip or not
-// A: status[29:28]	Sprite tile # remap hack, 0=no remap, 1=kof95, 2=whp, 3=kizuna
+
+// cfg bits:
+//  cfg[27:24] Special chip type, 0=None, 1=PRO-CT0, 2=Link MCU, 3=NEO-CMC
+//  cfg[23]    Use PCM chip or not
+//  cfg[31:28] Quirk, Sprite tile # remap hack, 0=no remap, 1=kof95, 2=whp, 3=kizuna
 
 `include "build_id.v"
 
@@ -366,9 +368,10 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 	
 //////////////////   Her Majesty   ///////////////////
 
+	reg  [31:0] cfg = 0;
 	wire [15:0] snd_right;
 	wire [15:0] snd_left;
-	
+
 	wire nRESETP, nSYSTEM, CARD_WE, SHADOW, nVEC, nREGEN, nSRAMWEN, PALBNK;
 	wire CD_nRESET_Z80;
 	
@@ -483,9 +486,11 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 	parameter INDEX_CROMS = 64;
 	
 	wire memcard_save = status[12];
-	wire [1:0] cart_chip = status[25:24];
 	wire video_mode = status[3];
-	wire use_pcm = status[26];
+
+	wire [3:0] cart_chip  = cfg[27:24];
+	wire [3:0] cart_pchip = cfg[22:20];
+	wire use_pcm = cfg[23];
 	
 	// Memory card and backup ram image save/load
 	always @(posedge clk_sys)
@@ -683,7 +688,7 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 				if(ioctl_addr_offset >= P2ROM_OFFSET) P2ROM_MASK <= P2ROM_MASK | (ioctl_addr_offset - P2ROM_OFFSET);
 			end
 			
-			if(ioctl_index == INDEX_MEMCP && ioctl_addr == 6) begin
+			if(ioctl_index == INDEX_MEMCP && ioctl_addr == 6 && cp_op) begin
 				if(cp_idx >= INDEX_VROMS) begin
 					if(cp_idx < (INDEX_VROMS+32)) V1ROM_MASK <= V1ROM_MASK | (cp_end[23:0]-1'd1);
 					else  								V2ROM_MASK <= V2ROM_MASK | (cp_end[23:0]-1'd1);
@@ -740,7 +745,7 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 		.nPORTOE(nPORTOE),
 		.nSROMOE(nSROMOE),
 		.DATA_TYPE(~FC1 & FC0), // 0 - program, 1 - data, 
-		.P2ROM_ADDR({P_BANK, M68K_ADDR[19:1], 1'b0} & P2ROM_MASK),
+		.P2ROM_ADDR(P2ROM_ADDR & P2ROM_MASK),
 		.PROM_DATA(PROM_DATA),
 		.PROM_DATA_READY(PROM_DATA_READY),
 
@@ -926,8 +931,8 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 	assign FIXD = S2H1 ? SROM_DATA[15:8] : SROM_DATA[7:0];
 	
 	// Disable ROM read in PORT zone if the game uses a special chip
-	assign M68K_DATA = (nROMOE & nSROMOE & |{nPORTOE, cart_chip}) ? 16'bzzzzzzzzzzzzzzzz : PROM_DATA;
-	
+	assign M68K_DATA = (nROMOE & nSROMOE & |{nPORTOE, cart_chip, cart_pchip}) ? 16'bzzzzzzzzzzzzzzzz : PROM_DATA;
+
 	// 68k work RAM
 	dpram #(15) WRAML(
 		.clock_a(CLK_24M),
@@ -954,6 +959,43 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 		.data_b(TRASH_ADDR[7:0]),
 		.wren_b(~nRESET)
 	);
+	
+	wire [23:0] P2ROM_ADDR = (!cart_pchip) ? {P_BANK, M68K_ADDR[19:1], 1'b0} : 24'bZ;
+	
+	neo_pvc neo_pvc
+	(
+		.nRESET(nRESET),
+		.CLK_24M(CLK_24M),
+
+		.ENABLE(cart_pchip == 2),
+
+		.M68K_ADDR(M68K_ADDR),
+		.M68K_DATA(M68K_DATA),
+		.PROM_DATA(PROM_DATA),
+		.nPORTOEL(nPORTOEL),
+		.nPORTOEU(nPORTOEU),
+		.nPORTWEL(nPORTWEL),
+		.nPORTWEU(nPORTWEU),
+		.P2_ADDR(P2ROM_ADDR)
+	);
+	
+	neo_sma neo_sma
+	(
+		.nRESET(nRESET),
+		.CLK_24M(CLK_24M),
+
+		.TYPE(cart_pchip),
+
+		.M68K_ADDR(M68K_ADDR),
+		.M68K_DATA(M68K_DATA),
+		.PROM_DATA(PROM_DATA),
+		.nPORTOEL(nPORTOEL),
+		.nPORTOEU(nPORTOEU),
+		.nPORTWEL(nPORTWEL),
+		.nPORTWEU(nPORTWEU),
+		.P2_ADDR(P2ROM_ADDR)
+	);
+	
 
 	// Work RAM or CD extended RAM read
 	assign M68K_DATA[7:0]  = nWRL ? 8'bzzzzzzzz : SYSTEM_CDx ? PROM_DATA[7:0]  : WRAML_OUT;
@@ -1058,7 +1100,7 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 		.GAD(GAD_SEC), .GBD(GBD_SEC)
 	);	
 	
-	assign M68K_DATA[7:0] = ((cart_chip == 2'd1) & ~nPORTOEL) ?
+	assign M68K_DATA[7:0] = ((cart_chip == 1) & ~nPORTOEL) ?
 									{GBD_SEC[1], GBD_SEC[0], GBD_SEC[3], GBD_SEC[2],
 									GAD_SEC[1], GAD_SEC[0], GAD_SEC[3], GAD_SEC[2]} : 8'bzzzzzzzz;
 
@@ -1082,7 +1124,7 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 	);
 	
 	// NEO-CMC handles this, set to 0 for now ()
-	assign FIX_BANK = (cart_chip == 2'd3) ? CMC_FIX_BANK : 2'b00;
+	assign FIX_BANK = (cart_chip == 3) ? CMC_FIX_BANK : 2'b00;
 	
 	// Fake COM MCU
 	wire [15:0] COM_DOUT;
@@ -1094,7 +1136,7 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 		.M68K_DIN(COM_DOUT)
 	);
 	
-	assign M68K_DATA = (cart_chip == 2'd2) ? COM_DOUT : 16'bzzzzzzzz_zzzzzzzz;
+	assign M68K_DATA = (cart_chip == 2) ? COM_DOUT : 16'bzzzzzzzz_zzzzzzzz;
 	
 	syslatch SL(
 		.nRESET(nRESET),
@@ -1391,6 +1433,7 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 		.q(sdr_cpdin)
 	);
 
+	reg         cp_op;
 	reg   [7:0] cp_idx;
 	reg  [26:0] cp_size;
 	reg  [26:0] cp_addr;
@@ -1417,15 +1460,22 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 		if(ioctl_download && ioctl_index == INDEX_MEMCP) begin
 			if(ioctl_wr) begin
 				case(ioctl_addr[3:0])
-					0: cp_idx         <= ioctl_dout[7:0];
+					0: {cp_op,cp_idx} <= {~ioctl_dout[15],ioctl_dout[7:0]};
 					2: cp_size[15:0]  <= ioctl_dout;
 					4: begin
 							cp_size[26:16] <= ioctl_dout[10:0];
 							cp_addr     <= cp_offset;
 							cp_end      <= cp_offset + {ioctl_dout[10:0], cp_size[15:0]};
 						end
-					6: if(ioctl_dout) memcp_wait  <= 1;
+					6: if(ioctl_dout && cp_op) memcp_wait  <= 1;
 				endcase
+
+				if(~cp_op) begin
+					case(ioctl_addr[3:0])
+						2: cfg[15:0]  <= ioctl_dout;
+						4: cfg[31:16] <= ioctl_dout;
+					endcase
+				end
 			end
 		end
 
