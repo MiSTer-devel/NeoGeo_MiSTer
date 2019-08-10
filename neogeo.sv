@@ -440,7 +440,7 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 	wire [1:0] FIX_BANK;
 	wire [15:0] S_LATCH;
 	wire [7:0] FIXD;
-	wire [14:0] FIXMAP_ADDR;
+	wire [10:0] FIXMAP_ADDR;
 	
 	wire CWE, BWE, BOE;
 	
@@ -488,9 +488,10 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 	wire memcard_save = status[12];
 	wire video_mode = status[3];
 
-	wire [3:0] cart_chip  = cfg[27:24];
 	wire [3:0] cart_pchip = cfg[22:20];
-	wire use_pcm = cfg[23];
+	wire       use_pcm    = cfg[23];
+	wire [1:0] cart_chip  = cfg[25:24]; // legacy option: 0 - none, 1 - PRO-CT0, 2 - Link MCU
+	wire [1:0] cmc_chip   = cfg[27:26]; // 0 - none, 1 - 042, 2 - 050 (unimplemented yet)
 	
 	// Memory card and backup ram image save/load
 	always @(posedge clk_sys)
@@ -1114,18 +1115,16 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 	always @(negedge PCK1)
 		C_LATCH_EXT <= PBUS[23:20];
 	
-	wire [1:0] CMC_FIX_BANK;
-	
-	cmc_fix CMCFIX(
+	neo_cmc neo_cmc
+	(
 		.PCK2B(~PCK2),
-		.PBUS(PBUS[15:0]),
-		.FIXMAP_ADDR(FIXMAP_ADDR),
-		.FIX_BANK(CMC_FIX_BANK)
+		.PBUS(PBUS[14:0]),
+		.TYPE(cmc_chip),
+		.ADDR(FIXMAP_ADDR),
+		.BANK(FIX_BANK)
 	);
 	
-	// NEO-CMC handles this, set to 0 for now ()
-	assign FIX_BANK = (cart_chip == 3) ? CMC_FIX_BANK : 2'b00;
-	
+
 	// Fake COM MCU
 	wire [15:0] COM_DOUT;
 	
