@@ -221,8 +221,26 @@ https://lmgtfy.com/?q=darksoft+neo+geo+roll-up+pack
 	<romset name="svcsplus" pcm="1" altname="SNK vs Capcom Super Plus" publisher="Hack" year="2003" ram="2"/>
 	<romset name="svccpru" pcm="1" altname="SNK vs Capcom Remix Ultra" publisher="Hack" year="2003" ram="2"/>
 
+	<!-- Not in darksoft pack -->
+	<romset name="kof2003ps2" pcm="1" altname="King of Fighters 2003, The (PS2)" year="2003" ram="2">
+		<file name="271ps2-p1.bin" index="4"/>
+		<file name="271ps2-s1.bin" index="8"/>
+		<file name="271-c1cd.bin" index="64"/>
+		<file name="271-c2cd.bin" index="65"/>
+		<file name="271-c3cd.bin" index="96"/>
+		<file name="271-c4cd.bin" index="97"/>
+		<file name="271-c5cd.bin" index="128"/>
+		<file name="271-c6cd.bin" index="129"/>
+		<file name="271-c7bs1.bin" index="160"/>
+		<file name="271-c8bs1.bin" index="161"/>
+		<file name="271-m1cd.bin" index="9"/>
+		<file name="271-v1cd.bin" index="16"/>
+		<file name="271-v2cd.bin" index="32"/>
+	</romset>
+
 	<!-- ROMs requiring 128MB SDRAM (2x64MB) -->
 
+	<!-- Not in darksoft pack -->
 	<romset name="badapple" pcm="1" altname="Bad Apple Demo" ram="3">
 		<file name="bada-p1.bin" index="4"/>
 		<file name="bada-s1.bin" index="8"/>
