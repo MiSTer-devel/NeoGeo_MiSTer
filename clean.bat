@@ -30,7 +30,7 @@ del /s *.spd
 del /s *.bsf
 del /s *.f
 del /s *.sopcinfo
-del /s *.xml
+del *.xml
 del *.cdf
 del /s new_rtl_netlist
 del /s old_rtl_netlist
