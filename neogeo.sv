@@ -216,13 +216,14 @@ localparam CONF_STR = {
 	"NEOGEO;;",
 	"-;",
 	"H0FS1,*,Load ROM set;",
-	"H1S0,ISOBIN,Load CD Image;",
+	"H1S1,ISOBIN,Load CD Image;",
 	"-;",
-	"O12,System type,Console(AES),Arcade(MVS);", //,CD,CDZ;",
-	"O3,Video mode,NTSC,PAL;",
+	"O12,System Type,Console(AES),Arcade(MVS);", //,CD,CDZ;",
+	"O3,Video Mode,NTSC,PAL;",
 	"-;",
-	"H0O4,Memory card,Plugged,Unplugged;",
-	"RC,Save memory card;",
+	"H0O4,Memory Card,Plugged,Unplugged;",
+	"RL,Load Memory Card;",
+	"RC,Save Memory Card;",
 	"H1-;",
 	"H1OAB,Region,US,EU,JP,AS;",
 	"H1OF,CD lid,Opened,Closed;",
@@ -234,7 +235,7 @@ localparam CONF_STR = {
 	"OG,Width,320px,304px;",
 	"OH,Aspect Ratio,Original,Wide;",
 	"OIK,Scandoubler Fx,None,HQ2x,CRT 25%,CRT 50%,CRT 75%;",
-	"O56,Stereo mix,none,25%,50%,100%;",
+	"O56,Stereo Mix,none,25%,50%,100%;",
 	"-;",
 `ifdef DUAL_SDRAM
 	"OD,Primary SDRAM,32MB,64MB;",
@@ -275,7 +276,7 @@ reg nRESET;
 always @(posedge CLK_24M) begin
 	nRESET <= &TRASH_ADDR;
 	if (~&TRASH_ADDR) TRASH_ADDR <= TRASH_ADDR + 1'b1;
-	if (ioctl_download | status[0] | status[14] | buttons[1]) begin
+	if (ioctl_download | status[0] | status[14] | buttons[1] | bk_loading) begin
 		TRASH_ADDR <= 0;
 		SYSTEM_TYPE <= status[2:1];	// Latch the system type on reset
 	end
@@ -287,28 +288,24 @@ always @(posedge clk_sys) counter_p <= counter_p + 1'd1;
 
 //////////////////   HPS I/O   ///////////////////
 
-// VD 0: CD bin file
-// VD 1: CD cue file, let MiSTer binary take care of it, do not touch !
-// VD 2: Save file
-wire [2:0] img_mounted;
-wire [2:0] sd_rd;
-wire [2:0] sd_wr;
-assign sd_wr[1:0] = 0;
+// VD 0: Save file
+// VD 1: CD bin file
+// VD 2: CD cue file, let MiSTer binary take care of it, do not touch !
+wire [1:0] img_mounted;
+wire [1:0] sd_rd;
+wire [1:0] sd_wr;
+assign sd_rd[0] = bk_rd;
+assign sd_wr[0] = bk_wr;
+assign sd_wr[1] = 0;
 
 wire sd_ack, sd_buff_wr, img_readonly;
 
-wire [7:0] sd_buff_addr;	// Address inside 256-word sector
+wire  [7:0] sd_buff_addr;	// Address inside 256-word sector
 wire [15:0] sd_buff_dout;
 wire [15:0] sd_buff_din;
 wire [15:0] sd_req_type;
 wire [63:0] img_size;
-reg ioctl_download_prev;
-reg memcard_load = 0;
-reg memcard_ena = 0;
-reg memcard_loading = 0;
-reg memcard_state = 0;
-reg memcard_save_prev = 0, sd_ack_prev;
-reg [31:0] sd_lba;
+reg  [31:0] sd_lba;
 wire [31:0] CD_sd_lba;
 
 wire [15:0] joystick_0;	// ----HNLS DCBAUDLR
@@ -328,7 +325,7 @@ wire  [7:0] ioctl_index;
 wire SYSTEM_MVS = (SYSTEM_TYPE == 2'd1);
 wire SYSTEM_CDx = SYSTEM_TYPE[1];
 
-hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
+hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1), .VDNUM(2)) hps_io
 (
 	.clk_sys(clk_sys),
 	.HPS_BUS(HPS_BUS),
@@ -485,78 +482,83 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 	parameter INDEX_VROMS = 16;
 	parameter INDEX_CROMS = 64;
 	
-	wire memcard_save = status[12];
 	wire video_mode = status[3];
 
 	wire [3:0] cart_pchip = cfg[22:20];
 	wire       use_pcm    = cfg[23];
 	wire [1:0] cart_chip  = cfg[25:24]; // legacy option: 0 - none, 1 - PRO-CT0, 2 - Link MCU
-	wire [1:0] cmc_chip   = cfg[27:26]; // 0 - none, 1 - 042, 2 - 050 (unimplemented yet)
-	
+	wire [1:0] cmc_chip   = cfg[27:26]; // type 1/2
+
 	// Memory card and backup ram image save/load
-	always @(posedge clk_sys)
-	begin
-		ioctl_download_prev <= ioctl_download;
-		
-		// Disable memcard operations on download start
-		if(~ioctl_download_prev & ioctl_download)
-			memcard_ena <= 0;
+	wire downloading = status[0];
+	reg bk_rd, bk_wr;
+	reg bk_ena = 0;
+	//reg sav_pending = 0;
+	//wire bk_change = 0; // TODO
 
-		// Enable memcard operations while not downloading, 'disk' #2 is mounted, has a != 0 size, and is writable
-		if(~ioctl_download && img_mounted[2] && img_size && ~img_readonly)
-			memcard_ena <= 1;
+	always @(posedge clk_sys) begin
+		reg old_downloading = 0;
+	//	reg old_change = 0;
 
-		// Start memcard image load on download end
-		// TODO: Trigger this on reset release, not download end ! Confuses Neo CD
-		if (ioctl_download_prev & ~ioctl_download)
-			memcard_load <= 1;
-		else if (memcard_state)
-			memcard_load <= 0;
+		old_downloading <= downloading;
+		if(~old_downloading & downloading) bk_ena <= 0;
 
-		memcard_save_prev <= memcard_save;
-		sd_ack_prev <= sd_ack;
-		
-		if (~sd_ack_prev & sd_ack)
-			{sd_rd[2], sd_wr[2]} <= 2'b00;
-		else
-		begin
-			if (!memcard_state)
-			begin
-				// No current memcard operation
-				if (memcard_ena & (memcard_load | (~memcard_save_prev & memcard_save)))
-				begin
-					// Start operation
-					memcard_state <= 1;
-					memcard_loading <= memcard_load;
-					sd_lba <= 32'd0;
-					sd_rd[2] <= memcard_load;
-					sd_wr[2] <= ~memcard_load;
-				end
+		//Save file always mounted in the end of downloading state.
+		if(downloading && img_mounted[0] && !img_readonly) bk_ena <= 1;
+
+	//	old_change <= bk_change;
+	//	if (~old_change & bk_change & ~OSD_STATUS) sav_pending <= status[13];
+	//	else if (bk_state) sav_pending <= 0;
+	end
+
+	wire bk_load    = status[21];
+	wire bk_save    = status[12]; // | (sav_pending & OSD_STATUS);
+	reg  bk_loading = 0;
+	reg  bk_state   = 0;
+
+	always @(posedge clk_sys) begin
+		reg old_downloading = 0;
+		reg old_load = 0, old_save = 0, old_ack;
+
+		old_downloading <= downloading;
+
+		old_load <= bk_load;
+		old_save <= bk_save;
+		old_ack  <= sd_ack;
+
+		if(~old_ack & sd_ack) {bk_rd, bk_wr} <= 0;
+
+		if(!bk_state) begin
+			if(bk_ena & ((~old_load & bk_load) | (~old_save & bk_save))) begin
+				bk_state <= 1;
+				bk_loading <= bk_load;
+				sd_lba <= 0;
+				bk_rd  <=  bk_load;
+				bk_wr  <= ~bk_load;
 			end
-			else
-			begin
-				if (sd_ack_prev & ~sd_ack)
-				begin
-					// On ack falling edge, either increase lba and continue, or stop operation
-					if ((SYSTEM_CDx & (sd_lba[7:0] >= 8'd15)) |	// 8kB / 256 words per sector / 2 bytes per word
-						(~SYSTEM_CDx & (sd_lba[7:0] >= 8'd131)))	// (64kB + 2kB) / 256 words per sector / 2 bytes per word
-					begin
-						memcard_loading <= 0;	// Useless ?
-						memcard_state <= 0;
-					end
-					else
-					begin
-						sd_lba <= sd_lba + 1'd1;
-						sd_rd[2] <= memcard_loading;
-						sd_wr[2] <= ~memcard_loading;
-					end
+			// always load backup so it will erase the memory if doesn't exist
+			if(old_downloading & ~downloading & bk_ena) begin
+				bk_state <= 1;
+				bk_loading <= 1;
+				sd_lba <= 0;
+				bk_rd  <= 1;
+				bk_wr  <= 0;
+			end
+		end else begin
+			if(old_ack & ~sd_ack) begin
+				if (sd_lba >= 'h8F) begin // 64KB + 8KB regardless the selected system
+					bk_loading <= 0;
+					bk_state <= 0;
+				end else begin
+					sd_lba <= sd_lba + 1'd1;
+					bk_rd  <=  bk_loading;
+					bk_wr  <= ~bk_loading;
 				end
 			end
 		end
 	end
-	
+
 	wire [1:0] CD_REGION;
-	
 	always @(status[11:10])
 	begin
 		// CD Region code remap:
@@ -607,7 +609,7 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 		.CD_TR_WR_DATA(CD_TR_WR_DATA), .CD_TR_WR_ADDR(CD_TR_WR_ADDR),
 		.CD_IRQ(CD_IRQ), .IACK(IACK),
 		.sd_req_type(sd_req_type),
-		.sd_rd(sd_rd[0]), .sd_ack(sd_ack), .sd_buff_wr(sd_buff_wr),
+		.sd_rd(sd_rd[1]), .sd_ack(sd_ack), .sd_buff_wr(sd_buff_wr),
 		.sd_buff_dout(sd_buff_dout), .sd_lba(CD_sd_lba),
 		.DMA_RUNNING(DMA_RUNNING),
 		.DMA_DATA_IN(PROM_DATA), .DMA_DATA_OUT(DMA_DATA_OUT),
@@ -1002,16 +1004,17 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 	assign M68K_DATA[7:0]  = nWRL ? 8'bzzzzzzzz : SYSTEM_CDx ? PROM_DATA[7:0]  : WRAML_OUT;
 	assign M68K_DATA[15:8] = nWRU ? 8'bzzzzzzzz : SYSTEM_CDx ? PROM_DATA[15:8] : WRAMU_OUT;
 	
-	
+	wire save_wr    = (!SYSTEM_CDx || (sd_req_type == 16'h0000)) & sd_buff_wr & sd_ack;
+	wire sram_wr    = ~sd_lba[7] & save_wr; // 000000~00FFFF
+	wire memcard_wr =  sd_lba[7] & save_wr; // 010000-011FFF
+	wire [14:0] sram_addr    = {sd_lba[6:0], sd_buff_addr}; //64KB
+	wire [11:0] memcard_addr = {sd_lba[3:0], sd_buff_addr}; //8KB
+
 	// Backup RAM
 	wire nBWL = nSRAMWEL | nSRAMWEN_G;
 	wire nBWU = nSRAMWEU | nSRAMWEN_G;
 	
 	wire [15:0] sd_buff_din_sram;
-	wire [14:0] sram_addr = {sd_lba[6:0], sd_buff_addr};
-	// Enable writes for save file's 000000~00FFFF
-	wire sram_wr = SYSTEM_MVS & ~sd_lba[7] & sd_buff_wr & sd_ack;
-	
 	backup BACKUP(
 		.CLK_24M(CLK_24M),
 		.M68K_ADDR(M68K_ADDR[15:1]),
@@ -1034,10 +1037,6 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 	assign CARD_WE = (SYSTEM_CDx | (~nCARDWEN & CARDWENB)) & ~nCRDW;
 	
 	wire [15:0] sd_buff_din_memcard;
-	wire [11:0] memcard_addr = {sd_lba[3:0], sd_buff_addr};
-	wire memcard_wr = SYSTEM_CDx ? (sd_req_type == 16'h0000) & sd_buff_wr & sd_ack :		// Enable writes for save file's 000000+
-							sd_lba[7] & sd_buff_wr & sd_ack;			// Enable writes for save file's 010000+
-	
 	memcard MEMCARD(
 		.CLK_24M(CLK_24M),
 		.SYSTEM_CDx(SYSTEM_CDx),
@@ -1616,7 +1615,7 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1)) hps_io
 	wire [7:0] r,g,b;
 	wire hs,vs,hblank,vblank;
 
-	video_cleaner cideo_cleaner
+	video_cleaner video_cleaner
 	(
 		.clk_vid(clk_sys),
 		.ce_pix(ce_pix),
