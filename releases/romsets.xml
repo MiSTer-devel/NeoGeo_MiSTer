@@ -108,7 +108,8 @@ https://lmgtfy.com/?q=darksoft+neo+geo+roll-up+pack
 	<romset name="pnyaa" pcm="1" altname="Pochi and Nyaa"/>
 	<romset name="popbounc" pcm="1" altname="Pop n Bounce" altnamej="Gapporin" publisher="Video System Co." year="1997"/>
 	<romset name="pspikes2" pcm="1" altname="Power Spikes II" publisher="Video System Co." year="1994"/>
-	<romset name="puzzledp,puzzldpr" pcm="1" altname="Puzzle De Pon!" publisher="Visco" year="1995"/>
+	<romset name="puzzldpr" pcm="1" altname="Puzzle De Pon! R!" publisher="Visco" year="1997"/>
+	<romset name="puzzledp" pcm="1" altname="Puzzle De Pon!" publisher="Visco" year="1995"/>
 	<romset name="quizdai2" pcm="1" altname="Quiz Meitantei Neo & Geo - Quiz Daisousa Sen part 2" publisher="SNK" year="1992"/>
 	<romset name="quizdais,quizdask" pcm="1" altname="Quiz Daisousa Sen - The Last Count Down" publisher="SNK" year="1991"/>
 	<romset name="quizkof,quizkofk" pcm="1" altname="Quiz King of Fighters" publisher="Saurus (SNK license)" year="1995"/>
