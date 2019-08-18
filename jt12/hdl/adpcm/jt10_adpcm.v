@@ -44,7 +44,7 @@ reg [5:0] step_next, step_1p;
 reg       sign2, sign3, sign4, sign5, xsign5;
 
 // All outputs from stage 1
-wire [sigw-1:0] inc3_long = { {sigw-11{1'b0}},inc3[11:1] };
+assign pcm = { {16-sigw{x1[sigw-1]}}, x1 } <<< shift;
 
 // This could be decomposed in more steps as the pipeline
 // has room for it
@@ -76,7 +76,7 @@ jt10_adpcma_lut u_lut(
 // 666 kHz -> 18.5 kHz = 55.5/3 kHz
 
 reg chon2, chon3, chon4;
-wire [sigw-1:0] inc3_long = { {sigw-12{1'b0}},inc3 };
+wire [sigw-1:0] inc3_long = { {sigw-11{1'b0}},inc3[11:1] };
 
 always @( posedge clk or negedge rst_n )
     if( ! rst_n ) begin
