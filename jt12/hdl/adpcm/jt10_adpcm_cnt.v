@@ -129,8 +129,8 @@ always @(posedge clk or negedge rst_n)
         end4   <= 'd0;     end5 <= 'd0;     end6 <= 'd0;
     end else if( cen ) begin
         addr2  <= addr1;
-        on2    <= aoff ? 1'b0 : (aon | on1);
-        clr2   <= aoff || (aon && !on1); // Each time a A-ON is sent the address counter restarts
+        on2    <= aoff ? 1'b0 : (aon | (on1 && !done1));
+        clr2   <= aoff || aon; // Each time a A-ON is sent the address counter restarts
         start2 <=  (up_start && up1) ? addr_in[11:0] : start1;
         end2   <=  (up_end   && up1) ? addr_in[11:0] : end1;
         bank2  <= ((up_end | up_start) && up1) ? addr_in[15:12] : bank1;
