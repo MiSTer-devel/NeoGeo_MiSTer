@@ -44,7 +44,7 @@ wire will_hold = !CONT || HOLD;
 always @(posedge clk)
     if( cen ) env <= inv ? ~gain : gain;
 
-always @( posedge clk )
+always @( posedge clk, negedge rst_n )
     if( !rst_n) begin
         gain  <= 5'h1F;
         inv   <= 1'b0;
