@@ -44,7 +44,7 @@ reg [5:0] step_next, step_1p;
 reg       sign2, sign3, sign4, sign5, xsign5;
 
 // All outputs from stage 1
-assign pcm = { {16-sigw{x1[sigw-1]}}, x1 } <<< shift;
+wire [sigw-1:0] inc3_long = { {sigw-11{1'b0}},inc3[11:1] };
 
 // This could be decomposed in more steps as the pipeline
 // has room for it
