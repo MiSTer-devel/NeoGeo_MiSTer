@@ -91,7 +91,7 @@ always @(posedge clk or negedge rst_n)
         lracl4  <= lracl3;
         // IV: new data is accepted here
         lracl5  <= lracl4;
-        db5     <= { 1'b0, ~lracl4[5:0] } + {1'b0, ~atl};
+        db5     <= { 2'b0, ~lracl4[4:0] } + {1'b0, ~atl};
         // V
         lracl6  <= lracl5;
         lin6    <= lin_5b;

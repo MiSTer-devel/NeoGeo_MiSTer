@@ -76,7 +76,7 @@ jt10_adpcma_lut u_lut(
 // 666 kHz -> 18.5 kHz = 55.5/3 kHz
 
 reg chon2, chon3, chon4;
-wire [sigw-1:0] inc3_long = { {sigw-12{1'b0}},inc3 };
+wire [sigw-1:0] inc3_long = { {sigw-11{1'b0}},inc3[11:1] };
 
 always @( posedge clk or negedge rst_n )
     if( ! rst_n ) begin
