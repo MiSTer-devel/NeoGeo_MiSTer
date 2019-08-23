@@ -47,7 +47,8 @@ module jt10(
     output          [ 9:0] psg_snd,    
     output  signed  [15:0] snd_right,
     output  signed  [15:0] snd_left,
-    output          snd_sample
+    output          snd_sample,
+	 input [3:0] snd_enable
 );
 
 // Uses 6 FM channels but only 4 are outputted
@@ -81,6 +82,8 @@ u_jt12(
     .snd_right      ( snd_right    ),
     .snd_left       ( snd_left     ),
     .snd_sample     ( snd_sample   ),
+	 	 .snd_enable(snd_enable),
+
     // unused pins
     .en_hifi_pcm    ( 1'b0         ) // used only on YM2612 mode
 );
