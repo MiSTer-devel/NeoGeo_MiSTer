@@ -90,8 +90,8 @@ always @(*)
             `endif
         end
         {2'd0,3'd6}: begin // ADPCM-B:
-            acc_input_l = adpcmB_l>>>1; // Operator width is 14 bit, ADPCM-B is 16 bit
-            acc_input_r = adpcmB_r>>>1; // accumulator width per input channel is 14 bit
+            acc_input_l = adpcmB_l >>> 1; // Operator width is 14 bit, ADPCM-B is 16 bit
+            acc_input_r = adpcmB_r >>> 1; // accumulator width per input channel is 14 bit
             `ifndef NOMIX
             acc_en_l    = 1'b1;
             acc_en_r    = 1'b1;
@@ -110,22 +110,27 @@ always @(*)
 
 // Continuous output
 
-jt12_single_acc #(.win(16),.wout(16)) u_left(
+wire [16:0] large_right, large_left;
+
+jt12_single_acc #(.win(16),.wout(17)) u_left(
     .clk        ( clk            ),
     .clk_en     ( clk_en         ),
     .op_result  ( acc_input_l    ),
     .sum_en     ( acc_en_l       ),
     .zero       ( zero           ),
-    .snd        ( left           )
+    .snd        ( large_left     )
 );
 
-jt12_single_acc #(.win(16),.wout(16)) u_right(
+jt12_single_acc #(.win(16),.wout(17)) u_right(
     .clk        ( clk            ),
     .clk_en     ( clk_en         ),
     .op_result  ( acc_input_r    ),
     .sum_en     ( acc_en_r       ),
     .zero       ( zero           ),
-    .snd        ( right          )
+    .snd        ( large_right    )
 );
+
+assign left = large_left[16:1];
+assign right = large_right[16:1];
 
 endmodule

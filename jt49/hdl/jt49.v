@@ -53,14 +53,15 @@ wire bitA, bitB, bitC;
 wire noise;
 reg Amix, Bmix, Cmix;
 
-wire cen2, cen4, cen_ch, cen16;
+wire cen_ch, cen_no;
 
 jt49_cen u_cen(
     .clk    ( clk     ), 
     .rst_n  ( rst_n   ), 
     .cen    ( clk_en  ),
     .sel    ( sel     ),
-    .cen8   ( cen_ch  ) // 1 cen8 = 8 x clk
+    .cen8   ( cen_ch  ), // 1 cen8 = 8 x clk
+    .cen16  ( cen_no  )
 );
 
 // internal modules operate at clk/16
@@ -92,7 +93,7 @@ jt49_div #(12) u_chC(
 // of Fclk/16 when period is 1
 jt49_noise u_ng( 
     .clk    ( clk               ), 
-    .cen    ( cen_ch            ),
+    .cen    ( cen_no            ),
     .rst_n  ( rst_n             ), 
     .period ( regarray[6][4:0]  ), 
     .noise  ( noise             ) 
@@ -146,9 +147,9 @@ wire use_envB = regarray[ 9][4];
 wire use_envC = regarray[10][4];
 
 always @(posedge clk) if( clk_en ) begin
-    Amix <= (noise|regarray[7][3]) ^ (bitA|regarray[7][0]);
-    Bmix <= (noise|regarray[7][4]) ^ (bitB|regarray[7][1]);
-    Cmix <= (noise|regarray[7][5]) ^ (bitC|regarray[7][2]);
+    Amix <= (noise|regarray[7][3]) & (bitA|regarray[7][0]);
+    Bmix <= (noise|regarray[7][4]) & (bitB|regarray[7][1]);
+    Cmix <= (noise|regarray[7][5]) & (bitC|regarray[7][2]);
 
     logA <= !Amix ? 5'd0 : (use_envA ? envelope : volA );
     logB <= !Bmix ? 5'd0 : (use_envB ? envelope : volB );
@@ -170,7 +171,7 @@ always @(*)
     endcase // addr
 
 // register array
-always @(posedge clk)
+always @(posedge clk, negedge rst_n)
     if( !rst_n ) begin
         dout <= 8'd0;
         eg_restart <= 1'b0;
@@ -180,8 +181,8 @@ always @(posedge clk)
         regarray[3]<=8'd0; regarray[7]<=8'd0; regarray[11]<=8'd0; regarray[15]<=8'd0;
     end else if( !cs_n ) begin
         dout <= regarray[ addr ] & read_mask;
-        if(addr == 'he && ~regarray[7][6]) dout <= IOA_in;
-        if(addr == 'hf && ~regarray[7][7]) dout <= IOB_in;
+        if(addr == 4'he && !regarray[7][6]) dout <= IOA_in;
+        if(addr == 4'hf && !regarray[7][7]) dout <= IOB_in;
         if( !wr_n ) regarray[addr] <= din;
         eg_restart <= addr == 4'hD;
     end

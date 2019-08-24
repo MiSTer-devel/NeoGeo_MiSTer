@@ -47,37 +47,39 @@ module jt49_bus ( // note that input ports are not multiplexed
 );
 
 reg wr_n, cs_n;
-reg [7:0] addr;
+reg [3:0] addr;
+reg addr_ok;
 reg [7:0] din_latch;
 
 always @(posedge clk) 
     if( !rst_n ) begin
-        wr_n <= 1'b1;
-        cs_n <= 1'b1;
-        addr <= 8'd0;
+        wr_n    <= 1'b1;
+        cs_n    <= 1'b1;
+        addr    <= 4'd0;
+        addr_ok <= 1'b1;
     end else begin // I/O cannot use clk_en
+        // addr must be
         case( {bdir,bc1} )
             2'b00: { wr_n, cs_n } <= 2'b11;
-            2'b01: { wr_n, cs_n } <= 2'b10;
+            2'b01: { wr_n, cs_n } <= addr_ok ? 2'b10 : 2'b11;
             2'b10: begin
-                { wr_n, cs_n } <= 2'b00;
+                { wr_n, cs_n } <= addr_ok ? 2'b00 : 2'b11;
                 din_latch <= din;
             end
             2'b11: begin
                 { wr_n, cs_n } <= 2'b11;
-                addr <= din;
+                addr    <= din[3:0];
+                addr_ok <= din[7:4] == 4'd0;
             end
         endcase // {bdir,bc1}
     end
-
-wire addr_valid_n = |addr[7:4];
 
 jt49 u_jt49( // note that input ports are not multiplexed
     .rst_n  (  rst_n     ),
     .clk    (  clk       ),    // signal on positive edge
     .clk_en (  clk_en    ),    // clock enable on negative edge
     .addr   (  addr[3:0] ),
-    .cs_n   (  cs_n || addr_valid_n ),
+    .cs_n   (  cs_n      ),
     .wr_n   (  wr_n      ),  // write
     .din    (  din_latch ),
     .sel    (  sel       ), // if sel is low, the clock is divided by 2
