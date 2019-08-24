@@ -69,7 +69,8 @@ assign roe_n    = roe_n1;
 assign clr      = clr1;
 assign decon    = decon1;
 
-wire active5 = { cur_ch[1:0], cur_ch[5:2] } == en_ch;
+// Two cycles early:  0            0             1            1             2            2             3            3             4            4             5            5
+wire active5 = (en_ch[1] && cur_ch[4]) || (en_ch[2] && cur_ch[5]) || (en_ch[2] && cur_ch[0]) || (en_ch[3] && cur_ch[1]) || (en_ch[4] && cur_ch[2]) || (en_ch[5] && cur_ch[3]);//{ cur_ch[3:0], cur_ch[5:4] } == en_ch;
 wire sumup5  = on5 && !done5 && active5;
 reg  sumup6;
 
@@ -129,8 +130,8 @@ always @(posedge clk or negedge rst_n)
         end4   <= 'd0;     end5 <= 'd0;     end6 <= 'd0;
     end else if( cen ) begin
         addr2  <= addr1;
-        on2    <= aoff ? 1'b0 : (aon | (on1 && !done1));
-        clr2   <= aoff || aon; // Each time a A-ON is sent the address counter restarts
+        on2    <= aoff ? 1'b0 : (aon | (on1  && ~done1));
+        clr2   <= aoff || aon || done1; // Each time a A-ON is sent the address counter restarts
         start2 <=  (up_start && up1) ? addr_in[11:0] : start1;
         end2   <=  (up_end   && up1) ? addr_in[11:0] : end1;
         bank2  <= ((up_end | up_start) && up1) ? addr_in[15:12] : bank1;
@@ -152,7 +153,7 @@ always @(posedge clk or negedge rst_n)
         addr5  <= addr4;
         on5    <= on4;
         clr5   <= clr4;
-        done5  <= addr4[20:9] == end4; // && addr4[8:0]==~9'b0;
+        done5  <= addr4[20:9] == end4;// && addr4[8:0]==~9'b0;
         start5 <= start4;
         end5   <= end4;
         bank5  <= bank4;
@@ -166,7 +167,7 @@ always @(posedge clk or negedge rst_n)
         bank6  <= bank5;
         sumup6 <= sumup5;
 
-        addr1  <= clr6 ? {start6,9'd0} : (sumup6 ? addr6+21'd1 :addr6);
+        addr1  <= (clr6 && on6) ? {start6,9'd0} : (sumup6 ? addr6+21'd1 :addr6);
         on1    <= on6;
         done1  <= done6;
         start1 <= start6;

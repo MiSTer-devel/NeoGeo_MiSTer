@@ -62,7 +62,7 @@ always @(posedge clk or negedge rst_n)
         last <= 18'd0;
     end else if(cen) begin
         if( match )
-            acc <= en_ch[0] ? pcm_in_long : ( pcm_in_long + acc );
+            acc <= cur_ch[0] ? pcm_in_long : ( pcm_in_long + acc );
         if( adv ) begin
             // step = diff * (1/4+1/16+1/64+1/128)
             step <= { {2{step_full[22]}}, step_full[22:7] }; // >>>7;

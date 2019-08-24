@@ -90,6 +90,7 @@ jt10_adpcmb u_decoder(
     .adv    ( adv & cen55    ),
     .data   ( din            ),
     .chon   ( acmd_on_b      ),
+    .clr         ( flag && !acmd_rep_b      ),
     .pcm    ( pcmdec         )
 );
 
@@ -98,7 +99,7 @@ jt10_adpcmb_interpol u_interpol(
     .rst_n  ( rst_n          ),
     .clk    ( clk            ),
     .cen    ( cen            ),
-    .cen55  ( cen55          ),
+    .cen55  ( cen55  && acmd_on_b         ),
     .adv    ( adv            ),
     .pcmdec ( pcmdec         ),
     .pcmout ( pcminter       )

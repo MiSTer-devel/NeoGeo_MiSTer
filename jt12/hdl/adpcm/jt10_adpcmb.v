@@ -28,6 +28,7 @@ module jt10_adpcmb(
     input   [3:0]   data,
     input           chon,       // high if this channel is on
     input           adv,
+    input           clr,
     output signed [15:0] pcm
 );
 
@@ -75,7 +76,7 @@ always @( posedge clk or negedge rst_n )
     end else if(cen) begin
         adv2 <= {1'b0,adv2[3:1]};
         // I
-        if( adv ) begin
+		  if( adv ) begin
             d2        <= {data[2:0],1'b1};
             sign_data <= data[3];
             adv2[3] <= 1'b1;
@@ -105,6 +106,11 @@ always @( posedge clk or negedge rst_n )
         end else begin
             x1      <= 'd0;
             step1   <= 'd127;
+        end
+		  if( clr ) begin
+            x1      <= 'd0;
+            step1   <= 'd127;
+            d2        <= {4'b0};
         end
     end
 

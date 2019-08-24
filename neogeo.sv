@@ -218,6 +218,10 @@ localparam CONF_STR = {
 	"H0FS1,*,Load ROM set;",
 	"H1S1,ISOBIN,Load CD Image;",
 	"-;",
+	"OP,FM,ON,OFF;",
+	"OQ,ADPCMA,ON,OFF;",
+	"OR,ADPCMB,ON,OFF;",
+	"OS,PSG,ON,OFF;",
 	"O12,System Type,Console(AES),Arcade(MVS);", //,CD,CDZ;",
 	"O3,Video Mode,NTSC,PAL;",
 	"-;",
@@ -1506,6 +1510,8 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1), .VDNUM(2)) hps_io
 	end
 
 	wire [7:0] YM2610_DOUT;
+	wire signed [15:0] ym2610_l;
+	wire signed [15:0] ym2610_r;
 
 	jt10 YM2610(
 		.rst(~nRESET),
@@ -1516,9 +1522,37 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1), .VDNUM(2)) hps_io
 		.irq_n(nZ80INT),
 		.adpcma_addr(ADPCMA_ADDR), .adpcma_bank(ADPCMA_BANK), .adpcma_roe_n(nSDROE), .adpcma_data(ADPCMA_DATA),
 		.adpcmb_addr(ADPCMB_ADDR), .adpcmb_roe_n(nSDPOE), .adpcmb_data(SYSTEM_CDx ? 8'h08 : ADPCMB_DATA),	// CD has no ADPCM-B
-		.snd_right(snd_right), .snd_left(snd_left)
+		.snd_right(snd_right), .snd_left(snd_left), .snd_enable(~status[28:25])
+//		.snd_right(ym2610_r), .snd_left(ym2610_l), .snd_enable(~status[28:25])
 	);
-	 
+/*
+// Remove DC offset already signed
+jt49_dcrm2 #(.sw(16), .ins(1)) dc_filter_l (
+	.clk  (CLK_8M),
+	.cen  (filter_cnt==0),
+	.rst  (~nRESET),
+	.dins (ym2610_l),
+	.dout (snd_left)
+);
+
+jt49_dcrm2 #(.sw(16), .ins(1)) dc_filter_r (
+	.clk  (CLK_8M),
+	.cen  (filter_cnt==0),
+	.rst  (~nRESET),
+	.dins (ym2610_r),
+	.dout (snd_right)
+);
+
+// Filter CE impacts frequency response
+reg [16:0] filter_cnt;
+always_ff @(posedge CLK_8M) begin
+	filter_cnt<= filter_cnt + 1'b1;
+	if (filter_cnt == 16'b1000_1111_1111_1111) begin // divisible by 36
+		filter_cnt<= filter_cnt + 1'b1;
+	end
+end
+*/
+	
 	 
 	// For Neo CD only
 	wire VIDEO_EN = SYSTEM_CDx ? CD_VIDEO_EN : 1'b1;

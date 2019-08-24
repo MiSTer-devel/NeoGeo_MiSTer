@@ -31,11 +31,7 @@ module jt10_adpcm(
     output signed [15:0] pcm
 );
 
-localparam sigw = 13; // 1 bit more than the actual signal width so
-localparam shift = 3; //16-sigw;
-    // there is room for overflow
-wire signed [sigw-1:0] max_pos = { 2'b00, {sigw-2{1'b1}} };
-wire signed [sigw-1:0] max_neg = { 2'b11, {sigw-2{1'b0}} };
+localparam sigw = 12;
 
 reg signed [sigw-1:0] x1, x2, x3, x4, x5, x6;
 reg signed [sigw-1:0] inc4;
@@ -44,7 +40,7 @@ reg [5:0] step_next, step_1p;
 reg       sign2, sign3, sign4, sign5, xsign5;
 
 // All outputs from stage 1
-assign pcm = { {16-sigw{x1[sigw-1]}}, x1 } <<< shift;
+assign pcm = { {16-sigw{x1[sigw-1]}}, x1 };
 
 // This could be decomposed in more steps as the pipeline
 // has room for it
@@ -76,7 +72,7 @@ jt10_adpcma_lut u_lut(
 // 666 kHz -> 18.5 kHz = 55.5/3 kHz
 
 reg chon2, chon3, chon4;
-wire [sigw-1:0] inc3_long = { {sigw-11{1'b0}},inc3[11:1] };
+wire [sigw-1:0] inc3_long = { {sigw-12{1'b0}},inc3 };
 
 always @( posedge clk or negedge rst_n )
     if( ! rst_n ) begin
@@ -95,7 +91,7 @@ always @( posedge clk or negedge rst_n )
         sign2     <= data[3];
         x2        <= clr ? 13'd0 : x1;
         step2     <= clr ? 6'd0 : (chon ? step_1p : step1);
-        chon2     <= chon;
+        chon2     <= ~clr && chon;
         lut_addr2 <= { step1, data[2:0] };
         // II 2's complement of inc2 if necessary
         sign3     <= sign2;
@@ -114,15 +110,7 @@ always @( posedge clk or negedge rst_n )
         x5        <= chon4 ? x4 + inc4 : x4;
         step5     <= step4;
         // V
-        // if( xsign5!=x5[sigw-1] && sign5!=x5[sigw-1] ) begin // enable limiter
-        //     if( sign5 ) // it was negative
-        //         x6 <= {1'b1, {sigw-1{1'b0}}};
-        //     else // it was positive
-        //         x6 <= {1'b0, {sigw-1{1'b1}}};
-        // end else
         x6        <= x5;
-        if( x5 > max_pos) x6 <= max_pos;
-        if( x5 < max_neg) x6 <= max_neg;
         step6     <= step5;
         // VI: close the loop
         x1        <= x6;
