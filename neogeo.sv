@@ -1560,7 +1560,7 @@ end
 	wire SPR_EN = SYSTEM_CDx ? CD_SPR_EN : 1'b1;
 	wire DOTA_GATED = SPR_EN & DOTA;
 	wire DOTB_GATED = SPR_EN & DOTB;
-	wire HSync,VSync;
+	wire HSync; //,VSync;
 	
 	lspc2_a2	LSPC(
 		.CLK_24M(CLK_24M),
@@ -1579,7 +1579,7 @@ end
 		.CHG(CHG),
 		.LD1(LD1), .LD2(LD2),
 		.WE(WE), .CK(CK),	.SS1(SS1), .SS2(SS2),
-		.HSYNC(HSync), .VSYNC(VSync),
+		.HSYNC(HSync), //.VSYNC(VSync),
 		.CHBL(CHBL), .BNKB(nBNKB),
 		.VCS(VCS),
 		.SVRAM_ADDR(SLOW_VRAM_ADDR),
@@ -1639,6 +1639,28 @@ end
 			if(HBlank[1:0] == 2'b10) pxcnt <= 0;
 		end
 	end
+	
+	//Re-create VSync as original one is barely equals to VBlank
+	reg VSync;
+	always @(posedge CLK_VIDEO) begin
+		reg       old_hs;
+		reg       old_vbl;
+		reg [2:0] vbl;
+		reg [7:0] vblcnt, vspos;
+		
+		old_hs <= HSync;
+		if(~old_hs & HSync) begin
+			old_vbl <= nBNKB;
+			
+			if(~nBNKB) vblcnt <= vblcnt+1'd1;
+			if(old_vbl & ~nBNKB) vblcnt <= 0;
+			if(~old_vbl & nBNKB) vspos <= (vblcnt>>1) - 8'd10;
+
+			{VSync,vbl} <= {vbl,1'b0};
+			if(vblcnt == vspos) {VSync,vbl} <= '1;
+		end
+	end
+	
 
 	assign CLK_VIDEO = clk_sys;
 	assign VGA_SL = scale ? scale[1:0] - 1'd1 : 2'd0;
