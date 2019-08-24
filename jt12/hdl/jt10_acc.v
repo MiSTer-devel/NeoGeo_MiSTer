@@ -110,15 +110,13 @@ always @(*)
 
 // Continuous output
 
-wire [15:0] large_right, large_left;
-
 jt12_single_acc #(.win(16),.wout(16)) u_left(
     .clk        ( clk            ),
     .clk_en     ( clk_en         ),
     .op_result  ( acc_input_l    ),
     .sum_en     ( acc_en_l       ),
     .zero       ( zero           ),
-    .snd        ( large_left     )
+    .snd        ( left           )
 );
 
 jt12_single_acc #(.win(16),.wout(16)) u_right(
@@ -127,10 +125,7 @@ jt12_single_acc #(.win(16),.wout(16)) u_right(
     .op_result  ( acc_input_r    ),
     .sum_en     ( acc_en_r       ),
     .zero       ( zero           ),
-    .snd        ( large_right    )
+    .snd        ( right          )
 );
-
-assign left = large_left[15:0];
-assign right = large_right[15:0];
 
 endmodule
