@@ -79,8 +79,8 @@ reg acc_en_l, acc_en_r;
 always @(*)
     case( {cur_op,cur_ch} )
         {2'd0,3'd2}: begin // ADPCM-A:
-            acc_input_l = adpcmA_l<<<2;
-            acc_input_r = adpcmA_r<<<2;
+            acc_input_l = (adpcmA_l <<< 2) + (adpcmA_l <<< 1);
+            acc_input_r = (adpcmA_r <<< 2) + (adpcmA_r <<< 1);
             `ifndef NOMIX
             acc_en_l    = 1'b1;
             acc_en_r    = 1'b1;
@@ -101,8 +101,8 @@ always @(*)
             `endif
         end
         default: begin
-            acc_input_l = opext;
-            acc_input_r = opext;
+            acc_input_l = opext >>> 1;
+            acc_input_r = opext >>> 1;
             acc_en_l    = sum_en & left_en;
             acc_en_r    = sum_en & right_en;
         end
@@ -110,27 +110,22 @@ always @(*)
 
 // Continuous output
 
-wire [16:0] large_right, large_left;
-
-jt12_single_acc #(.win(16),.wout(17)) u_left(
+jt12_single_acc #(.win(16),.wout(16)) u_left(
     .clk        ( clk            ),
     .clk_en     ( clk_en         ),
     .op_result  ( acc_input_l    ),
     .sum_en     ( acc_en_l       ),
     .zero       ( zero           ),
-    .snd        ( large_left     )
+    .snd        ( left           )
 );
 
-jt12_single_acc #(.win(16),.wout(17)) u_right(
+jt12_single_acc #(.win(16),.wout(16)) u_right(
     .clk        ( clk            ),
     .clk_en     ( clk_en         ),
     .op_result  ( acc_input_r    ),
     .sum_en     ( acc_en_r       ),
     .zero       ( zero           ),
-    .snd        ( large_right    )
+    .snd        ( right          )
 );
-
-assign left = large_left[16:1];
-assign right = large_right[16:1];
 
 endmodule

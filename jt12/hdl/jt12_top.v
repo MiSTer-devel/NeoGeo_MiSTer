@@ -459,8 +459,8 @@ generate
             .IOA_in     (8'd0),
             .IOB_in     (8'd0)
         );
-        assign snd_left  = snd_enable[3] ? fm_snd_left  + { 2'b0, psg_snd[9:0],4'd0} : fm_snd_left;
-        assign snd_right = snd_enable[3] ? fm_snd_right + { 2'b0, psg_snd[9:0],4'd0} : fm_snd_right;
+        assign snd_left  = snd_enable[3] ? fm_snd_left  + { 1'b0, psg_snd[9:0],5'd0} : fm_snd_left;
+        assign snd_right = snd_enable[3] ? fm_snd_right + { 1'b0, psg_snd[9:0],5'd0} : fm_snd_right;
     end else begin : gen_nossg
         assign psg_snd  = 10'd0;
         assign snd_left = fm_snd_left;
