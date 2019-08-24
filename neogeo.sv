@@ -218,10 +218,11 @@ localparam CONF_STR = {
 	"H0FS1,*,Load ROM set;",
 	"H1S1,ISOBIN,Load CD Image;",
 	"-;",
-	"OP,FM,ON,OFF;",
-	"OQ,ADPCMA,ON,OFF;",
-	"OR,ADPCMB,ON,OFF;",
-	"OS,PSG,ON,OFF;",
+	"H3OP,FM,ON,OFF;",
+	"H3OQ,ADPCMA,ON,OFF;",
+	"H3OR,ADPCMB,ON,OFF;",
+	"H3OS,PSG,ON,OFF;",
+	"H3-;",
 	"O12,System Type,Console(AES),Arcade(MVS);", //,CD,CDZ;",
 	"O3,Video Mode,NTSC,PAL;",
 	"-;",
@@ -315,6 +316,7 @@ wire [31:0] CD_sd_lba;
 wire [15:0] joystick_0;	// ----HNLS DCBAUDLR
 wire [15:0] joystick_1;
 wire  [1:0] buttons;
+wire [10:0] ps2_key;
 wire        forced_scandoubler;
 wire [31:0] status;
 
@@ -335,14 +337,15 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1), .VDNUM(2)) hps_io
 	.HPS_BUS(HPS_BUS),
 
 	.conf_str(CONF_STR),
-
 	.forced_scandoubler(forced_scandoubler),
-	//.ps2_mouse(ps2_mouse),	// Could be used for The Irritating Maze ?
-	
+
 	.joystick_0(joystick_0), .joystick_1(joystick_1),
-	.buttons(buttons),			// DE10 buttons ?
+	.buttons(buttons),
+	.ps2_key(ps2_key),
+
 	.status(status),				// status read (32 bits)
-	.status_menumask({~SYSTEM_MVS,~SYSTEM_CDx,SYSTEM_CDx}),
+	.status_menumask({~dbg_menu,~SYSTEM_MVS,~SYSTEM_CDx,SYSTEM_CDx}),
+
 	.RTC(rtc),
 	
 	// Loading signals
@@ -366,7 +369,26 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1), .VDNUM(2)) hps_io
 	.img_readonly(img_readonly),
 	.img_size(img_size)
 );
+
+reg dbg_menu = 0;
+always @(posedge clk_sys) begin
+	reg old_stb;
+	reg enter = 0;
+	reg esc = 0;
 	
+	old_stb <= ps2_key[10];
+	if(old_stb ^ ps2_key[10]) begin
+		if(ps2_key[7:0] == 'h5A) enter <= ps2_key[9];
+		if(ps2_key[7:0] == 'h76) esc   <= ps2_key[9];
+	end
+	
+	if(enter & esc) begin
+		dbg_menu <= ~dbg_menu;
+		enter <= 0;
+		esc <= 0;
+	end
+end
+
 //////////////////   Her Majesty   ///////////////////
 
 	reg  [31:0] cfg = 0;
@@ -1522,7 +1544,7 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1), .VDNUM(2)) hps_io
 		.irq_n(nZ80INT),
 		.adpcma_addr(ADPCMA_ADDR), .adpcma_bank(ADPCMA_BANK), .adpcma_roe_n(nSDROE), .adpcma_data(ADPCMA_DATA),
 		.adpcmb_addr(ADPCMB_ADDR), .adpcmb_roe_n(nSDPOE), .adpcmb_data(SYSTEM_CDx ? 8'h08 : ADPCMB_DATA),	// CD has no ADPCM-B
-		.snd_right(snd_right), .snd_left(snd_left), .snd_enable(~status[28:25])
+		.snd_right(snd_right), .snd_left(snd_left), .snd_enable(~{4{dbg_menu}} | ~status[28:25])
 //		.snd_right(ym2610_r), .snd_left(ym2610_l), .snd_enable(~status[28:25])
 	);
 /*
