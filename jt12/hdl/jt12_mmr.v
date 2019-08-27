@@ -69,6 +69,7 @@ module jt12_mmr(
     output  reg         acmd_on_b,  // Control - Process start, Key On
     output  reg         acmd_rep_b, // Control - Repeat
     output  reg         acmd_rst_b, // Control - Reset
+    output  reg         acmd_up_b,  // Control - New cmd received
     output  reg  [ 1:0] alr_b,      // Left / Right
     output  reg  [15:0] astart_b,   // Start address
     output  reg  [15:0] aend_b,     // End   address
@@ -354,7 +355,7 @@ always @(posedge clk) begin : memory_mapped_registers
                     if( !part && selected_register[7:4]==4'h1 ) begin
                         // YM2610 ADPCM-B support, A1=0, regs 1x
                         case(selected_register[3:0])
-                            4'd0: {acmd_on_b, acmd_rep_b,acmd_rst_b} <= {din[7],din[4],din[0]};
+                            4'd0: {acmd_up_b, acmd_on_b, acmd_rep_b,acmd_rst_b} <= {1'd1,din[7],din[4],din[0]};
                             4'd1: alr_b  <= din[7:6];
                             4'd2: astart_b [ 7:0] <= din;
                             4'd3: astart_b [15:8] <= din;
@@ -396,6 +397,7 @@ always @(posedge clk) begin : memory_mapped_registers
             pcm_wr   <= 1'b0;
             flag_ctl <= 'd0;
             up_aon   <= 1'b0;
+				acmd_up_b <= 1'b0;
         end
     end
 end

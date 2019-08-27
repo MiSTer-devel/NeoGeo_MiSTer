@@ -89,7 +89,7 @@ always @( posedge clk or negedge rst_n )
     end else if(cen) begin
         // I
         sign2     <= data[3];
-        x2        <= clr ? 13'd0 : x1;
+        x2        <= clr ? 12'd0 : x1;
         step2     <= clr ? 6'd0 : (chon ? step_1p : step1);
         chon2     <= ~clr && chon;
         lut_addr2 <= { step1, data[2:0] };
