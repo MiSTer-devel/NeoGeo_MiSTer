@@ -89,8 +89,7 @@ always @(posedge clk or negedge rst_n)
             addr <= {astart,8'd0};
             nibble_sel <= 'b0;
         end else if( on && adv ) begin
-            //if( (addr[23:8] < aend) || ( (addr[23:8] == aend) && ((~&aend[7:0]) || ~nibble_sel))) begin
-            if( addr[23:8] < aend ) begin
+            if( { addr, nibble_sel } < { aend, 8'hFF, 1'b1 } ) begin
                 { addr, nibble_sel } <= { addr, nibble_sel } + 25'd1;
                 set_flag <= 'd0;
             end
