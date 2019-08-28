@@ -28,6 +28,7 @@ module jt10_adpcm_drvB(
     input           acmd_on_b,  // Control - Process start, Key On
     input           acmd_rep_b, // Control - Repeat
     input           acmd_rst_b, // Control - Reset
+    input           acmd_up_b, // Control - New command received
     input    [ 1:0] alr_b,      // Left / Right
     input    [15:0] astart_b,   // Start address
     input    [15:0] aend_b,     // End   address
@@ -64,6 +65,7 @@ jt10_adpcmb_cnt u_cnt(
     .clk         ( clk             ),
     .cen         ( cen55           ),
     .delta_n     ( adeltan_b       ),
+	 .acmd_up_b   ( acmd_up_b       ),
     .clr         ( acmd_rst_b      ),
     .on          ( acmd_on_b       ),
     .astart      ( astart_b        ),
@@ -90,7 +92,7 @@ jt10_adpcmb u_decoder(
     .adv    ( adv & cen55    ),
     .data   ( din            ),
     .chon   ( acmd_on_b      ),
-    .clr         ( flag && !acmd_rep_b      ),
+    .clr    ( flag           ),
     .pcm    ( pcmdec         )
 );
 

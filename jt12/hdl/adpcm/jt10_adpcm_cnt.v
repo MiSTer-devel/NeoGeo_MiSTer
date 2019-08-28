@@ -153,7 +153,7 @@ always @(posedge clk or negedge rst_n)
         addr5  <= addr4;
         on5    <= on4;
         clr5   <= clr4;
-        done5  <= addr4[20:9] == end4;// && addr4[8:0]==~9'b0;
+        done5  <= addr4[20:9] == end4 && addr4[8:0]==~9'b0;
         start5 <= start4;
         end5   <= end4;
         bank5  <= bank4;

@@ -30,6 +30,7 @@ module jt10_adpcmb_cnt(
     input   [15:0]      delta_n,
     input               clr,
     input               on,
+    input               acmd_up_b,
     // Address
     input       [15:0]  astart,
     input       [15:0]  aend,
@@ -88,7 +89,7 @@ always @(posedge clk or negedge rst_n)
             addr <= {astart,8'd0};
             nibble_sel <= 'b0;
         end else if( on && adv ) begin
-            if( addr[23:8] < aend ) begin
+            if( { addr, nibble_sel } < { aend, 8'hFF, 1'b1 } ) begin
                 { addr, nibble_sel } <= { addr, nibble_sel } + 25'd1;
                 set_flag <= 'd0;
             end
@@ -99,6 +100,8 @@ always @(posedge clk or negedge rst_n)
                     nibble_sel <= 'b0;
                 end
             end
+				if (acmd_up_b)
+                set_flag <= 'd1;
         end
     end // cen
 
