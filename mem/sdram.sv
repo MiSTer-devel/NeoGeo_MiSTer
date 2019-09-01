@@ -3,7 +3,7 @@
 //
 // Static RAM controller implementation using SDRAM MT48LC16M16A2
 //
-// Copyright (c) 2015,2016 Sorgelig
+// Copyright (c) 2015-2019 Sorgelig
 //
 // Some parts of SDRAM code used from project:
 // http://hamsterworks.co.nz/mediawiki/index.php/Simple_SDRAM_Controller
@@ -24,6 +24,7 @@
 // ------------------------------------------
 //
 // furrtek 2019-01-24 : Added ugly burst reading
+// Sorgelig 2019-08   : rework, support mem copy and larger chips.
 //
 
 module sdram
@@ -44,7 +45,7 @@ module sdram
 	input             SDRAM_EN,    // clock enable
 
 	input             sel,
-	input      [25:1] addr,        // 25 bit address for 8bit mode. addr[0] = 0 for 16bit mode for correct operations.
+	input      [26:1] addr,        // 25 bit address for 8bit mode. addr[0] = 0 for 16bit mode for correct operations.
 	output reg [63:0] dout,        // data output to cpu
 	input      [15:0] din,         // data input from cpu
 	input             wr,          // request write
@@ -54,14 +55,14 @@ module sdram
 	output reg        ready,
 
 	input             cpsel,
-	input      [25:1] cpaddr,
+	input      [26:1] cpaddr,
 	input      [15:0] cpdin,
 	output reg        cprd,
 	input             cpreq,
 	output reg        cpbusy
 );
 
-assign SDRAM_nCS  = command[3];
+assign SDRAM_nCS  = chip;
 assign SDRAM_nRAS = command[2];
 assign SDRAM_nCAS = command[1];
 assign SDRAM_nWE  = command[0];
@@ -83,18 +84,17 @@ localparam cycles_per_refresh  = 14'd780;  // (64000*100)/8192-1 Calc'd as (64ms
 localparam startup_refresh_max = 14'b11111111111111;
 
 // SDRAM commands
-localparam CMD_INHIBIT         = 4'b1111;
-localparam CMD_NOP             = 4'b0111;
-localparam CMD_ACTIVE          = 4'b0011;
-localparam CMD_READ            = 4'b0101;
-localparam CMD_WRITE           = 4'b0100;
-localparam CMD_BURST_TERMINATE = 4'b0110;
-localparam CMD_PRECHARGE       = 4'b0010;
-localparam CMD_AUTO_REFRESH    = 4'b0001;
-localparam CMD_LOAD_MODE       = 4'b0000;
+wire [2:0] CMD_NOP             = 3'b111;
+wire [2:0] CMD_ACTIVE          = 3'b011;
+wire [2:0] CMD_READ            = 3'b101;
+wire [2:0] CMD_WRITE           = 3'b100;
+wire [2:0] CMD_PRECHARGE       = 3'b010;
+wire [2:0] CMD_AUTO_REFRESH    = 3'b001;
+wire [2:0] CMD_LOAD_MODE       = 3'b000;
 
 reg [13:0] refresh_count = startup_refresh_max - sdram_startup_cycles;
-reg  [3:0] command = CMD_INHIBIT;
+reg  [2:0] command;
+reg        chip;
 
 localparam STATE_STARTUP =  0;
 localparam STATE_WAIT    =  1;
@@ -107,6 +107,7 @@ localparam STATE_IDLE_2  =  7;
 localparam STATE_IDLE_3  =  8;
 localparam STATE_IDLE_4  =  9;
 localparam STATE_IDLE_5  = 10;
+localparam STATE_RFSH    = 11;
 
 
 always @(posedge clk) begin
@@ -160,18 +161,24 @@ always @(posedge clk) begin
 				SDRAM_A    <= 0;
 				SDRAM_BA   <= 0;
 
+				if (refresh_count == (startup_refresh_max-64)) chip <= 0;
+				if (refresh_count == (startup_refresh_max-32)) chip <= 1;
+
 				// All the commands during the startup are NOPS, except these
-				if(refresh_count == startup_refresh_max-31) begin
+				if (refresh_count == startup_refresh_max-63 || refresh_count == startup_refresh_max-31) begin
 					// ensure all rows are closed
 					command     <= CMD_PRECHARGE;
 					SDRAM_A[10] <= 1;  // all banks
 					SDRAM_BA    <= 2'b00;
-				end else if (refresh_count == startup_refresh_max-23) begin
+				end
+				if (refresh_count == startup_refresh_max-55 || refresh_count == startup_refresh_max-23) begin
 					// these refreshes need to be at least tREF (66ns) apart
 					command     <= CMD_AUTO_REFRESH;
-				end else if (refresh_count == startup_refresh_max-15) 
+				end
+				if (refresh_count == startup_refresh_max-47 || refresh_count == startup_refresh_max-15) begin
 					command     <= CMD_AUTO_REFRESH;
-				else if (refresh_count == startup_refresh_max-7) begin
+				end
+				if (refresh_count == startup_refresh_max-39 || refresh_count == startup_refresh_max-7) begin
 					// Now load the mode register
 					command     <= CMD_LOAD_MODE;
 					SDRAM_A     <= MODE;
@@ -184,7 +191,7 @@ always @(posedge clk) begin
 				//------------------------------------------------------
 				if (!refresh_count) begin
 					state   <= STATE_IDLE;
-					ready <= 1;
+					ready   <= 1;
 					refresh_count <= 0;
 				end
 				cpbusy <= 0;
@@ -202,10 +209,16 @@ always @(posedge clk) begin
 					//-- Start the refresh cycle. 
 					//-- This tasks tRFC (66ns), so 7 idle cycles are needed @ 120MHz
 					//------------------------------------------------------------------------
-					state    <= STATE_IDLE_5;
+					state    <= STATE_RFSH;
 					command  <= CMD_AUTO_REFRESH;
 					refresh_count <= refresh_count - cycles_per_refresh + 1'd1;
+					chip     <= 0;
 				end
+			end
+			STATE_RFSH: begin
+				state    <= STATE_IDLE_5;
+				command  <= CMD_AUTO_REFRESH;
+				chip     <= 1;
 			end
 
 			STATE_IDLE: begin
@@ -214,7 +227,8 @@ always @(posedge clk) begin
 					state <= STATE_IDLE_1;
 				end else if (rd | wr) begin
 					if(sel) begin
-						{cas_addr[12:9],SDRAM_BA,SDRAM_A,cas_addr[8:0]} <= {~wr ? 2'b00 : ~bs, 1'b1, addr};
+						{cas_addr[12:9],SDRAM_BA,SDRAM_A,cas_addr[8:0]} <= {~wr ? 2'b00 : ~bs, 1'b1, addr[25:1]};
+						chip       <= addr[26];
 						saved_data <= din;
 						saved_wr   <= wr;
 						saved_burst<= ~wr & burst;
@@ -232,7 +246,8 @@ always @(posedge clk) begin
 					cprd   <= 0;
 					old_cpreq <= cpreq;
 					if(~old_cpreq & cpreq & cpsel) begin
-						{cas_addr[12:9],SDRAM_BA,SDRAM_A,cas_addr[8:0]} <= {2'b00, 1'b0, cpaddr};
+						{cas_addr[12:9],SDRAM_BA,SDRAM_A,cas_addr[8:0]} <= {2'b00, 1'b0, cpaddr[25:1]};
+						chip    <= cpaddr[26];
 						cpbusy  <= 1;
 						cpcnt   <= 511;
 						command <= CMD_ACTIVE;
@@ -287,6 +302,7 @@ always @(posedge clk) begin
 		SDRAM_A <= 'Z;
 		SDRAM_BA <= 'Z;
 		command <= 'Z;
+		chip <= 'Z;
 	end
 end
 

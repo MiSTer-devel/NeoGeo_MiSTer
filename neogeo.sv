@@ -242,12 +242,6 @@ localparam CONF_STR = {
 	"OIK,Scandoubler Fx,None,HQ2x,CRT 25%,CRT 50%,CRT 75%;",
 	"O56,Stereo Mix,none,25%,50%,100%;",
 	"-;",
-`ifdef DUAL_SDRAM
-	"OD,Primary SDRAM,32MB,64MB;",
-`else
-	"OD,SDRAM,32MB,64MB;",
-`endif
-	"-;",
 	"RE,Reset & apply;",  // decouple manual reset from system reset 
 	"J1,A,B,C,D,Start,Select,Coin,ABC;",	// ABC is a special key to press A+B+C at once, useful for
 	"V,v",`BUILD_DATE								// keyboards that don't allow more than 2 keypresses at once
@@ -331,6 +325,8 @@ wire  [7:0] ioctl_index;
 wire SYSTEM_MVS = (SYSTEM_TYPE == 2'd1);
 wire SYSTEM_CDx = SYSTEM_TYPE[1];
 
+wire [15:0] sdram_sz;
+
 hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1), .VDNUM(2)) hps_io
 (
 	.clk_sys(clk_sys),
@@ -347,6 +343,7 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1), .VDNUM(2)) hps_io
 	.status_menumask({~dbg_menu,~SYSTEM_MVS,~SYSTEM_CDx,SYSTEM_CDx}),
 
 	.RTC(rtc),
+	.sdram_sz(sdram_sz),
 	
 	// Loading signals
 	.ioctl_wr(ioctl_wr),
@@ -816,10 +813,9 @@ end
 		.SDRAM_READY(sdram_ready)
 	);
 	
-	reg  sdr_pri_64;
-	wire sdr_pri_sel   = ~sdram_addr[26] & (~sdram_addr[25] | sdr_pri_64);
-	wire sdr_pri_cpsel = ~sdr_cpaddr[26] & (~sdr_cpaddr[25] | sdr_pri_64);
-	always @(posedge clk_sys) if (~nRESET) sdr_pri_64 <= status[13];
+	reg  [1:0] sdr_pri_128_64;
+	wire sdr_pri_cpsel = (~sdr_cpaddr[26] | sdr_pri_128_64[1]) & (~sdr_cpaddr[25] | sdr_pri_128_64[0]);
+	always @(posedge clk_sys) if (~nRESET) sdr_pri_128_64 <= {~sdram_sz[14] & &sdram_sz[1:0], ~sdram_sz[14] & sdram_sz[1]};
 
 	wire sdram1_ready, sdram2_ready;
 	wire [63:0] sdram1_dout, sdram2_dout;
@@ -839,7 +835,7 @@ end
 
 		.init(~locked),	// Init SDRAM as soon as the PLL is locked
 		.clk(clk_sys),
-		.addr(sdram_addr[25:1]),
+		.addr(sdram_addr[26:1]),
 		.sel(sdr_pri_sel),
 		.dout(sdram1_dout),
 		.din(sdram_din),
@@ -850,7 +846,7 @@ end
 		.ready(sdram1_ready),
 
 		.cpsel(sdr_pri_cpsel),
-		.cpaddr(sdr_cpaddr[25:1]),
+		.cpaddr(sdr_cpaddr[26:1]),
 		.cpdin(sdr_cpdin),
 		.cprd(sdr1_cprd),
 		.cpreq(sdr_cpreq),
@@ -888,8 +884,10 @@ end
 		.cpbusy(sdr2_cpbusy)
 	);
 
+	wire sdr_pri_sel   = (~sdram_addr[26] | sdr_pri_128_64[1]) & (~sdram_addr[25] | sdr_pri_128_64[0]);
 	assign sdr2_en = SDRAM2_EN;
 `else
+	wire   sdr_pri_sel = 1;
 	assign sdram2_dout = '0;
 	assign sdram2_ready = 1;
 	assign sdr2_cprd = 0;
@@ -1080,13 +1078,6 @@ end
 	assign sd_buff_din = SYSTEM_CDx ? sd_buff_din_memcard :
 								sd_lba[7] ? sd_buff_din_memcard : sd_buff_din_sram;
 	
-	// Cartridge stuff
-	/*gap_hack GAPHACK(
-		{C_LATCH_EXT, C_LATCH[19:4]},
-		C_LATCH[3:0],
-		status[29:28],
-		CROM_ADDR
-	);*/
 	assign CROM_ADDR = {C_LATCH_EXT, C_LATCH, 3'b000} & CROM_MASK;
 
 	zmc ZMC(
