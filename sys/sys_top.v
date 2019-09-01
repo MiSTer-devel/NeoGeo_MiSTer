@@ -1,7 +1,7 @@
 //============================================================================
 //
 //  MiSTer hardware abstraction module
-//  (c)2017-2019 Sorgelig
+//  (c)2017-2019 Alexey Melnikov
 //
 //  This program is free software; you can redistribute it and/or modify it
 //  under the terms of the GNU General Public License as published by the Free
@@ -170,7 +170,7 @@ always @(posedge FPGA_CLK2_50) begin
 			btnled <= 4'bZZZZ;
 		`else
 			{btn_r,btn_o,btn_u} <= ~{BTN_RESET,BTN_OSD,BTN_USER};
-			btnled <= {(~VGA_EN & sog & ~(vs1 ^ hs1)) ? 1'b1 : 1'bZ, 3'bZZZ};
+			btnled <= {(~VGA_EN & sog & ~cs1) ? 1'b1 : 1'bZ, 3'bZZZ};
 		`endif
 	end
 end
@@ -254,11 +254,11 @@ reg [15:0] cfg;
 
 reg  cfg_got   = 0;
 reg  cfg_set   = 0;
-wire hdmi_limited = cfg[8];
+wire [1:0] hdmi_limited = {cfg[11],cfg[8]};
 wire dvi_mode  = cfg[7];
 wire audio_96k = cfg[6];
 wire direct_video = cfg[10];
-wire csync     = cfg[3];
+wire csync_en     = cfg[3];
 wire ypbpr_en  = cfg[5];
 wire io_osd_vga= io_ss1 & ~io_ss2;
 `ifndef DUAL_SDRAM
@@ -838,7 +838,7 @@ always @(negedge clk_vid) begin
 		end
 
 		dv_de1 <= !{hss,hs} && vde;
-		dv_hs1 <= csync ? (vs ^ hs) : hs;
+		dv_hs1 <= csync_en ? cs : hs;
 		dv_vs1 <= vs;
 	end
 
@@ -890,6 +890,9 @@ osd vga_osd
 	.de_in(de)
 );
 
+wire cs;
+csync csync_vga(clk_vid, hs, vs, cs);
+
 `ifndef DUAL_SDRAM
 	wire [23:0] vga_o;
 	vga_out vga_out
@@ -900,11 +903,15 @@ osd vga_osd
 		.din(vga_scaler ? {24{hdmi_tx_de}} & hdmi_tx_d : vga_q)
 	);
 
+	wire hdmi_cs;
+	csync csync_hdmi(clk_hdmi, hdmi_hs, hdmi_vs, hdmi_cs);
+
 	wire vs1 = vga_scaler ? hdmi_vs : vs;
 	wire hs1 = vga_scaler ? hdmi_hs : hs;
+	wire cs1 = vga_scaler ? hdmi_cs : cs;
 
-	assign VGA_VS = (VGA_EN | SW[3]) ? 1'bZ      : csync ?     1'b1     : ~vs1;
-	assign VGA_HS = (VGA_EN | SW[3]) ? 1'bZ      : csync ? ~(vs1 ^ hs1) : ~hs1;
+	assign VGA_VS = (VGA_EN | SW[3]) ? 1'bZ      : csync_en ? 1'b1 : ~vs1;
+	assign VGA_HS = (VGA_EN | SW[3]) ? 1'bZ      : csync_en ? ~cs1 : ~hs1;
 	assign VGA_R  = (VGA_EN | SW[3]) ? 6'bZZZZZZ : vga_o[23:18];
 	assign VGA_G  = (VGA_EN | SW[3]) ? 6'bZZZZZZ : vga_o[15:10];
 	assign VGA_B  = (VGA_EN | SW[3]) ? 6'bZZZZZZ : vga_o[7:2];
@@ -1227,6 +1234,48 @@ always @(posedge clk) begin
 
 	//clamping
 	out <= ^a4[16:15] ? {a4[16],{15{a4[15]}}} : a4[15:0];
+end
+
+endmodule
+
+/////////////////////////////////////////////////////////////////////
+
+// CSync generation
+// Shifts HSync left by 1 HSync period during VSync
+
+module csync
+(
+	input  clk,
+	input  hsync,
+	input  vsync,
+
+	output csync
+);
+
+assign csync = (csync_vs ^ csync_hs);
+
+reg csync_hs, csync_vs;
+always @(posedge clk) begin
+	reg prev_hs;
+	reg [15:0] h_cnt, line_len, hs_len;
+
+	// Count line/Hsync length
+	h_cnt <= h_cnt + 1'd1;
+
+	prev_hs <= hsync;
+	if (prev_hs ^ hsync) begin
+		h_cnt <= 0;
+		if (hsync) begin
+			line_len <= h_cnt - hs_len;
+			csync_hs <= 0;
+		end
+		else hs_len <= h_cnt;
+	end
+	
+	if (~vsync) csync_hs <= hsync;
+	else if(h_cnt == line_len) csync_hs <= 1;
+	
+	csync_vs <= vsync;
 end
 
 endmodule
