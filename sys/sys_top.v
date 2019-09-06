@@ -96,8 +96,14 @@ module sys_top
 `endif
 
 	////////// I/O ALT /////////
-	inout   [3:0] BTNLED,
+	output        SD_SPI_CS,
+	input         SD_SPI_MISO,
+	output        SD_SPI_CLK,
+	output        SD_SPI_MOSI,
+
 	inout         SDCD_SPDIF,
+	inout         IO_SCL,
+	inout         IO_SDA,
 
 	////////// ADC //////////////
 	output        ADC_SCK,
@@ -115,11 +121,12 @@ module sys_top
 	output  [7:0] LED,
 
 	///////// USER IO ///////////
-	inout   [5:0] USER_IO
+	inout   [6:0] USER_IO
 );
 
 //////////////////////  Secondary SD  ///////////////////////////////////
 
+wire sd_miso;
 `ifndef DUAL_SDRAM
 	wire SD_CS, SD_CLK, SD_MOSI, SD_MISO;
 
@@ -127,8 +134,16 @@ module sys_top
 	assign SDIO_DAT[3]  = SW[3] ? 1'bZ  : SD_CS;
 	assign SDIO_CLK     = SW[3] ? 1'bZ  : SD_CLK;
 	assign SDIO_CMD     = SW[3] ? 1'bZ  : SD_MOSI;
-	assign SD_MISO      = SW[3] ? 1'b1  : SDIO_DAT[0];
+	assign sd_miso      = SW[3] ? 1'b1  : SDIO_DAT[0];
+	assign SD_SPI_CS    = mcp_sdcd ? ((~VGA_EN & sog & ~cs1) ? 1'b1 : 1'bZ) : SD_CS;
+`else
+	assign sd_miso      = 1'b1;
+	assign SD_SPI_CS    = mcp_sdcd ? 1'bZ : SD_CS;
 `endif
+
+assign SD_SPI_CLK  = mcp_sdcd ? 1'bZ    : SD_CLK;
+assign SD_SPI_MOSI = mcp_sdcd ? 1'bZ    : SD_MOSI;
+assign SD_MISO     = mcp_sdcd ? sd_miso : SD_SPI_MISO;
 
 //////////////////////  LEDs/Buttons  ///////////////////////////////////
 
@@ -149,33 +164,27 @@ wire led_locked;
 //LEDs on main board
 assign LED = (led_overtake & led_state) | (~led_overtake & {1'b0,led_locked,1'b0, ~led_p, 1'b0, ~led_d, 1'b0, ~led_u});
 
-reg [3:0] btnled = 3'bZZZ;
-reg btn_r = 0, btn_o = 0, btn_u = 0;
-always @(posedge FPGA_CLK2_50) begin
-	reg [12:0] cnt;
+wire btn_r, btn_o, btn_u;
+`ifdef DUAL_SDRAM
+	assign {btn_r,btn_o,btn_u} = {mcp_btn[1],mcp_btn[2],mcp_btn[0]};
+`else
+	assign {btn_r,btn_o,btn_u} = ~{BTN_RESET,BTN_OSD,BTN_USER} | {mcp_btn[1],mcp_btn[2],mcp_btn[0]};
+`endif
 
-	if(SW[3]) begin
-		cnt <= cnt + 1'd1;
-		if(~&cnt[12:8]) btnled <= ~{1'b0,led_p,led_d,led_u};
-		else begin
-			if(~cnt[7]) btnled <= 0;
-			else btnled <= 4'b0ZZZ;
-			if(&cnt) {btn_r,btn_o,btn_u} <= ~BTNLED[2:0];
-		end
-	end
-	else begin
-		cnt <= 0;
-		`ifdef DUAL_SDRAM
-			{btn_r,btn_o,btn_u} <= 0;
-			btnled <= 4'bZZZZ;
-		`else
-			{btn_r,btn_o,btn_u} <= ~{BTN_RESET,BTN_OSD,BTN_USER};
-			btnled <= {(~VGA_EN & sog & ~cs1) ? 1'b1 : 1'bZ, 3'bZZZ};
-		`endif
-	end
-end
+wire [2:0] mcp_btn;
+wire       mcp_sdcd;
+mcp23009 mcp23009
+(
+	.clk(FPGA_CLK2_50),
 
-assign BTNLED = btnled;
+	.btn(mcp_btn),
+	.led({led_p, led_d, led_u}),
+	.sd_cd(mcp_sdcd),
+
+	.scl(IO_SCL),
+	.sda(IO_SDA)
+);
+
 
 reg btn_user, btn_osd;
 always @(posedge FPGA_CLK2_50) begin
@@ -197,12 +206,11 @@ always @(posedge FPGA_CLK2_50) begin
 	end
 end
 
-
 /////////////////////////  HPS I/O  /////////////////////////////////////
 
 // gp_in[31] = 0 - quick flag that FPGA is initialized (HPS reads 1 when FPGA is not in user mode)
 //                 used to avoid lockups while JTAG loading
-wire [31:0] gp_in = {1'b0, btn_user, btn_osd, 9'd0, io_ver, io_ack, io_wide, io_dout};
+wire [31:0] gp_in = {1'b0, btn_user | btn[1], btn_osd | btn[0], 9'd0, io_ver, io_ack, io_wide, io_dout};
 wire [31:0] gp_out;
 
 wire  [1:0] io_ver = 1; // 0 - standard MiST I/O (for quick porting of complex MiST cores). 1 - optimized HPS I/O. 2,3 - reserved for future.
@@ -919,7 +927,7 @@ csync csync_vga(clk_vid, hs, vs, cs);
 
 /////////////////////////  Audio output  ////////////////////////////////
 
-assign SDCD_SPDIF =(SW[3] & spdif) ? 1'b0 : 1'bZ;
+assign SDCD_SPDIF =(SW[3] & ~spdif) ? 1'b0 : 1'bZ;
 
 `ifndef DUAL_SDRAM
 	wire anl,anr;
@@ -1021,6 +1029,7 @@ assign USER_IO[2] = !(SW[1] ? HDMI_I2S   : user_out[2]) ? 1'b0 : 1'bZ;
 assign USER_IO[3] =                       !user_out[3]  ? 1'b0 : 1'bZ;
 assign USER_IO[4] = !(SW[1] ? HDMI_SCLK  : user_out[4]) ? 1'b0 : 1'bZ;
 assign USER_IO[5] = !(SW[1] ? HDMI_LRCLK : user_out[5]) ? 1'b0 : 1'bZ;
+assign USER_IO[6] =                       !user_out[6]  ? 1'b0 : 1'bZ;
 
 assign user_in[0] =         USER_IO[0];
 assign user_in[1] =         USER_IO[1];
@@ -1028,6 +1037,7 @@ assign user_in[2] = SW[1] | USER_IO[2];
 assign user_in[3] =         USER_IO[3];
 assign user_in[4] = SW[1] | USER_IO[4];
 assign user_in[5] = SW[1] | USER_IO[5];
+assign user_in[6] =         USER_IO[6];
 
 
 ///////////////////  User module connection ////////////////////////////
@@ -1054,6 +1064,7 @@ wire        ram_write;
 wire        led_user;
 wire  [1:0] led_power;
 wire  [1:0] led_disk;
+wire  [1:0] btn;
 
 wire vs_emu, hs_emu;
 sync_fix sync_v(clk_vid, vs_emu, vs);
@@ -1067,7 +1078,7 @@ wire        uart_rxd;
 wire        uart_txd;
 wire        osd_status;
 
-wire  [5:0] user_out, user_in;
+wire  [6:0] user_out, user_in;
 
 emu emu
 (
@@ -1090,6 +1101,7 @@ emu emu
 	.LED_USER(led_user),
 	.LED_POWER(led_power),
 	.LED_DISK(led_disk),
+	.BUTTONS(btn),
 
 	.VIDEO_ARX(ARX),
 	.VIDEO_ARY(ARY),
@@ -1134,13 +1146,13 @@ emu emu
 	.SDRAM2_nCAS(SDRAM2_nCAS),
 	.SDRAM2_CLK(SDRAM2_CLK),
 	.SDRAM2_EN(SW[3]),
-`else
+`endif
+
 	.SD_SCK(SD_CLK),
 	.SD_MOSI(SD_MOSI),
 	.SD_MISO(SD_MISO),
 	.SD_CS(SD_CS),
-	.SD_CD(SW[0] ? VGA_HS : SW[3] ? 1'b1 : SDCD_SPDIF ),
-`endif
+	.SD_CD(mcp_sdcd & (SW[0] ? VGA_HS : (SW[3] | SDCD_SPDIF))),
 
 	.UART_CTS(uart_rts),
 	.UART_RTS(uart_cts),
