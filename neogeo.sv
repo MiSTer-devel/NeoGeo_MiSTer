@@ -181,7 +181,7 @@ assign AUDIO_R = snd_right;
 assign LED_USER  = status[0];
 assign LED_DISK  = 0;
 assign LED_POWER = 0;
-assign BUTTONS   = 0;
+assign BUTTONS   = osd_btn;
 
 assign VIDEO_ARX = status[17] ? 8'd16 : 8'd10;	// 320/32
 assign VIDEO_ARY = status[17] ? 8'd9  : 8'd7;	// 224/32
@@ -290,6 +290,18 @@ end
 reg [1:0] counter_p = 0;
 always @(posedge clk_sys) counter_p <= counter_p + 1'd1;
 
+reg osd_btn = 0;
+always @(posedge CLK_24M) begin
+	integer timeout = 0;
+	
+	if(!RESET) begin
+		osd_btn <= 0;
+		if(timeout < 24000000) begin
+			timeout <= timeout + 1;
+			osd_btn <= 1;
+		end
+	end
+end
 
 //////////////////   HPS I/O   ///////////////////
 
