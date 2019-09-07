@@ -440,7 +440,7 @@ always @(posedge FPGA_CLK2_50) begin
 end
 
 wire clk_100m;
-wire clk_hdmi  = hdmi_tx_clk;
+wire clk_hdmi  = ~hdmi_tx_clk;  // Internal HDMI clock, inverted in relation to external clock
 wire clk_audio = FPGA_CLK3_50;
 wire clk_pal   = FPGA_CLK3_50;
 
