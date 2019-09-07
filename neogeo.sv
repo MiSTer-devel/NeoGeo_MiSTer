@@ -1660,7 +1660,7 @@ end
 		old_clk <= CLK_6MB;
 		if(~old_clk & CLK_6MB) begin
 			ce_pix <= 1;
-			PAL_RAM_REG <= (nRESET && VIDEO_EN && ((pxcnt >= 7 && pxcnt < 311) || ~status[16])) ? PAL_RAM_DATA : 16'h0000;
+			PAL_RAM_REG <= (nRESET && VIDEO_EN && ((pxcnt >= 7 && pxcnt < 311) || ~status[16])) ? PAL_RAM_DATA : 16'h8000;
 		end
 
 		if(ce_pix) begin
@@ -1699,17 +1699,20 @@ end
 
 	wire [2:0] scale = status[20:18];
 
+	wire [7:0] R8 = {PAL_RAM_REG[11:8], PAL_RAM_REG[14], ~PAL_RAM_REG[15], PAL_RAM_REG[11:10]};
+	wire [7:0] G8 = {PAL_RAM_REG[7:4],  PAL_RAM_REG[13], ~PAL_RAM_REG[15], PAL_RAM_REG[7:6]};
+	wire [7:0] B8 = {PAL_RAM_REG[3:0],  PAL_RAM_REG[12], ~PAL_RAM_REG[15], PAL_RAM_REG[3:2]};
+
 	wire [7:0] r,g,b;
 	wire hs,vs,hblank,vblank;
-
 	video_cleaner video_cleaner
 	(
 		.clk_vid(clk_sys),
 		.ce_pix(ce_pix),
 
-		.R({PAL_RAM_REG[11:8], PAL_RAM_REG[14], {3{PAL_RAM_REG[15]}}}),
-		.G({PAL_RAM_REG[7:4],  PAL_RAM_REG[13], {3{PAL_RAM_REG[15]}}}),
-		.B({PAL_RAM_REG[3:0],  PAL_RAM_REG[12], {3{PAL_RAM_REG[15]}}}),
+		.R(~SHADOW ? R8 : {1'b0, R8[7:1]}),
+		.G(~SHADOW ? G8 : {1'b0, G8[7:1]}),
+		.B(~SHADOW ? B8 : {1'b0, B8[7:1]}),
 
 		.HSync(HSync),
 		.VSync(VSync),
