@@ -127,9 +127,9 @@ module sys_top
 //////////////////////  Secondary SD  ///////////////////////////////////
 
 wire sd_miso;
-`ifndef DUAL_SDRAM
-	wire SD_CS, SD_CLK, SD_MOSI, SD_MISO;
+wire SD_CS, SD_CLK, SD_MOSI, SD_MISO;
 
+`ifndef DUAL_SDRAM
 	assign SDIO_DAT[2:1]= 2'bZZ;
 	assign SDIO_DAT[3]  = SW[3] ? 1'bZ  : SD_CS;
 	assign SDIO_CLK     = SW[3] ? 1'bZ  : SD_CLK;
@@ -210,7 +210,7 @@ end
 
 // gp_in[31] = 0 - quick flag that FPGA is initialized (HPS reads 1 when FPGA is not in user mode)
 //                 used to avoid lockups while JTAG loading
-wire [31:0] gp_in = {1'b0, btn_user | btn[1], btn_osd | btn[0], 9'd0, io_ver, io_ack, io_wide, io_dout};
+wire [31:0] gp_in = {1'b0, btn_user | btn[1], btn_osd | btn[0], SW[3], 8'd0, io_ver, io_ack, io_wide, io_dout};
 wire [31:0] gp_out;
 
 wire  [1:0] io_ver = 1; // 0 - standard MiST I/O (for quick porting of complex MiST cores). 1 - optimized HPS I/O. 2,3 - reserved for future.
@@ -246,7 +246,11 @@ always @(posedge clk_sys) begin
 	gp_outd <= gp_out;
 end
 
-wire  [7:0] core_type  = 'hA4; // A4 - generic core.
+`ifdef DUAL_SDRAM
+	wire  [7:0] core_type  = 'hA8; // generic core, dual SDRAM.
+`else
+	wire  [7:0] core_type  = 'hA4; // generic core.
+`endif
 
 // HPS will not communicate to core if magic is different
 wire [31:0] core_magic = {24'h5CA623, core_type};
@@ -260,18 +264,18 @@ cyclonev_hps_interface_mpu_general_purpose h2f_gp
 
 reg [15:0] cfg;
 
-reg  cfg_got   = 0;
-reg  cfg_set   = 0;
+reg        cfg_got      = 0;
+reg        cfg_set      = 0;
 wire [1:0] hdmi_limited = {cfg[11],cfg[8]};
-wire dvi_mode  = cfg[7];
-wire audio_96k = cfg[6];
-wire direct_video = cfg[10];
-wire csync_en     = cfg[3];
-wire ypbpr_en  = cfg[5];
-wire io_osd_vga= io_ss1 & ~io_ss2;
+wire       direct_video = cfg[10];
+wire       dvi_mode     = cfg[7];
+wire       audio_96k    = cfg[6];
+wire       csync_en     = cfg[3];
+wire       ypbpr_en     = cfg[5];
+wire       io_osd_vga   = io_ss1 & ~io_ss2;
 `ifndef DUAL_SDRAM
-	wire sog       = cfg[9];
-	wire vga_scaler= cfg[2];
+	wire    sog          = cfg[9];
+	wire    vga_scaler   = cfg[2];
 `endif
 
 reg        cfg_custom_t = 0;
@@ -1152,7 +1156,11 @@ emu emu
 	.SD_MOSI(SD_MOSI),
 	.SD_MISO(SD_MISO),
 	.SD_CS(SD_CS),
+`ifdef DUAL_SDRAM
+	.SD_CD(mcp_sdcd),
+`else
 	.SD_CD(mcp_sdcd & (SW[0] ? VGA_HS : (SW[3] | SDCD_SPDIF))),
+`endif
 
 	.UART_CTS(uart_rts),
 	.UART_RTS(uart_cts),
