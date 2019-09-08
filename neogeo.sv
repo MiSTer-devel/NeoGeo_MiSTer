@@ -202,13 +202,6 @@ assign VIDEO_ARY = status[17] ? 8'd9  : 8'd7;	// 224/32
 //  :	status[14]		Manual Reset
 //  :	status[20:15]  OSD options
 
-// cfg bits:
-//  cfg[27:24] Special chip type, 0=None, 1=PRO-CT0, 2=Link MCU, 3=NEO-CMC
-//  cfg[23]    Use PCM chip or not
-//  cfg[31:28] Quirk, Sprite tile # remap hack, 0=no remap, 1=kof95, 2=whp, 3=kizuna
-
-`include "build_id.v"
-
 // Conditional modification of the CONF strings chaining according to chosen system type
 // Con Arc CD CDz
 // 00  01  10 11
@@ -218,6 +211,7 @@ assign VIDEO_ARY = status[17] ? 8'd9  : 8'd7;	// 224/32
 // +   O   +  +  SYSTEM_MVS; 
 // +   +   O  O  SYSTEM_CDx;   
 
+`include "build_id.v"
 localparam CONF_STR = {
 	"NEOGEO;;",
 	"-;",
