@@ -1679,7 +1679,7 @@ end
 			
 			if(~nBNKB) vblcnt <= vblcnt+1'd1;
 			if(old_vbl & ~nBNKB) vblcnt <= 0;
-			if(~old_vbl & nBNKB) vspos <= (vblcnt>>1) - 8'd10;
+			if(~old_vbl & nBNKB) vspos <= (vblcnt>>1) - 8'd7;
 
 			{VSync,vbl} <= {vbl,1'b0};
 			if(vblcnt == vspos) {VSync,vbl} <= '1;
