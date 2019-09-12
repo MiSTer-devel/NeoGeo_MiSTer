@@ -1382,6 +1382,7 @@ end
 	// To trigger a read request, just set adpcm_rd to ~adpcm_rdack
 	
 	reg ADPCMA_READ_REQ, ADPCMB_READ_REQ;
+	reg ADPCMA_READ_ACK, ADPCMB_READ_ACK;
 	reg [24:0] ADPCMA_ADDR_LATCH;	// 32MB
 	reg [24:0] ADPCMB_ADDR_LATCH;	// 32MB
 	
@@ -1417,12 +1418,12 @@ end
 		.rdaddr(ADPCMA_ADDR_LATCH),
 		.dout(ADPCMA_DATA),
 		.rd_req(ADPCMA_READ_REQ),
-		.rd_ack(),
+		.rd_ack(ADPCMA_READ_ACK),
 
 		.rdaddr2(ADPCMB_ADDR_LATCH),
 		.dout2(ADPCMB_DATA),
 		.rd_req2(ADPCMB_READ_REQ),
-		.rd_ack2(),
+		.rd_ack2(ADPCMB_READ_ACK),
 
 		.rdaddr3({7'b10_0000_0,MA & MROM_MASK[18:11],SDA[10:0]}),
 		.dout3(M1_ROM_DATA),
@@ -1541,7 +1542,7 @@ end
 
 	jt10 YM2610(
 		.rst(~nRESET),
-		.clk(CLK_8M), .cen(1),
+		.clk(CLK_8M), .cen(~(ADPCMA_READ_REQ ^ ADPCMA_READ_ACK) & ~(ADPCMB_READ_REQ ^ ADPCMB_READ_ACK)),
 		.addr(SDA[1:0]),
 		.din(SDD_OUT), .dout(YM2610_DOUT),
 		.cs_n(n2610CS), .wr_n(n2610WR),
