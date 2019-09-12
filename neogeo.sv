@@ -224,6 +224,7 @@ localparam CONF_STR = {
 	"H3OS,PSG,ON,OFF;",
 	"H3-;",
 	"O12,System Type,Console(AES),Arcade(MVS);", //,CD,CDZ;",
+	"OM,BIOS,UniBIOS,Original;",
 	"O3,Video Mode,NTSC,PAL;",
 	"-;",
 	"H0O4,Memory Card,Plugged,Unplugged;",
@@ -352,7 +353,7 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1), .VDNUM(2)) hps_io
 	.ps2_key(ps2_key),
 
 	.status(status),				// status read (32 bits)
-	.status_menumask({~dbg_menu,~SYSTEM_MVS,~SYSTEM_CDx,SYSTEM_CDx}),
+	.status_menumask({status[22], 11'd0, ~dbg_menu,~SYSTEM_MVS,~SYSTEM_CDx,SYSTEM_CDx}),
 
 	.RTC(rtc),
 	.sdram_sz(sdram_sz),
