@@ -1695,9 +1695,13 @@ end
 
 	wire [2:0] scale = status[20:18];
 
-	wire [7:0] R8 = {PAL_RAM_REG[11:8], PAL_RAM_REG[14], ~PAL_RAM_REG[15], PAL_RAM_REG[11:10]};
-	wire [7:0] G8 = {PAL_RAM_REG[7:4],  PAL_RAM_REG[13], ~PAL_RAM_REG[15], PAL_RAM_REG[7:6]};
-	wire [7:0] B8 = {PAL_RAM_REG[3:0],  PAL_RAM_REG[12], ~PAL_RAM_REG[15], PAL_RAM_REG[3:2]};
+	wire [6:0] R6 = {1'b0, PAL_RAM_REG[11:8], PAL_RAM_REG[14], PAL_RAM_REG[11]} - PAL_RAM_REG[15];
+	wire [6:0] G6 = {1'b0, PAL_RAM_REG[7:4],  PAL_RAM_REG[13], PAL_RAM_REG[7] } - PAL_RAM_REG[15];
+	wire [6:0] B6 = {1'b0, PAL_RAM_REG[3:0],  PAL_RAM_REG[12], PAL_RAM_REG[3] } - PAL_RAM_REG[15];
+
+	wire [7:0] R8 = R6[6] ? 8'd0 : {R6[5:0],  R6[5:4]};
+	wire [7:0] G8 = G6[6] ? 8'd0 : {G6[5:0],  G6[5:4]};
+	wire [7:0] B8 = B6[6] ? 8'd0 : {B6[5:0],  B6[5:4]};
 
 	wire [7:0] r,g,b;
 	wire hs,vs,hblank,vblank;
