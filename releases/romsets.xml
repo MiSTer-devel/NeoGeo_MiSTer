@@ -2,11 +2,13 @@
 
 This file must be placed into NeoGeo dir.
 Following ROM files must be present in NeoGeo dir:
-   uni-bios.rom (or neo-epo.sp1 + sp-s2.sp1)
+
+   uni-bios.rom
+   neo-epo.sp1
+   sp-s2.sp1
    000-lo.lo
    sfix.sfix
 
-   
 This romset is for the Darksoft flash cart rom pack. It can
 be found in the usual places one might find Smokemonster
 everdrive packs and other such things.
