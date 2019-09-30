@@ -106,7 +106,7 @@ jt49_div #(16) u_envdiv(
     .clk    ( clk               ), 
     .cen    ( cen_ch            ),
     .rst_n  ( rst_n             ),
-    .period ({regarray[14],regarray[13]}), 
+    .period ({regarray[4'hc],regarray[4'hb]}), 
     .div    ( eg_step           ) 
 );  
 
