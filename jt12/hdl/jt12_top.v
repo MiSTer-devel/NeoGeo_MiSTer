@@ -454,7 +454,7 @@ generate
             .B          ( psg_B     ),
             .C          ( psg_C     ),
             .dout       ( psg_dout  ),
-            .sel        ( 1'b0      ),  // half clock speed
+            .sel        ( 1'b1      ),  // half clock speed
             // Unused:
             .IOA_out    (),
             .IOB_out    (),

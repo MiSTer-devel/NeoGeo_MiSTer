@@ -44,6 +44,9 @@ wire will_hold = !CONT || HOLD;
 always @(posedge clk)
     if( cen ) env <= inv ? ~gain : gain;
 
+wire step_edge = step && !last_step;
+reg  last_step;
+
 always @( posedge clk, negedge rst_n )
     if( !rst_n) begin
         gain  <= 5'h1F;
@@ -51,12 +54,13 @@ always @( posedge clk, negedge rst_n )
         stop  <= 1'b0;
     end
     else if( cen ) begin
+        last_step <= step;
         if( restart ) begin
             gain  <= 5'h1F;
             inv   <= ATT;
             stop  <= 1'b0;
         end
-        else if (step && !stop) begin
+        else if (step_edge && !stop) begin
             if( gain==5'h00 ) begin
                 if( will_hold )
                     stop <= 1'b1;
