@@ -48,8 +48,8 @@ always @(*)
     else
     casez( div_setting )
         2'b0?: { opn_pres, ssg_pres } = { 4'd2-4'd1, 3'd0 }; // 2
-        2'b10: { opn_pres, ssg_pres } = { 4'd6-4'd1, 3'd3 }; // 6 - Default for YM2608
-        2'b11: { opn_pres, ssg_pres } = { 4'd3-4'd1, 3'd1 }; // 3 - Default for YM2203
+        2'b10: { opn_pres, ssg_pres } = { 4'd6-4'd1, 3'd1 }; // 6 - Default for YM2608
+        2'b11: { opn_pres, ssg_pres } = { 4'd3-4'd1, 3'd0 }; // 3 - Default for YM2203
     endcase // div_setting
 
 `ifdef SIMULATION
