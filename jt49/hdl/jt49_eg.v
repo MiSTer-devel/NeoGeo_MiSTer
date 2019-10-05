@@ -25,6 +25,7 @@ module jt49_eg(
   input           clk, // this is the divided down clock from the core
   input           cen,
   input           step,
+  input           null_period,
   input           rst_n,
   input           restart,
   input [3:0]     ctrl,
@@ -44,8 +45,9 @@ wire will_hold = !CONT || HOLD;
 always @(posedge clk)
     if( cen ) env <= inv ? ~gain : gain;
 
-wire step_edge = step && !last_step;
+wire step_edge = (step && !last_step) || null_period;
 reg  last_step;
+wire will_invert = (!CONT&&ATT) || (CONT&&ALT);
 
 always @( posedge clk, negedge rst_n )
     if( !rst_n) begin
@@ -66,7 +68,7 @@ always @( posedge clk, negedge rst_n )
                     stop <= 1'b1;
                 else
                     gain <= gain-5'b1;
-                if( (!CONT&&ATT) || (CONT&&ALT) ) inv<=~inv;
+                if( will_invert ) inv<=~inv;
             end
             else gain <= gain-5'b1;
         end
