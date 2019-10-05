@@ -101,25 +101,28 @@ jt49_noise u_ng(
 
 // envelope generator
 wire eg_step;
+wire [15:0] eg_period   = {regarray[4'hc],regarray[4'hb]};
+wire        null_period = eg_period == 16'h0;
 
 jt49_div #(16) u_envdiv( 
     .clk    ( clk               ), 
     .cen    ( cen256            ),
     .rst_n  ( rst_n             ),
-    .period ({regarray[4'hc],regarray[4'hb]}), 
+    .period ( eg_period         ), 
     .div    ( eg_step           ) 
 );  
 
 reg eg_restart;
 
 jt49_eg u_env(
-    .clk    ( clk               ),
-    .cen    ( cen16             ),
-    .step   ( eg_step           ),
-    .rst_n  ( rst_n             ),
-    .restart( eg_restart        ),
-    .ctrl   ( regarray[4'hD][3:0] ),
-    .env    ( envelope          )
+    .clk        ( clk               ),
+    .cen        ( cen256            ),
+    .step       ( eg_step           ),
+    .rst_n      ( rst_n             ),
+    .restart    ( eg_restart        ),
+    .null_period( null_period       ),
+    .ctrl       ( regarray[4'hD][3:0] ),
+    .env        ( envelope          )
 );
 
 reg  [4:0] logA, logB, logC;
@@ -171,20 +174,37 @@ always @(*)
     endcase // addr
 
 // register array
+reg  last_wrn;
+wire wrn_edge = ~(wr_n|cs_n) & last_wrn;
+reg  eg_rst_rq;
+
 always @(posedge clk, negedge rst_n)
     if( !rst_n ) begin
-        dout <= 8'd0;
-        eg_restart <= 1'b0;
+        dout      <= 8'd0;
+        last_wrn  <= 1'b0;
+        eg_rst_rq <= 1'b0;
         regarray[0]<=8'd0; regarray[4]<=8'd0; regarray[ 8]<=8'd0; regarray[12]<=8'd0;
         regarray[1]<=8'd0; regarray[5]<=8'd0; regarray[ 9]<=8'd0; regarray[13]<=8'd0;
         regarray[2]<=8'd0; regarray[6]<=8'd0; regarray[10]<=8'd0; regarray[14]<=8'd0;
         regarray[3]<=8'd0; regarray[7]<=8'd0; regarray[11]<=8'd0; regarray[15]<=8'd0;
     end else if( !cs_n ) begin
         dout <= regarray[ addr ] & read_mask;
-        if(addr == 4'he && !regarray[7][6]) dout <= IOA_in;
-        if(addr == 4'hf && !regarray[7][7]) dout <= IOB_in;
-        if( !wr_n ) regarray[addr] <= din;
-        eg_restart <= addr == 4'hD;
+        if( !wr_n ) begin
+            regarray[addr] <= din;
+            if(addr == 4'he && !regarray[7][6]) dout <= IOA_in;
+            if(addr == 4'hf && !regarray[7][7]) dout <= IOB_in;
+        end
+        last_wrn  <= wr_n;
+        if( eg_restart )
+            eg_rst_rq <= 1'b0;
+        else if ( addr == 4'hD && wrn_edge ) eg_rst_rq <= 1'b1;
+    end
+
+always @(posedge clk, negedge rst_n)
+    if( !rst_n ) begin
+        eg_restart <= 1'b0;
+    end else if(cen256) begin
+        eg_restart <= eg_rst_rq;
     end
 
 endmodule
