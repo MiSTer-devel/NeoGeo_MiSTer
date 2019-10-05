@@ -26,21 +26,22 @@ module jt49_cen(
     input   rst_n,
     input   cen,    // base clock enable signal
     input   sel,    // when low, divide by 2 once more
-    output  reg cen8,
-    output  reg cen16
+    output  cen16,
+    output  cen256
 );
 
-reg [3:0] cencnt=4'd0;
+reg [9:0] cencnt;
 
-always @(posedge clk) if(cen)
-    cencnt <= cencnt+4'd1;
+always @(posedge clk, negedge rst_n) 
+    if(!rst_n)
+        cencnt <= 10'd0;
+    else if(cen)
+        cencnt <= cencnt+10'd1;
 
-wire toggle = sel ? cencnt[1:0]==2'd0 : cencnt[2:0]==3'd0;
-wire toggle2= sel ? cencnt[2:0]==3'd0 : cencnt[3:0]==4'd0;
+wire toggle16 = sel ? cencnt[2:0]==3'd0 : cencnt[3:0]==4'd0;
+wire toggle256= sel ? cencnt[6:0]==7'd0 : cencnt[7:0]==8'd0;
 
-always @(negedge clk) begin
-    cen8  <= cen && toggle;
-    cen16 <= cen && toggle2;
-end
+assign cen16  = cen & toggle16;
+assign cen256 = cen & toggle256;
 
 endmodule // jt49_cen

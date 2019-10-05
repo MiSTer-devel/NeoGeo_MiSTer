@@ -53,22 +53,22 @@ wire bitA, bitB, bitC;
 wire noise;
 reg Amix, Bmix, Cmix;
 
-wire cen_ch, cen_no;
+wire cen16, cen256;
 
 jt49_cen u_cen(
     .clk    ( clk     ), 
     .rst_n  ( rst_n   ), 
     .cen    ( clk_en  ),
     .sel    ( sel     ),
-    .cen8   ( cen_ch  ), // 1 cen8 = 8 x clk
-    .cen16  ( cen_no  )
+    .cen16  ( cen16   ),
+    .cen256 ( cen256  )
 );
 
 // internal modules operate at clk/16
 jt49_div #(12) u_chA( 
     .clk        ( clk           ), 
     .rst_n      ( rst_n         ), 
-    .cen        ( cen_ch        ),
+    .cen        ( cen16         ),
     .period     ( {regarray[1][3:0], regarray[0][7:0] } ), 
     .div        ( bitA          )
 );
@@ -76,7 +76,7 @@ jt49_div #(12) u_chA(
 jt49_div #(12) u_chB( 
     .clk        ( clk           ), 
     .rst_n      ( rst_n         ), 
-    .cen        ( cen_ch        ),    
+    .cen        ( cen16         ),    
     .period     ( {regarray[3][3:0], regarray[2][7:0] } ),   
     .div        ( bitB          ) 
 );
@@ -84,7 +84,7 @@ jt49_div #(12) u_chB(
 jt49_div #(12) u_chC( 
     .clk        ( clk           ), 
     .rst_n      ( rst_n         ), 
-    .cen        ( cen_ch        ),
+    .cen        ( cen16         ),
     .period     ( {regarray[5][3:0], regarray[4][7:0] } ), 
     .div        ( bitC          )
 );
@@ -93,7 +93,7 @@ jt49_div #(12) u_chC(
 // of Fclk/16 when period is 1
 jt49_noise u_ng( 
     .clk    ( clk               ), 
-    .cen    ( cen_no            ),
+    .cen    ( cen16             ),
     .rst_n  ( rst_n             ), 
     .period ( regarray[6][4:0]  ), 
     .noise  ( noise             ) 
@@ -104,7 +104,7 @@ wire eg_step;
 
 jt49_div #(16) u_envdiv( 
     .clk    ( clk               ), 
-    .cen    ( cen_ch            ),
+    .cen    ( cen256            ),
     .rst_n  ( rst_n             ),
     .period ({regarray[4'hc],regarray[4'hb]}), 
     .div    ( eg_step           ) 
@@ -114,7 +114,7 @@ reg eg_restart;
 
 jt49_eg u_env(
     .clk    ( clk               ),
-    .cen    ( cen_ch            ),
+    .cen    ( cen16             ),
     .step   ( eg_step           ),
     .rst_n  ( rst_n             ),
     .restart( eg_restart        ),
