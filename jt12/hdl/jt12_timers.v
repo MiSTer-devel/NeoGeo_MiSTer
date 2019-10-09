@@ -93,7 +93,7 @@ always@(posedge clk)
 reg [mult_width+counter_width-1:0] next, init;
 
 always @(*) begin
-	if( mult<mult_max ) begin
+	if( mult+1'b1<mult_max ) begin
 		// mult not meant to overflow in this line
 		{overflow, next } = { {1'b0, cnt}, mult+1'b1 } ; 
 	end else begin
