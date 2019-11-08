@@ -60,6 +60,7 @@ reg [5:0] done_sr, zero;
 reg roe_n1, decon1;
 
 reg clr1, clr2, clr3, clr4, clr5, clr6;
+reg skip1, skip2, skip3, skip4, skip5, skip6;
 
 // All outputs from stage 1
 assign addr_out = addr1[20:1];
@@ -128,13 +129,16 @@ always @(posedge clk or negedge rst_n)
         start4 <= 'd0;   start5 <= 'd0;   start6 <= 'd0;
         end1   <= 'd0;     end2 <= 'd0;     end3 <= 'd0;
         end4   <= 'd0;     end5 <= 'd0;     end6 <= 'd0;
+        skip1  <= 'd0;    skip2 <= 'd0;    skip3 <= 'd0;
+        skip4  <= 'd0;    skip5 <= 'd0;    skip6 <= 'd0;
     end else if( cen ) begin
         addr2  <= addr1;
-        on2    <= aoff ? 1'b0 : (aon | (on1  && ~done1));
+        on2    <= aoff ? 1'b0 : (aon | (on1 && ~done1));
         clr2   <= aoff || aon || done1; // Each time a A-ON is sent the address counter restarts
         start2 <=  (up_start && up1) ? addr_in[11:0] : start1;
         end2   <=  (up_end   && up1) ? addr_in[11:0] : end1;
         bank2  <= ((up_end | up_start) && up1) ? addr_in[15:12] : bank1;
+        skip2  <= skip1;
 
         addr3  <= addr2; // clr2 ? {start2,9'd0} : addr2;
         on3    <= on2;
@@ -142,6 +146,7 @@ always @(posedge clk or negedge rst_n)
         start3 <= start2;
         end3   <= end2;
         bank3  <= bank2;
+        skip3  <= skip2;
 
         addr4  <= addr3;
         on4    <= on3;
@@ -149,6 +154,7 @@ always @(posedge clk or negedge rst_n)
         start4 <= start3;
         end4   <= end3;
         bank4  <= bank3;
+        skip4  <= skip3;
 
         addr5  <= addr4;
         on5    <= on4;
@@ -157,6 +163,7 @@ always @(posedge clk or negedge rst_n)
         start5 <= start4;
         end5   <= end4;
         bank5  <= bank4;
+        skip5  <= skip4;
         // V
         addr6  <= addr5;
         on6    <= on5;
@@ -166,8 +173,9 @@ always @(posedge clk or negedge rst_n)
         end6   <= end5;
         bank6  <= bank5;
         sumup6 <= sumup5;
+        skip6  <= skip5;
 
-        addr1  <= (clr6 && on6) ? {start6,9'd0} : (sumup6 ? addr6+21'd1 :addr6);
+        addr1  <= (clr6 && on6) ? {start6,9'd0} : (sumup6 && ~skip6 ? addr6+21'd1 :addr6);
         on1    <= on6;
         done1  <= done6;
         start1 <= start6;
@@ -176,6 +184,7 @@ always @(posedge clk or negedge rst_n)
         decon1 <= sumup6;
         bank1  <= bank6;
         clr1   <= clr6;
+        skip1  <= (clr6 && on6) ? 1'b1 : sumup6 ? 1'b0 : skip6;
     end
 
 endmodule // jt10_adpcm_cnt
