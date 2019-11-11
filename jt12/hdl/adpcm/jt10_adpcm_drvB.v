@@ -47,6 +47,8 @@ module jt10_adpcm_drvB(
 
 wire nibble_sel;
 wire adv;           // advance to next reading
+wire restart;
+wire chon;
 
 // `ifdef SIMULATION
 // real fsample;
@@ -74,8 +76,10 @@ jt10_adpcmb_cnt u_cnt(
     .addr        ( addr            ),
     .nibble_sel  ( nibble_sel      ),
     // Flag control
+    .chon        ( chon            ),
     .clr_flag    ( clr_flag        ),
     .flag        ( flag            ),
+    .restart     ( restart         ),
     .adv         ( adv             )
 );
 
@@ -91,8 +95,8 @@ jt10_adpcmb u_decoder(
     .cen    ( cen            ),
     .adv    ( adv & cen55    ),
     .data   ( din            ),
-    .chon   ( acmd_on_b      ),
-    .clr    ( flag           ),
+    .chon   ( chon           ),
+    .clr    ( flag | restart ),
     .pcm    ( pcmdec         )
 );
 
@@ -101,7 +105,7 @@ jt10_adpcmb_interpol u_interpol(
     .rst_n  ( rst_n          ),
     .clk    ( clk            ),
     .cen    ( cen            ),
-    .cen55  ( cen55  && acmd_on_b         ),
+    .cen55  ( cen55  && chon ),
     .adv    ( adv            ),
     .pcmdec ( pcmdec         ),
     .pcmout ( pcminter       )
