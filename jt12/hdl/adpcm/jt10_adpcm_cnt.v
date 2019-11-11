@@ -137,7 +137,7 @@ always @(posedge clk or negedge rst_n)
         clr2   <= aoff || aon || done1; // Each time a A-ON is sent the address counter restarts
         start2 <=  (up_start && up1) ? addr_in[11:0] : start1;
         end2   <=  (up_end   && up1) ? addr_in[11:0] : end1;
-        bank2  <= ((up_end | up_start) && up1) ? addr_in[15:12] : bank1;
+        bank2  <=  (up_start && up1) ? addr_in[15:12] : bank1;
         skip2  <= skip1;
 
         addr3  <= addr2; // clr2 ? {start2,9'd0} : addr2;
