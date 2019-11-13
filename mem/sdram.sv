@@ -111,12 +111,13 @@ localparam STATE_RFSH    = 11;
 
 
 always @(posedge clk) begin
-	reg [CAS_LATENCY+BURST_LENGTH-1:0] data_ready_delay;
+	reg [CAS_LATENCY+BURST_LENGTH:0] data_ready_delay;
 
 	reg        saved_wr;
 	reg        saved_burst;
 	reg [12:0] cas_addr;
 	reg [15:0] saved_data;
+	reg [15:0] dq_reg;
 	reg  [8:0] cpcnt;
 	reg        old_cpreq = 0;
 	reg  [3:0] state = STATE_STARTUP;
@@ -124,11 +125,12 @@ always @(posedge clk) begin
 	refresh_count <= refresh_count+1'b1;
 
 	data_ready_delay <= data_ready_delay>>1;
+	dq_reg <= SDRAM_DQ;
 
-	if(data_ready_delay[0]) dout[15:0]  <= SDRAM_DQ;
-	if(data_ready_delay[1]) dout[31:16] <= SDRAM_DQ;
-	if(data_ready_delay[2]) dout[47:32] <= SDRAM_DQ;
-	if(data_ready_delay[3]) dout[63:48] <= SDRAM_DQ;
+	if(data_ready_delay[0]) dout[15:0]  <= dq_reg;
+	if(data_ready_delay[1]) dout[31:16] <= dq_reg;
+	if(data_ready_delay[2]) dout[47:32] <= dq_reg;
+	if(data_ready_delay[3]) dout[63:48] <= dq_reg;
 
 	if(data_ready_delay[0] &  saved_burst) ready <= 1;
 	if(data_ready_delay[3] & ~saved_burst) ready <= 1;
@@ -268,7 +270,7 @@ always @(posedge clk) begin
 				end
 				else begin
 					command  <= CMD_READ;
-					data_ready_delay[CAS_LATENCY+BURST_LENGTH-1] <= 1;
+					data_ready_delay[CAS_LATENCY+BURST_LENGTH] <= 1;
 				end
 			end
 			
