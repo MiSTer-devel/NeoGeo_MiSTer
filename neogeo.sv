@@ -339,6 +339,7 @@ wire SYSTEM_MVS = (SYSTEM_TYPE == 2'd1);
 wire SYSTEM_CDx = SYSTEM_TYPE[1];
 
 wire [15:0] sdram_sz;
+wire [21:0] gamma_bus;
 
 hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1), .VDNUM(2)) hps_io
 (
@@ -357,7 +358,8 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1), .VDNUM(2)) hps_io
 
 	.RTC(rtc),
 	.sdram_sz(sdram_sz),
-	
+	.gamma_bus(gamma_bus),
+
 	// Loading signals
 	.ioctl_wr(ioctl_wr),
 	.ioctl_addr(ioctl_addr),
@@ -1728,11 +1730,11 @@ end
 		.VBlank_out(vblank)
 	);
 	
-	video_mixer #(.LINE_LENGTH(320), .HALF_DEPTH(0)) video_mixer
+	video_mixer #(.LINE_LENGTH(320), .HALF_DEPTH(0), .GAMMA(1)) video_mixer
 	(
 		.*,
 
-		.clk_sys(CLK_VIDEO),
+		.clk_vid(CLK_VIDEO),
 		.ce_pix(ce_pix),
 		.ce_pix_out(CE_PIXEL),
 
