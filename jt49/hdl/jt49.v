@@ -32,9 +32,9 @@ module jt49 ( // note that input ports are not multiplexed
     input            sel, // if sel is low, the clock is divided by 2
     output reg [7:0] dout,
     output reg [9:0] sound,  // combined channel output
-    output     [7:0] A,      // linearised channel output
-    output     [7:0] B,
-    output     [7:0] C,
+    output reg [7:0] A,      // linearised channel output
+    output reg [7:0] B,
+    output reg [7:0] C,
 
     input      [7:0] IOA_in,
     output     [7:0] IOA_out,
@@ -42,6 +42,10 @@ module jt49 ( // note that input ports are not multiplexed
     input      [7:0] IOB_in,
     output     [7:0] IOB_out
 );
+
+parameter [1:0] COMP=2'b00;
+parameter       CLKDIV=3;
+wire [1:0] comp = COMP;
 
 reg [7:0] regarray[15:0];
 
@@ -55,7 +59,7 @@ reg Amix, Bmix, Cmix;
 
 wire cen16, cen256;
 
-jt49_cen u_cen(
+jt49_cen #(.CLKDIV(CLKDIV)) u_cen(
     .clk    ( clk     ), 
     .rst_n  ( rst_n   ), 
     .cen    ( clk_en  ),
@@ -89,8 +93,6 @@ jt49_div #(12) u_chC(
     .div        ( bitC          )
 );
 
-// the noise uses a x2 faster clock in order to produce a frequency
-// of Fclk/16 when period is 1
 jt49_noise u_ng( 
     .clk    ( clk               ), 
     .cen    ( cen16             ),
@@ -125,21 +127,14 @@ jt49_eg u_env(
     .env        ( envelope          )
 );
 
-reg  [4:0] logA, logB, logC;
+reg  [4:0] logA, logB, logC, log;
+wire [7:0] lin;
 
-jt49_exp u_expA(
-    .din    ( logA ),
-    .dout   ( A    )
-);
-
-jt49_exp u_expB(
-    .din    ( logB ),
-    .dout   ( B    )
-);
-
-jt49_exp u_expC(
-    .din    ( logC ),
-    .dout   ( C    )
+jt49_exp u_exp(
+    .clk    ( clk  ),
+    .comp   ( comp ),
+    .din    ( log  ),
+    .dout   ( lin  )
 );
 
 wire [4:0] volA = { regarray[ 8][3:0], regarray[ 8][3] };
@@ -148,6 +143,11 @@ wire [4:0] volC = { regarray[10][3:0], regarray[10][3] };
 wire use_envA = regarray[ 8][4];
 wire use_envB = regarray[ 9][4];
 wire use_envC = regarray[10][4];
+wire use_noA  = regarray[ 7][3];
+wire use_noB  = regarray[ 7][4];
+wire use_noC  = regarray[ 7][5];
+
+reg [3:0] acc_st;
 
 always @(posedge clk) if( clk_en ) begin
     Amix <= (noise|regarray[7][3]) & (bitA|regarray[7][0]);
@@ -157,8 +157,36 @@ always @(posedge clk) if( clk_en ) begin
     logA <= !Amix ? 5'd0 : (use_envA ? envelope : volA );
     logB <= !Bmix ? 5'd0 : (use_envB ? envelope : volB );
     logC <= !Cmix ? 5'd0 : (use_envC ? envelope : volC );
-   
-    sound <= { 2'b0, A } + { 2'b0, B } + { 2'b0, C };
+end   
+
+reg [9:0] acc;
+
+always @(posedge clk, negedge rst_n) begin
+    if( !rst_n ) begin
+        acc_st <= 4'b1;
+        acc    <= 10'd0;
+    end else if(clk_en) begin
+        acc_st <= { acc_st[2:0], acc_st[3] };
+        acc <= acc + {2'b0,lin};
+        case( acc_st )
+            4'b0001: begin
+                log   <= logA;
+                acc   <= 10'd0;
+                sound <= acc;
+            end
+            4'b0010: begin
+                A   <= lin;
+                log <= logB;
+            end
+            4'b0100: begin
+                B   <= lin;
+                log <= logC;
+            end
+            4'b1000: begin // last sum
+                C   <= lin;
+            end
+        endcase
+    end
 end
 
 reg [7:0] read_mask;

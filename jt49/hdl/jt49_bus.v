@@ -46,6 +46,8 @@ module jt49_bus ( // note that input ports are not multiplexed
     output     [7:0] IOB_out
 );
 
+parameter [1:0] COMP=2'b00;
+
 reg wr_n, cs_n;
 reg [3:0] addr;
 reg addr_ok;
@@ -74,7 +76,7 @@ always @(posedge clk)
         endcase // {bdir,bc1}
     end
 
-jt49 u_jt49( // note that input ports are not multiplexed
+jt49 #(.COMP(COMP)) u_jt49( // note that input ports are not multiplexed
     .rst_n  (  rst_n     ),
     .clk    (  clk       ),    // signal on positive edge
     .clk_en (  clk_en    ),    // clock enable on negative edge

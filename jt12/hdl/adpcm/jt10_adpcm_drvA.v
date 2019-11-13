@@ -50,7 +50,8 @@ module jt10_adpcm_drvA(
     input   [5:0]   clr_flags,
 
     output signed [15:0]  pcm55_l,
-    output signed [15:0]  pcm55_r
+    output signed [15:0]  pcm55_r,
+	 input   [5:0]   ch_enable
 );
 
 /* verilator tracing_on */
@@ -190,7 +191,7 @@ jt10_adpcm_acc u_acc_left(
     .en_ch  ( en_ch     ),
     .match  ( match     ),
     // left/right enable
-    .en_sum ( lr[1]     ),
+    .en_sum ( lr[1] && (ch_enable & cur_ch) ),
 
     .pcm_in ( pcm_att   ),    // 18.5 kHz
     .pcm_out( pre_pcm55_l   )     // 55.5 kHz
@@ -205,7 +206,7 @@ jt10_adpcm_acc u_acc_right(
     .en_ch  ( en_ch     ),
     .match  ( match     ),
     // left/right enable
-    .en_sum ( lr[0]     ),
+    .en_sum ( lr[0] && (ch_enable & cur_ch) ),
 
     .pcm_in ( pcm_att   ),    // 18.5 kHz
     .pcm_out( pre_pcm55_r   )     // 55.5 kHz

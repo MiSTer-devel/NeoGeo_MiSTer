@@ -48,12 +48,13 @@ module jt10(
     output  signed  [15:0] snd_right,
     output  signed  [15:0] snd_left,
     output          snd_sample,
-	 input [3:0] snd_enable
+	 input   [3:0]   snd_enable,
+	 input   [5:0]   ch_enable
 );
 
 // Uses 6 FM channels but only 4 are outputted
 jt12_top #(
-    .use_lfo(1),.use_ssg(1), .num_ch(6), .use_pcm(0), .use_adpcm(1) )
+    .use_lfo(1),.use_ssg(1), .num_ch(6), .use_pcm(0), .use_adpcm(1), .use_clkdiv(0) )
 u_jt12(
     .rst            ( rst          ),        // rst should be at least 6 clk&cen cycles long
     .clk            ( clk          ),        // CPU clock
@@ -82,7 +83,8 @@ u_jt12(
     .snd_right      ( snd_right    ),
     .snd_left       ( snd_left     ),
     .snd_sample     ( snd_sample   ),
-	 	 .snd_enable(snd_enable),
+    .snd_enable     ( snd_enable   ),
+    .ch_enable      ( ch_enable    ),
 
     // unused pins
     .en_hifi_pcm    ( 1'b0         ) // used only on YM2612 mode
