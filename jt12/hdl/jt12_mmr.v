@@ -25,6 +25,7 @@ module jt12_mmr(
     input           clk,
     input           cen /* synthesis direct_enable */,
     output          clk_en,
+    output          clk_en_2,
     output          clk_en_ssg,
     output          clk_en_666,
     output          clk_en_111,
@@ -124,17 +125,18 @@ module jt12_mmr(
     output  reg     psg_wr_n
 );
 
-parameter use_ssg=0, num_ch=6, use_pcm=1, use_adpcm=0;
+parameter use_ssg=0, num_ch=6, use_pcm=1, use_adpcm=0, use_clkdiv=1;
 
 reg [1:0] div_setting;
 
 
-jt12_div #(.use_ssg(use_ssg),.num_ch(num_ch)) u_div (
+jt12_div #(.use_ssg(use_ssg)) u_div (
     .rst            ( rst             ),
     .clk            ( clk             ),
     .cen            ( cen             ),
     .div_setting    ( div_setting     ),
     .clk_en         ( clk_en          ),
+    .clk_en_2       ( clk_en_2        ),
     .clk_en_ssg     ( clk_en_ssg      ),
     .clk_en_666     ( clk_en_666      ),
     .clk_en_111     ( clk_en_111      ),
@@ -202,7 +204,7 @@ reg part;
 always @(posedge clk) begin : memory_mapped_registers
     if( rst ) begin
         selected_register   <= 8'h0;
-        div_setting         <= 2'b11; 
+        div_setting         <= 2'b10; // FM=1/6, SSG=1/4
         up_ch               <= 3'd0;
         up_op               <= 2'd0;
         up_keyon            <= 1'd0;
@@ -261,7 +263,18 @@ always @(posedge clk) begin : memory_mapped_registers
         if( write ) begin
             if( !addr[0] ) begin
                 selected_register <= din;  
-                part <= addr[1];             
+                part <= addr[1];        
+                if( use_clkdiv==1 ) begin
+                    case(din)
+                        // clock divider: should work only for ym2203
+                        // and ym2608.
+                        // clock divider works just by selecting the register
+                        REG_CLK_N6: div_setting[1] <= 1'b1; // 2D
+                        REG_CLK_N3: div_setting[0] <= 1'b1; // 2E
+                        REG_CLK_N2: div_setting    <= 2'b0; // 2F
+                        default:;
+                    endcase
+                end
             end else begin
                 // Global registers
                 din_copy <= din;
@@ -292,10 +305,7 @@ always @(posedge clk) begin : memory_mapped_registers
                         `ifndef NOLFO                   
                         REG_LFO:    { lfo_en, lfo_freq } <= din[3:0];
                         `endif
-                        // clock divider
-                        REG_CLK_N6: div_setting[1] <= 1'b1; 
-                        REG_CLK_N3: div_setting[0] <= 1'b1; 
-                        REG_CLK_N2: div_setting <= 2'b0;
+                        default:;
                     endcase
                 end
 

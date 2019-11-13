@@ -60,13 +60,14 @@ module jt12_top (
     output  signed  [15:0] snd_right, // FM+PSG
     output  signed  [15:0] snd_left,  // FM+PSG
     output                 snd_sample,
-	 input [3:0] snd_enable
+	 input   [3:0]          snd_enable,
+	 input   [5:0]          ch_enable
 );
 
 // parameters to select the features for each chip type
 // defaults to YM2612
 parameter use_lfo=1, use_ssg=0, num_ch=6, use_pcm=1;
-parameter use_adpcm=0;
+parameter use_adpcm=0, use_clkdiv=1;
 
 wire flag_A, flag_B, busy;
 
@@ -159,7 +160,7 @@ wire        adpcmb_flag;
 wire [ 6:0] flag_ctl;
 
 
-wire clk_en_666, clk_en_111, clk_en_55;
+wire clk_en_2, clk_en_666, clk_en_111, clk_en_55;
 wire  signed  [15:0] adpcmAt_l;
 wire  signed  [15:0] adpcmAt_r;
 wire  signed  [15:0] adpcmBt_l;
@@ -209,7 +210,8 @@ if( use_adpcm==1 ) begin: gen_adpcm
         .clr_flags  ( flag_ctl[5:0] ),
 
         .pcm55_l    ( adpcmAt_l      ),
-        .pcm55_r    ( adpcmAt_r      )
+        .pcm55_r    ( adpcmAt_r      ),
+		  .ch_enable  ( ch_enable      )
     );
     /* verilator tracing_on */
     jt10_adpcm_drvB u_adpcm_b(
@@ -292,12 +294,13 @@ jt12_dout #(.use_ssg(use_ssg),.use_adpcm(use_adpcm)) u_dout(
 
 
 /* verilator tracing_off */
-jt12_mmr #(.use_ssg(use_ssg),.num_ch(num_ch),.use_pcm(use_pcm), .use_adpcm(use_adpcm))
+jt12_mmr #(.use_ssg(use_ssg),.num_ch(num_ch),.use_pcm(use_pcm), .use_adpcm(use_adpcm), .use_clkdiv(use_clkdiv))
     u_mmr(
     .rst        ( rst       ),
     .clk        ( clk       ),
     .cen        ( cen       ),  // external clock enable
     .clk_en     ( clk_en    ),  // internal clock enable
+    .clk_en_2   ( clk_en_2  ),  // input cen divided by 2
     .clk_en_ssg ( clk_en_ssg),  // internal clock enable
     .clk_en_666 ( clk_en_666),
     .clk_en_111 ( clk_en_111),
@@ -342,6 +345,7 @@ jt12_mmr #(.use_ssg(use_ssg),.num_ch(num_ch),.use_pcm(use_pcm), .use_adpcm(use_a
     .acmd_on_b  ( acmd_on_b     ),  // Control - Process start, Key On
     .acmd_rep_b ( acmd_rep_b    ),  // Control - Repeat
     .acmd_rst_b ( acmd_rst_b    ),  // Control - Reset
+    .acmd_up_b  ( acmd_up_b     ),  // Control - New command received
     .alr_b      ( alr_b         ),  // Left / Right
     .astart_b   ( astart_b      ),  // Start address
     .aend_b     ( aend_b        ),  // End   address
@@ -396,9 +400,12 @@ jt12_mmr #(.use_ssg(use_ssg),.num_ch(num_ch),.use_pcm(use_pcm), .use_adpcm(use_a
 );
 
 /* verilator tracing_off */
+// YM2203 seems to use a fixed cen/3 clock for the timers, regardless 
+// of the prescaler setting
+wire timer_cen = num_ch==3 ? clk_en_2 : ( fast_timers ? cen : clk_en);
 jt12_timers u_timers(
     .clk        ( clk           ),
-    .clk_en     ( clk_en | fast_timers  ),
+    .clk_en     ( timer_cen     ),
     .rst        ( rst           ),
     .value_A    ( value_A       ),
     .value_B    ( value_B       ),
@@ -441,7 +448,8 @@ endgenerate
 `ifndef NOSSG
 generate
     if( use_ssg==1 ) begin : gen_ssg
-        jt49 u_psg( // note that input ports are not multiplexed
+        jt49 #(.COMP(2'b01), .CLKDIV(3)) 
+            u_psg( // note that input ports are not multiplexed
             .rst_n      ( ~rst      ),
             .clk        ( clk       ),    // signal on positive edge
             .clk_en     ( clk_en_ssg),    // clock enable on negative edge
@@ -468,6 +476,9 @@ generate
         assign snd_left = fm_snd_left;
         assign snd_right= fm_snd_right;
         assign psg_dout = 8'd0;
+        assign psg_A    = 8'd0;
+        assign psg_B    = 8'd0;
+        assign psg_C    = 8'd0;
     end
 endgenerate
 `else

@@ -24,11 +24,11 @@
 `timescale 1ns / 1ps
 
 module jt49_noise(
-  input       clk, // this is the divided down clock from the core
-  input       rst_n,
-  input       cen,
-  input [4:0] period,
-  output      noise
+  (* direct_enable *) input cen,
+    input       clk,
+    input       rst_n,
+    input [4:0] period,
+    output      noise
 );
 
 reg [5:0]count;
@@ -38,13 +38,15 @@ assign noise=poly17[0];
 wire noise_en;
 reg last_en;
 
+wire noise_up = noise_en && !last_en;
+
 always @( posedge clk, negedge rst_n )
   if( !rst_n ) 
     poly17 <= 17'd0;
   else if( cen ) begin
     last_en <= noise_en;
-    if( noise_en != last_en )
-        poly17 <= { poly17[0] ^ poly17[2] ^ poly17_zero, poly17[16:1] };
+    if( noise_up )
+        poly17 <= { poly17[0] ^ poly17[3] ^ poly17_zero, poly17[16:1] };
   end
 
 jt49_div #(5) u_div( 
