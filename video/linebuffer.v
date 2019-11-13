@@ -86,8 +86,7 @@ module linebuffer(
 	// BR: PEXU QUVU...
 	// TL: ERYV ENOG...
 	// TR: EDYZ ASYX...
-	always @(*)
-		ADDR_LATCH <= WE ? ADDR_COUNTER : ADDR_LATCH;
+	always @(posedge CLK) if(WE) ADDR_LATCH <= ADDR_COUNTER;
 
 	spram #(8,12) UR(
 		.clock(CLK),
@@ -96,5 +95,5 @@ module linebuffer(
 		.wren(~WE),
 		.q(DATA_OUT)
 	);
-		
+
 endmodule
