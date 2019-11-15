@@ -147,7 +147,7 @@ https://lmgtfy.com/?q=darksoft+neo+geo+roll-up+pack
 	<romset name="twinspri" pcm="1" altname="Twinkle Star Sprites" publisher="ADK / SNK" year="1996"/>
 	<romset name="twsoc96,tws96" pcm="1" altname="Tecmo World Soccer 96" publisher="Tecmo" year="1996"/>
 	<romset name="viewpoin" pcm="1" altname="Viewpoint" publisher="Sammy / Aicom" year="1992"/>
-	<!-- requires custom sram board, not implemented in fpga <romset name="vliner,vlinero" pcm="0" altname="V-Liner" publisher="Dyna / BrezzaSof" year="2001"/> -->
+	<!-- Black Jack slot machine, not a game. Requires custom sram board, not implemented in fpga <romset name="vliner,vlinero" pcm="0" altname="V-Liner" publisher="Dyna / BrezzaSof" year="2001"/> -->
 	<romset name="wakuwak7" pcm="1" altname="Waku Waku 7" publisher="Sunsoft" year="1996"/>
 	<romset name="wh1,wh1h,wh1ha" pcm="1" altname="World Heroes" publisher="Alpha Denshi Co." year="1992"/>
 	<romset name="wh2" pcm="1" altname="World Heroes 2" publisher="ADK" year="1993"/>
@@ -225,7 +225,7 @@ https://lmgtfy.com/?q=darksoft+neo+geo+roll-up+pack
 	<romset name="svcplus" pcm="1" altname="SNK vs Capcom Plus" publisher="SNK" year="2003" ram="2"/>
 	<romset name="svcsplus" pcm="1" altname="SNK vs Capcom Super Plus" publisher="Hack" year="2003" ram="2"/>
 	<romset name="svccpru" pcm="1" altname="SNK vs Capcom Remix Ultra" publisher="Hack" year="2003" ram="2"/>
-	<!-- Do not work <romset name="svcpcb,svcpcba" pcm="1" altname="SNK vs Capcom (PCB)" publisher="SNK" year="2003" ram="2"/> -->
+	<!-- Non-NeoGeo titles made for specific board. Do not work <romset name="svcpcb,svcpcba" pcm="1" altname="SNK vs Capcom (PCB)" publisher="SNK" year="2003" ram="2"/> -->
 
 	<!-- Not in darksoft pack -->
 	<romset name="kof2003ps2" pcm="1" altname="King of Fighters 2003, The (PS2)" year="2003" ram="2">
