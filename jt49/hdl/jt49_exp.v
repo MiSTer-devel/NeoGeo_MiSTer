@@ -20,6 +20,7 @@
     Based on sqmusic, by the same author
     
     */
+// altera message_off 10030
 
 `timescale 1ns / 1ps
 

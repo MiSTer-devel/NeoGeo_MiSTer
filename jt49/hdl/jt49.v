@@ -143,9 +143,6 @@ wire [4:0] volC = { regarray[10][3:0], regarray[10][3] };
 wire use_envA = regarray[ 8][4];
 wire use_envB = regarray[ 9][4];
 wire use_envC = regarray[10][4];
-wire use_noA  = regarray[ 7][3];
-wire use_noB  = regarray[ 7][4];
-wire use_noC  = regarray[ 7][5];
 
 reg [3:0] acc_st;
 
