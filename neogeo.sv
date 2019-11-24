@@ -955,7 +955,7 @@ end
 	
 	cpu_68k M68KCPU(
 		.CLK_24M(CLK_24M),
-		.nRESET(nRESET),
+		.nRESET(nRESET_WD),
 		.M68K_ADDR(M68K_ADDR),
 		.FX68K_DATAIN(FX68K_DATAIN), .FX68K_DATAOUT(FX68K_DATAOUT),
 		.nLDS(nLDS), .nUDS(nUDS), .nAS(nAS), .M68K_RW(M68K_RW),
@@ -1597,6 +1597,7 @@ end
 		.FIXMAP_ADDR(FIXMAP_ADDR)	// Extracted for NEO-CMC
 	);
 	
+	wire nRESET_WD;
 	neo_b1 B1(
 		.CLK(CLK_24M),	.CLK_6MB(CLK_6MB), .CLK_1HB(CLK_1HB),
 		.S1H1(S1H1),
@@ -1611,7 +1612,9 @@ end
 		.WE(WE), .CK(CK),
 		.TMS0(CHG), .LD1(LD1), .LD2(LD2), .SS1(SS1), .SS2(SS2),
 		.PA(PAL_RAM_ADDR),
-		.EN_FIX(FIX_EN)
+		.EN_FIX(FIX_EN),
+		.nRST(nRESET),
+		.nRESET(nRESET_WD)
 	);
 
 	spram #(13,16) PALRAM(

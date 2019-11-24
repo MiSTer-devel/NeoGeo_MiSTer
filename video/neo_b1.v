@@ -133,8 +133,8 @@ module neo_b1(
 
 
 	// Note: nRESET is sync'd to frame start
-	//watchdog WD(nLDS, RW, A23I, A22I, M68K_ADDR_U, BNKB, nHALT, nRESET, nRST);
-	assign nHALT = 1;
-	assign nRESET = 1;
+	watchdog WD(nLDS, RW, A23I, A22I, M68K_ADDR_U, BNKB, nHALT, nRESET, nRST);
+	//assign nHALT = 1;
+	//assign nRESET = 1;
 
 endmodule
