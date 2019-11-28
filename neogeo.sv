@@ -178,7 +178,7 @@ assign AUDIO_MIX = status[5:4];
 assign AUDIO_L = snd_left;
 assign AUDIO_R = snd_right;
 
-assign LED_USER  = status[0];
+assign LED_USER  = status[0] | (sav_pending & autosave);
 assign LED_DISK  = 0;
 assign LED_POWER = 0;
 assign BUTTONS   = osd_btn;
@@ -191,8 +191,8 @@ assign VIDEO_ARY = status[17] ? 8'd9  : 8'd7;	// 224/32
 // --AA-PSS -------- L--CGGDD DEEMVTTR
 //  :	status[0]		System Reset, used by the HPS, keep it there
 // T:	status[2:1]		System type, 0=Console, 1=Arcade, 2=CD, 3=CDZ
-// V: status[3]		Video mode
-// M: status[4]		Memory card presence
+// V:	status[3]		Video mode
+// M:	status[4]		Memory card presence
 // E:	status[6:5]		Stereo mix
 // D:	status[9:7]		DIP switches
 // G:	status[11:10]	Neo CD region
@@ -201,6 +201,7 @@ assign VIDEO_ARY = status[17] ? 8'd9  : 8'd7;	// 224/32
 //  :	status[13]		Primary SDRAM size 32MB/64MB
 //  :	status[14]		Manual Reset
 //  :	status[20:15]  OSD options
+// 0123456789 ABCDEFGHIJKLMNO
 
 // Conditional modification of the CONF strings chaining according to chosen system type
 // Con Arc CD CDz
@@ -236,6 +237,7 @@ localparam CONF_STR = {
 	"H0O4,Memory Card,Plugged,Unplugged;",
 	"RL,Load Memory Card;",
 	"RC,Save Memory Card;",
+	"OO,Autosave,Off,On;",
 	"H1-;",
 	"H1OAB,Region,US,EU,JP,AS;",
 	"H1OF,CD lid,Opened,Closed;",
@@ -538,26 +540,36 @@ end
 	wire downloading = status[0];
 	reg bk_rd, bk_wr;
 	reg bk_ena = 0;
-	//reg sav_pending = 0;
-	//wire bk_change = 0; // TODO
+	reg sav_pending = 0;
+
+	wire autosave = status[24];
+	// Memory write flag for backup memory & memory card
+	// bk      raised for: [AES] Unibios (set to MVS) softdip settings, [MVS] cab settings, dates, timer, high scores, saves, & bookkeeeping
+	// memcard raised for: [AES/MVS] game saves and high scores
+	wire save_change = bk_change | memcard_change;
+	wire bk_change;
+	wire memcard_change;
 
 	always @(posedge clk_sys) begin
 		reg old_downloading = 0;
-	//	reg old_change = 0;
+		reg old_change = 0;
 
 		old_downloading <= downloading;
 		if(~old_downloading & downloading) bk_ena <= 0;
 
-		//Save file always mounted in the end of downloading state.
+		// Save file always mounted in the end of downloading state.
 		if(downloading && img_mounted[0] && !img_readonly) bk_ena <= 1;
 
-	//	old_change <= bk_change;
-	//	if (~old_change & bk_change & ~OSD_STATUS) sav_pending <= status[13];
-	//	else if (bk_state) sav_pending <= 0;
+		// Determine whether file needs to be written
+		old_change <= save_change;
+		if (~old_change & save_change & ~OSD_STATUS)
+			sav_pending <= autosave;
+		else if (bk_state)
+			sav_pending <= 0;
 	end
 
 	wire bk_load    = status[21];
-	wire bk_save    = status[12]; // | (sav_pending & OSD_STATUS);
+	wire bk_save    = status[12] | (sav_pending & OSD_STATUS && autosave);
 	reg  bk_loading = 0;
 	reg  bk_state   = 0;
 
@@ -1059,7 +1071,7 @@ end
 	// Backup RAM
 	wire nBWL = nSRAMWEL | nSRAMWEN_G;
 	wire nBWU = nSRAMWEU | nSRAMWEN_G;
-	
+
 	wire [15:0] sd_buff_din_sram;
 	backup BACKUP(
 		.CLK_24M(CLK_24M),
@@ -1070,6 +1082,7 @@ end
 		.clk_sys(clk_sys),
 		.sram_addr(sram_addr),
 		.sram_wr(sram_wr),
+		.sram_change(bk_change),
 		.sd_buff_dout(sd_buff_dout),
 		.sd_buff_din_sram(sd_buff_din_sram)
 	);
@@ -1092,6 +1105,7 @@ end
 		.clk_sys(clk_sys),
 		.memcard_addr(memcard_addr),
 		.memcard_wr(memcard_wr),
+		.memcard_change(memcard_change),
 		.sd_buff_dout(sd_buff_dout),
 		.sd_buff_din_memcard(sd_buff_din_memcard)
 	);
