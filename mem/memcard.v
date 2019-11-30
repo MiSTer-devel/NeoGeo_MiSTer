@@ -28,9 +28,18 @@ module memcard(
 	input clk_sys,
 	input [11:0] memcard_addr,
 	input memcard_wr,
+	output reg memcard_change,
 	input [15:0] sd_buff_dout,
 	output [15:0] sd_buff_din_memcard
 );
+
+wire wren_aL = CARD_WE & CDA[0];
+wire wren_aU = CARD_WE & ~CDA[0];
+
+always @(posedge CLK_24M) begin.
+	// Can probably be simplified as "memcard_change = CARD_WE"
+	memcard_change = wren_aL | wren_aU;
+end
 
 	wire [7:0] CDD_L;
 	wire [7:0] CDD_U;
@@ -45,7 +54,7 @@ module memcard(
 	dpram #(.ADDRWIDTH(12)) MEMCARDL(
 		.clock_a(CLK_24M),
 		.address_a(CDA_MASKED),
-		.wren_a(CARD_WE & CDA[0]),
+		.wren_a(wren_aL),
 		.data_a(M68K_DATA),
 		.q_a(CDD_L),
 		
@@ -59,7 +68,7 @@ module memcard(
 	dpram #(.ADDRWIDTH(12)) MEMCARDU(
 		.clock_a(CLK_24M),
 		.address_a(CDA_MASKED),
-		.wren_a(CARD_WE & ~CDA[0]),
+		.wren_a(wren_aU),
 		.data_a(M68K_DATA),
 		.q_a(CDD_U),
 		

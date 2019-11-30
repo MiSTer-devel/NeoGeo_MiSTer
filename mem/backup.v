@@ -27,9 +27,14 @@ module backup(
 	input clk_sys,
 	input [14:0] sram_addr,
 	input sram_wr,
+	output reg sram_change,
 	input [15:0] sd_buff_dout,
 	output [15:0] sd_buff_din_sram
 );
+
+always @(posedge CLK_24M) begin
+	sram_change = (~nBWL | ~nBWU);
+end
 
 	dpram #(.ADDRWIDTH(15)) SRAML(
 		.clock_a(CLK_24M),
@@ -51,7 +56,7 @@ module backup(
 		.wren_a(~nBWU),
 		.data_a(M68K_DATA[15:8]),
 		.q_a(SRAM_OUT[15:8]),
-		
+
 		.clock_b(clk_sys),
 		.address_b(sram_addr),
 		.wren_b(sram_wr),
