@@ -178,7 +178,7 @@ assign AUDIO_MIX = status[5:4];
 assign AUDIO_L = snd_left;
 assign AUDIO_R = snd_right;
 
-assign LED_USER  = status[0] | (sav_pending & autosave);
+assign LED_USER  = status[0] | bk_pending;
 assign LED_DISK  = 0;
 assign LED_POWER = 0;
 assign BUTTONS   = osd_btn;
@@ -235,16 +235,16 @@ localparam CONF_STR = {
 	"O3,Video Mode,NTSC,PAL;",
 	"-;",
 	"H0O4,Memory Card,Plugged,Unplugged;",
-	"RL,Load Memory Card;",
-	"RC,Save Memory Card;",
-	"OO,Autosave,Off,On;",
+	"RL,Reload Memory Card;",
+	"D4RC,Save Memory Card;",
+	"OO,Autosave,OFF,ON;",
 	"H1-;",
 	"H1OAB,Region,US,EU,JP,AS;",
 	"H1OF,CD lid,Opened,Closed;",
 	"H2-;",
-	"H2O7,DIP:Settings,OFF,ON;",
-	"H2O8,DIP:Freeplay,OFF,ON;",
-	"H2O9,DIP:Freeze,OFF,ON;",
+	"H2O7,[DIP] Settings,OFF,ON;",
+	"H2O8,[DIP] Freeplay,OFF,ON;",
+	"H2O9,[DIP] Freeze,OFF,ON;",
 	"-;",
 	"OG,Width,320px,304px;",
 	"OH,Aspect Ratio,Original,Wide;",
@@ -363,7 +363,7 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1), .VDNUM(2)) hps_io
 	.ps2_key(ps2_key),
 
 	.status(status),				// status read (32 bits)
-	.status_menumask({status[22], 11'd0, ~dbg_menu,~SYSTEM_MVS,~SYSTEM_CDx,SYSTEM_CDx}),
+	.status_menumask({status[22], 10'd0, bk_autosave | ~bk_pending, ~dbg_menu,~SYSTEM_MVS,~SYSTEM_CDx,SYSTEM_CDx}),
 
 	.RTC(rtc),
 	.sdram_sz(sdram_sz),
@@ -540,19 +540,17 @@ end
 	wire downloading = status[0];
 	reg bk_rd, bk_wr;
 	reg bk_ena = 0;
-	reg sav_pending = 0;
+	reg bk_pending = 0;
 
-	wire autosave = status[24];
+	wire bk_autosave = status[24];
 	// Memory write flag for backup memory & memory card
-	// bk      raised for: [AES] Unibios (set to MVS) softdip settings, [MVS] cab settings, dates, timer, high scores, saves, & bookkeeeping
-	// memcard raised for: [AES/MVS] game saves and high scores
-	wire save_change = bk_change | memcard_change;
-	wire bk_change;
+	// (~nBWL | ~nBWU) : [AES] Unibios (set to MVS) softdip settings, [MVS] cab settings, dates, timer, high scores, saves, & bookkeeeping
+	// CARD_WE         : [AES/MVS] game saves and high scores
+	wire bk_change = ~nBWL | ~nBWU | CARD_WE;
 	wire memcard_change;
 
 	always @(posedge clk_sys) begin
 		reg old_downloading = 0;
-		reg old_change = 0;
 
 		old_downloading <= downloading;
 		if(~old_downloading & downloading) bk_ena <= 0;
@@ -561,15 +559,12 @@ end
 		if(downloading && img_mounted[0] && !img_readonly) bk_ena <= 1;
 
 		// Determine whether file needs to be written
-		old_change <= save_change;
-		if (~old_change & save_change & ~OSD_STATUS)
-			sav_pending <= autosave;
-		else if (bk_state)
-			sav_pending <= 0;
+		if (bk_change)     bk_pending <= 1;
+		else if (bk_state) bk_pending <= 0;
 	end
 
 	wire bk_load    = status[21];
-	wire bk_save    = status[12] | (sav_pending & OSD_STATUS && autosave);
+	wire bk_save    = status[12] | (bk_autosave & OSD_STATUS);
 	reg  bk_loading = 0;
 	reg  bk_state   = 0;
 
@@ -586,7 +581,7 @@ end
 		if(~old_ack & sd_ack) {bk_rd, bk_wr} <= 0;
 
 		if(!bk_state) begin
-			if(bk_ena & ((~old_load & bk_load) | (~old_save & bk_save))) begin
+			if(bk_ena & ((~old_load & bk_load) | (~old_save & bk_save & bk_pending))) begin
 				bk_state <= 1;
 				bk_loading <= bk_load;
 				sd_lba <= 0;
@@ -1082,7 +1077,6 @@ end
 		.clk_sys(clk_sys),
 		.sram_addr(sram_addr),
 		.sram_wr(sram_wr),
-		.sram_change(bk_change),
 		.sd_buff_dout(sd_buff_dout),
 		.sd_buff_din_sram(sd_buff_din_sram)
 	);
@@ -1105,7 +1099,6 @@ end
 		.clk_sys(clk_sys),
 		.memcard_addr(memcard_addr),
 		.memcard_wr(memcard_wr),
-		.memcard_change(memcard_change),
 		.sd_buff_dout(sd_buff_dout),
 		.sd_buff_din_memcard(sd_buff_din_memcard)
 	);

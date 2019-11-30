@@ -27,14 +27,9 @@ module backup(
 	input clk_sys,
 	input [14:0] sram_addr,
 	input sram_wr,
-	output reg sram_change,
 	input [15:0] sd_buff_dout,
 	output [15:0] sd_buff_din_sram
 );
-
-always @(posedge CLK_24M) begin
-	sram_change = (~nBWL | ~nBWU);
-end
 
 	dpram #(.ADDRWIDTH(15)) SRAML(
 		.clock_a(CLK_24M),
