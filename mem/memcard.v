@@ -36,7 +36,7 @@ module memcard(
 wire wren_aL = CARD_WE & CDA[0];
 wire wren_aU = CARD_WE & ~CDA[0];
 
-always @(posedge CLK_24M) begin.
+always @(posedge CLK_24M) begin
 	// Can probably be simplified as "memcard_change = CARD_WE"
 	memcard_change = wren_aL | wren_aU;
 end
