@@ -546,8 +546,16 @@ end
 	// Memory write flag for backup memory & memory card
 	// (~nBWL | ~nBWU) : [AES] Unibios (set to MVS) softdip settings, [MVS] cab settings, dates, timer, high scores, saves, & bookkeeeping
 	// CARD_WE         : [AES/MVS] game saves and high scores
-	wire bk_change = ~nBWL | ~nBWU | CARD_WE;
+	wire bk_change = sram_slot_we | CARD_WE;
 	wire memcard_change;
+
+	reg sram_slot_we;
+	always @(posedge clk_sys) begin
+		sram_slot_we <= 0;
+		if(~nBWL | ~nBWU) begin
+			sram_slot_we <= (M68K_ADDR[15:1] >= 'h190 && M68K_ADDR[15:1] < 'h4190);
+		end
+	end
 
 	always @(posedge clk_sys) begin
 		reg old_downloading = 0;
