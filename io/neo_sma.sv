@@ -212,7 +212,7 @@ always @(negedge nPORTOE or negedge nRESET) begin
 	if(~nRESET) rst = 1;
 	else begin
 		if(rst) rng <= 'h2345;
-		else rng <= {rng[14:1], rng[2] ^ rng[3] ^ rng[5] ^ rng[6] ^ rng[7] ^ rng[11] ^ rng[12] ^ rng[15]};
+		else rng <= {rng[14:0], rng[2] ^ rng[3] ^ rng[5] ^ rng[6] ^ rng[7] ^ rng[11] ^ rng[12] ^ rng[15]};
 		rst <= 0;
 	end
 end
