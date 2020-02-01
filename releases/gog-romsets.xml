@@ -1,0 +1,221 @@
+<!--
+
+This romset is for games available from Good Old Games https://gog.com .
+
+Good Old Games sells part of the NeoGeo game catalogue. Within installed games
+should be every file needed to play these games on MiSTer. Availability was not
+checked for all platforms nor all games, though.
+
+Suggested file layout:
+NeoGeo
+  000-lo.lo    (from neogeo.zip from any installed gog game)
+  neo-epo.sp1  (likewise)
+  sfix.sfix    (likewise)
+  sp-s2.sp1    (likewise)
+  uni-bios.rom (likewise, renamed from uni-bios_*.rom)
+  gog
+    romsets.xml (this file, renamed)
+    mslug
+      201-p1.p1 (from mslug.zip from installed game)
+      (etc, all files from the zip)
+    mslug2
+      241-p1.p1 (from mslug2.zip from installed game)
+      (etc, all files from the zip)
+    (etc)
+
+-->
+
+<romsets>
+	<!-- ROMs working with 32MB SDRAM -->
+
+	<romset name="fatfursp" pcm="1" altname="Fatal Fury Special" publisher="SNK" year="1993">
+		<file name="058-p1.p1" index="4"/>
+		<file name="058-p2.sp2" index="6"/>
+		<file name="058-s1.s1" index="8"/>
+		<file name="058-c1.c1" index="64"/>
+		<file name="058-c2.c2" index="65"/>
+		<file name="058-c3.c3" index="72"/>
+		<file name="058-c4.c4" index="73"/>
+		<file name="058-c5.c5" index="80"/>
+		<file name="058-c6.c6" index="81"/>
+		<file name="058-m1.m1" index="9"/>
+		<file name="058-v1.v1" index="16"/>
+		<file name="058-v2.v2" index="20"/>
+		<file name="058-v3.v3" index="24"/>
+	</romset>
+	<romset name="fatfurspa" pcm="1" altname="Fatal Fury Special (set 2)" publisher="SNK" year="1993">
+		<file name="058-p1.p1" index="4"/>
+		<file name="058-p2.sp2" index="6"/>
+		<file name="058-epr.ep1" index="4"/>
+		<file name="058-s1.s1" index="8"/>
+		<file name="058-c1.c1" index="64"/>
+		<file name="058-c2.c2" index="65"/>
+		<file name="058-c3.c3" index="72"/>
+		<file name="058-c4.c4" index="73"/>
+		<file name="058-c5.c5" index="80"/>
+		<file name="058-c6.c6" index="81"/>
+		<file name="058-m1.m1" index="9"/>
+		<file name="058-v1.v1" index="16"/>
+		<file name="058-v2.v2" index="20"/>
+		<file name="058-v3.v3" index="24"/>
+	</romset>
+	<romset name="ironclad" pcm="1" altname="Iron Clad" altnamej="Choutetsu Brikinger" publisher="Saurus" year="1996">
+		<file name="proto_220-p1.p1" index="4" offset="0x100000" length="0x100000"/>
+		<file name="proto_220-p1.p1" index="6" offset="0x000000" length="0x100000"/>
+		<file name="proto_220-s1.s1" index="8"/>
+		<file name="proto_220-c1.c1" index="64"/>
+		<file name="proto_220-c2.c2" index="65"/>
+		<file name="proto_220-c3.c3" index="80"/>
+		<file name="proto_220-c4.c4" index="81"/>
+		<file name="proto_220-m1.m1" index="9"/>
+		<file name="proto_220-v1.v1" index="16"/>
+	</romset>
+	<!-- Program ROM bank 0 does not pass CRC check as of Unibios 3.3 -->
+	<romset name="ironclado" pcm="1" altname="Iron Clad (bootleg)" altnamej="Choutetsu Brikinger" publisher="Saurus" year="1996">
+		<file name="proto_220-p1.p1" index="4" offset="0x100000" length="0x100000"/>
+		<file name="proto_220-p1.p1" index="6" offset="0x000000" length="0x100000"/>
+		<file name="220-p1a.bin" index="6"/>
+		<file name="proto_220-s1.s1" index="8"/>
+		<file name="proto_220-c1.c1" index="64"/>
+		<file name="proto_220-c2.c2" index="65"/>
+		<file name="proto_220-c3.c3" index="80"/>
+		<file name="proto_220-c4.c4" index="81"/>
+		<file name="proto_220-m1.m1" index="9"/>
+		<file name="proto_220-v1.v1" index="16"/>
+	</romset>
+	<romset name="kotm" pcm="1" altname="King of the Monsters" publisher="SNK" year="1991">
+		<file name="016-p1.p1" index="4"/>
+		<file name="016-p2.p2" index="5"/>
+		<file name="016-s1.s1" index="8"/>
+		<file name="016-c1.c1" index="64"/>
+		<file name="016-c2.c2" index="65"/>
+		<file name="016-c3.c3" index="68"/>
+		<file name="016-c4.c4" index="69"/>
+		<file name="016-m1.m1" index="9"/>
+		<file name="016-v1.v1" index="16"/>
+		<file name="016-v2.v2" index="18"/>
+	</romset>
+	<romset name="kotmh" pcm="1" altname="King of the Monsters (set 2)" publisher="SNK" year="1991">
+		<file name="016-hp1.p1" index="4"/>
+		<file name="016-p2.p2" index="5"/>
+		<file name="016-s1.s1" index="8"/>
+		<file name="016-c1.c1" index="64"/>
+		<file name="016-c2.c2" index="65"/>
+		<file name="016-c3.c3" index="68"/>
+		<file name="016-c4.c4" index="69"/>
+		<file name="016-m1.m1" index="9"/>
+		<file name="016-v1.v1" index="16"/>
+		<file name="016-v2.v2" index="18"/>
+	</romset>
+	<romset name="mslug" pcm="1" altname="Metal Slug - Super Vehicle-001" publisher="Nazca" year="1996">
+		<file name="201-p1.p1" index="4" offset="0x100000" length="0x100000"/>
+		<file name="201-p1.p1" index="6" offset="0x000000" length="0x100000"/>
+		<file name="201-s1.s1" index="8"/>
+		<file name="201-c1.c1" index="64"/>
+		<file name="201-c2.c2" index="65"/>
+		<file name="201-c3.c3" index="80"/>
+		<file name="201-c4.c4" index="81"/>
+		<file name="201-m1.m1" index="9"/>
+		<file name="201-v1.v1" index="16"/>
+		<file name="201-v2.v2" index="24"/>
+	</romset>
+	<romset name="mslug2" pcm="1" altname="Metal Slug 2 - Super Vehicle-001-II" publisher="SNK" year="1998">
+		<file name="241-p1.p1" index="4"/>
+		<file name="241-p2.sp2" index="6"/>
+		<file name="241-s1.s1" index="8"/>
+		<file name="241-c1.c1" index="64"/>
+		<file name="241-c2.c2" index="65"/>
+		<file name="241-c3.c3" index="96"/>
+		<file name="241-c4.c4" index="97"/>
+		<file name="241-m1.m1" index="9"/>
+		<file name="241-v1.v1" index="16"/>
+		<file name="241-v2.v2" index="24"/>
+	</romset>
+	<!-- 941-p1.p1 can be generated using the patch available from http://blog.system11.org/?p=1442 -->
+	<romset name="mslug2t" pcm="1" altname="Metal Slug 2 Turbo - Super Vehicle-001-II" publisher="SNK" year="1998">
+		<file name="941-p1.p1" index="4"/>
+		<file name="241-p2.sp2" index="6"/>
+		<file name="241-s1.s1" index="8"/>
+		<file name="241-c1.c1" index="64"/>
+		<file name="241-c2.c2" index="65"/>
+		<file name="241-c3.c3" index="96"/>
+		<file name="241-c4.c4" index="97"/>
+		<file name="241-m1.m1" index="9"/>
+		<file name="241-v1.v1" index="16"/>
+		<file name="241-v2.v2" index="24"/>
+	</romset>
+	<romset name="samsho2" pcm="1" altname="Samurai Shodown II" publisher="SNK" year="1994">
+		<file name="063-p1.p1" index="4" offset="0x100000" length="0x100000"/>
+		<file name="063-p1.p1" index="6" offset="0x000000" length="0x100000"/>
+		<file name="063-s1.s1" index="8"/>
+		<file name="063-c1.c1" index="64"/>
+		<file name="063-c2.c2" index="65"/>
+		<file name="063-c3.c3" index="72"/>
+		<file name="063-c4.c4" index="73"/>
+		<file name="063-c5.c5" index="80"/>
+		<file name="063-c6.c6" index="81"/>
+		<file name="063-c7.c7" index="88"/>
+		<file name="063-c8.c8" index="89"/>
+		<file name="063-m1.m1" index="9"/>
+		<file name="063-v1.v1" index="16"/>
+		<file name="063-v2.v2" index="20"/>
+		<file name="063-v3.v3" index="24"/>
+		<file name="063-v4.v4" index="28"/>
+	</romset>
+	<romset name="samsho2k" pcm="1" altname="Samurai Shodown II Korean" publisher="SNK" year="1994">
+		<file name="063-p1-kan.p1" index="4" offset="0x100000" length="0x100000"/>
+		<file name="063-p1-kan.p1" index="6" offset="0x000000" length="0x100000"/>
+		<file name="063-ep1-kan.ep1" index="4"/>
+		<file name="063-ep2-kan.ep2" index="5"/>
+		<file name="063-s1-kan.s1" index="8"/>
+		<file name="063-c1.c1" index="64"/>
+		<file name="063-c2.c2" index="65"/>
+		<file name="063-c3.c3" index="72"/>
+		<file name="063-c4.c4" index="73"/>
+		<file name="063-c5.c5" index="80"/>
+		<file name="063-c6.c6" index="81"/>
+		<file name="063-c7.c7" index="88"/>
+		<file name="063-c8.c8" index="89"/>
+		<file name="063-m1.m1" index="9"/>
+		<file name="063-v1.v1" index="16"/>
+		<file name="063-v2.v2" index="20"/>
+		<file name="063-v3.v3" index="24"/>
+		<file name="063-v4.v4" index="28"/>
+	</romset>
+	<romset name="samsho2k2" pcm="1" altname="Samurai Shodown II Korean 2" publisher="SNK" year="1994">
+		<file name="063-p1-kan.p1" index="4" offset="0x100000" length="0x100000"/>
+		<file name="063-p1-kan.p1" index="6" offset="0x000000" length="0x100000"/>
+		<file name="063-s1-kan.s1" index="8"/>
+		<file name="063-c1.c1" index="64"/>
+		<file name="063-c2.c2" index="65"/>
+		<file name="063-c3.c3" index="72"/>
+		<file name="063-c4.c4" index="73"/>
+		<file name="063-c5.c5" index="80"/>
+		<file name="063-c6.c6" index="81"/>
+		<file name="063-c7.c7" index="88"/>
+		<file name="063-c8.c8" index="89"/>
+		<file name="063-m1.m1" index="9"/>
+		<file name="063-v1.v1" index="16"/>
+		<file name="063-v2.v2" index="20"/>
+		<file name="063-v3.v3" index="24"/>
+		<file name="063-v4.v4" index="28"/>
+	</romset>
+	<romset name="twinspri" pcm="1" altname="Twinkle Star Sprites" publisher="ADK / SNK" year="1996">
+		<file name="224-p1.p1" index="4" offset="0x100000" length="0x100000"/>
+		<file name="224-p1.p1" index="6" offset="0x000000" length="0x100000"/>
+		<file name="224-s1.s1" index="8"/>
+		<file name="224-c1.c1" index="64"/>
+		<file name="224-c2.c2" index="65"/>
+		<file name="224-c3.c3" index="80"/>
+		<file name="224-c4.c4" index="81"/>
+		<file name="224-m1.m1" index="9"/>
+		<file name="224-v1.v1" index="16"/>
+		<file name="224-v2.v2" index="24"/>
+	</romset>
+
+	<!-- ROMs requiring 64MB SDRAM -->
+
+	<!-- ROMs requiring 96MB SDRAM (32MB+64MB) -->
+
+	<!-- ROMs requiring 128MB SDRAM (2x64MB) -->
+</romsets>
