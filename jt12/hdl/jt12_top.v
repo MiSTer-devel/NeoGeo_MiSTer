@@ -448,27 +448,23 @@ endgenerate
 `ifndef NOSSG
 generate
     if( use_ssg==1 ) begin : gen_ssg
-        jt49 #(.COMP(2'b01), .CLKDIV(3)) 
-            u_psg( // note that input ports are not multiplexed
-            .rst_n      ( ~rst      ),
-            .clk        ( clk       ),    // signal on positive edge
-            .clk_en     ( clk_en_ssg),    // clock enable on negative edge
-            .addr       ( psg_addr  ),
-            .cs_n       ( 1'b0      ),
-            .wr_n       ( psg_wr_n  ),  // write
-            .din        ( psg_data  ),
-            .sound      ( psg_snd   ),  // combined output
-            .A          ( psg_A     ),
-            .B          ( psg_B     ),
-            .C          ( psg_C     ),
-            .dout       ( psg_dout  ),
-            .sel        ( 1'b1      ),  // half clock speed
-            // Unused:
-            .IOA_out    (),
-            .IOB_out    (),
-            .IOA_in     (8'd0),
-            .IOB_in     (8'd0)
+        ym2149emb u_psg
+        (
+            .CLK(clk),
+            .CE(clk_en_ssg),
+            .RESET(rst),
+            .CS(1),
+            .WR(~psg_wr_n),
+            .ADDR(psg_addr),
+            .DI(psg_data),
+            .DO(psg_dout),
+            .CHANNEL_A(psg_A),
+            .CHANNEL_B(psg_B),
+            .CHANNEL_C(psg_C),
+            .SEL(0),
+            .MODE(0)
         );
+		  assign psg_snd = {2'b00, psg_A} + {2'b00, psg_B} + {2'b00, psg_C};
         assign snd_left  = snd_enable[3] ? fm_snd_left  + { 1'b0, psg_snd[9:0],5'd0} : fm_snd_left;
         assign snd_right = snd_enable[3] ? fm_snd_right + { 1'b0, psg_snd[9:0],5'd0} : fm_snd_right;
     end else begin : gen_nossg
