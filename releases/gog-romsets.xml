@@ -104,7 +104,7 @@ NeoGeo
 		<file name="../ironclad/proto_220-m1.m1" index="9"/>
 		<file name="../ironclad/proto_220-v1.v1" index="16"/>
 	</romset>
-	<romset name="kotm" pcm="1" altname="King of the Monsters" publisher="SNK" year="1991">
+	<romset name="kotm" pcm="1" altname="King of the Monsters (Set 1)" publisher="SNK" year="1991">
 		<file name="016-p1.p1" index="4"/>
 		<file name="016-p2.p2" index="5"/>
 		<file name="016-s1.s1" index="8"/>
@@ -116,7 +116,7 @@ NeoGeo
 		<file name="016-v1.v1" index="16"/>
 		<file name="016-v2.v2" index="18"/>
 	</romset>
-	<romset name="kotmh" pcm="1" altname="King of the Monsters (set 2)" publisher="SNK" year="1991">
+	<romset name="kotmh" pcm="1" altname="King of the Monsters (Set 2)" publisher="SNK" year="1991">
 		<file name="../kotm/016-hp1.p1" index="4"/>
 		<file name="../kotm/016-p2.p2" index="5"/>
 		<file name="../kotm/016-s1.s1" index="8"/>
