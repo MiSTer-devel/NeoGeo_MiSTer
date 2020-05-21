@@ -193,6 +193,8 @@ https://lmgtfy.com/?q=darksoft+neo+geo+roll-up+pack
 	<romset name="sengoku3" pcm="1" altname="Sengoku 3" altnamej="Sengoku Densho 2001" publisher="Noise Factory / SNK" year="2001" ram="1"/>
 	<romset name="shocktr2" pcm="1" altname="Shock Troopers - 2nd Squad" publisher="Saurus" year="1998" ram="1"/>
 	<romset name="shocktro,shcktroa" pcm="1" altname="Shock Troopers" publisher="Saurus" year="1997" ram="1"/>
+	<!-- Not in darksoft pack -->
+	<romset name="neotris" pcm="1" altname="NeoTRIS (free beta version)" publisher="Chipsonsteroids" year="2020" ram="1"/>
 
 	<!-- ROMs requiring 96MB SDRAM (32MB+64MB) -->
 
