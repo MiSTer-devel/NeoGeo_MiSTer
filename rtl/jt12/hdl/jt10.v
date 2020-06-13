@@ -42,14 +42,17 @@ module jt10(
     output          adpcmb_roe_n, // ADPCM-B ROM output enable
 	 input	[7:0]	  adpcmb_data,
     // Separated output
+    output          [ 7:0] psg_A,
+    output          [ 7:0] psg_B,
+    output          [ 7:0] psg_C,
     output  signed  [15:0] fm_snd,
     // combined output
     output          [ 9:0] psg_snd,    
     output  signed  [15:0] snd_right,
     output  signed  [15:0] snd_left,
     output          snd_sample,
-	 input   [3:0]   snd_enable,
-	 input   [5:0]   ch_enable
+    input   [3:0]   snd_enable,
+    input   [5:0]   ch_enable
 );
 
 // Uses 6 FM channels but only 4 are outputted
@@ -76,6 +79,9 @@ u_jt12(
     .adpcmb_roe_n   ( adpcmb_roe_n ), // ADPCM-B ROM output enable
     .adpcmb_data    ( adpcmb_data  ), // Data from RAM
     // Separated output
+    .psg_A          ( psg_A        ),
+    .psg_B          ( psg_B        ),
+    .psg_C          ( psg_C        ),
     .psg_snd        ( psg_snd      ),    
     .fm_snd_left    ( fm_snd       ),
     .fm_snd_right   (),

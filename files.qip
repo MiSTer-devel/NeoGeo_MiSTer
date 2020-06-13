@@ -1,4 +1,5 @@
 set_global_assignment -name QIP_FILE rtl/jt12/hdl/jt10.qip
+set_global_assignment -name QIP_FILE rtl/jt49/hdl/jt49.qip
 set_global_assignment -name QIP_FILE rtl/video/video.qip
 set_global_assignment -name QIP_FILE rtl/cd/cd.qip
 set_global_assignment -name QIP_FILE rtl/io/io.qip
