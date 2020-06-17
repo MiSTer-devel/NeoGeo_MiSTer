@@ -75,10 +75,11 @@ reg  signed [15:0] acc_input_l, acc_input_r;
 reg acc_en_l, acc_en_r;
 
 // YM2610 mode:
-// uses channels 2 and 6 for ADPCM data, throwing away FM data for those channels
+// uses channels 0 and 4 for ADPCM data, throwing away FM data for those channels
+// reference: YM2610 Application Notes.
 always @(*)
     case( {cur_op,cur_ch} )
-        {2'd0,3'd2}: begin // ADPCM-A:
+        {2'd0,3'd0}: begin // ADPCM-A:
             acc_input_l = (adpcmA_l <<< 2) + (adpcmA_l <<< 1);
             acc_input_r = (adpcmA_r <<< 2) + (adpcmA_r <<< 1);
             `ifndef NOMIX
@@ -89,7 +90,7 @@ always @(*)
             acc_en_r    = 1'b0;
             `endif
         end
-        {2'd0,3'd6}: begin // ADPCM-B:
+        {2'd0,3'd4}: begin // ADPCM-B:
             acc_input_l = adpcmB_l >>> 1; // Operator width is 14 bit, ADPCM-B is 16 bit
             acc_input_r = adpcmB_r >>> 1; // accumulator width per input channel is 14 bit
             `ifndef NOMIX
@@ -101,6 +102,12 @@ always @(*)
             `endif
         end
         default: begin
+            // Note by Jose Tejada:
+            // I don't think we should divide down the FM output
+            // but someone was looking at the balance of the different
+            // channels and made this arrangement
+            // I suppose ADPCM-A would saturate if taken up a factor of 8 instead of 4
+            // I'll leave it as it is but I think it is worth revisiting this:
             acc_input_l = opext >>> 1;
             acc_input_r = opext >>> 1;
             acc_en_l    = sum_en & left_en;
@@ -127,5 +134,40 @@ jt12_single_acc #(.win(16),.wout(16)) u_right(
     .zero       ( zero           ),
     .snd        ( right          )
 );
+
+`ifdef SIMULATION
+// Dump each channel independently
+// It dumps values in decimal, left and right
+integer f0,f1,f2,f4,f5,f6;
+reg signed [15:0] sum_l[7], sum_r[7];
+
+initial begin
+    f0=$fopen("fm0.raw","w");
+    f1=$fopen("fm1.raw","w");
+    f2=$fopen("fm2.raw","w");
+    f4=$fopen("fm4.raw","w");
+    f5=$fopen("fm5.raw","w");
+    f6=$fopen("fm6.raw","w");
+end
+
+always @(posedge clk) begin
+    if(cur_op==2'b0) begin
+        sum_l[cur_ch] <= acc_en_l ? acc_input_l : 16'd0;
+        sum_r[cur_ch] <= acc_en_r ? acc_input_r : 16'd0;
+    end else begin
+        sum_l[cur_ch] <= sum_l[cur_ch] + (acc_en_l ? acc_input_l : 16'd0);
+        sum_r[cur_ch] <= sum_r[cur_ch] + (acc_en_r ? acc_input_r : 16'd0);
+    end
+end
+
+always @(posedge zero) begin
+    $fwrite(f0,"%d,%d\n", sum_l[0], sum_r[0]);
+    $fwrite(f1,"%d,%d\n", sum_l[1], sum_r[1]);
+    $fwrite(f2,"%d,%d\n", sum_l[2], sum_r[2]);
+    $fwrite(f4,"%d,%d\n", sum_l[4], sum_r[4]);
+    $fwrite(f5,"%d,%d\n", sum_l[5], sum_r[5]);
+    $fwrite(f6,"%d,%d\n", sum_l[6], sum_r[6]);
+end
+`endif
 
 endmodule
