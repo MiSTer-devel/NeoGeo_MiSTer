@@ -12,13 +12,13 @@
 
     You should have received a copy of the GNU General Public License
     along with JT49.  If not, see <http://www.gnu.org/licenses/>.
-    
+
     Author: Jose Tejada Gomez. Twitter: @topapate
     Version: 1.0
     Date: 10-Nov-2018
-    
+
     Based on sqmusic, by the same author
-    
+
     */
 
 module jt49 ( // note that input ports are not multiplexed
@@ -60,8 +60,8 @@ reg Amix, Bmix, Cmix;
 wire cen16, cen256;
 
 jt49_cen #(.CLKDIV(CLKDIV)) u_cen(
-    .clk    ( clk     ), 
-    .rst_n  ( rst_n   ), 
+    .clk    ( clk     ),
+    .rst_n  ( rst_n   ),
     .cen    ( clk_en  ),
     .sel    ( sel     ),
     .cen16  ( cen16   ),
@@ -69,36 +69,36 @@ jt49_cen #(.CLKDIV(CLKDIV)) u_cen(
 );
 
 // internal modules operate at clk/16
-jt49_div #(12) u_chA( 
-    .clk        ( clk           ), 
-    .rst_n      ( rst_n         ), 
+jt49_div #(12) u_chA(
+    .clk        ( clk           ),
+    .rst_n      ( rst_n         ),
     .cen        ( cen16         ),
-    .period     ( {regarray[1][3:0], regarray[0][7:0] } ), 
+    .period     ( {regarray[1][3:0], regarray[0][7:0] } ),
     .div        ( bitA          )
 );
 
-jt49_div #(12) u_chB( 
-    .clk        ( clk           ), 
-    .rst_n      ( rst_n         ), 
-    .cen        ( cen16         ),    
-    .period     ( {regarray[3][3:0], regarray[2][7:0] } ),   
-    .div        ( bitB          ) 
+jt49_div #(12) u_chB(
+    .clk        ( clk           ),
+    .rst_n      ( rst_n         ),
+    .cen        ( cen16         ),
+    .period     ( {regarray[3][3:0], regarray[2][7:0] } ),
+    .div        ( bitB          )
 );
 
-jt49_div #(12) u_chC( 
-    .clk        ( clk           ), 
-    .rst_n      ( rst_n         ), 
+jt49_div #(12) u_chC(
+    .clk        ( clk           ),
+    .rst_n      ( rst_n         ),
     .cen        ( cen16         ),
-    .period     ( {regarray[5][3:0], regarray[4][7:0] } ), 
+    .period     ( {regarray[5][3:0], regarray[4][7:0] } ),
     .div        ( bitC          )
 );
 
-jt49_noise u_ng( 
-    .clk    ( clk               ), 
+jt49_noise u_ng(
+    .clk    ( clk               ),
     .cen    ( cen16             ),
-    .rst_n  ( rst_n             ), 
-    .period ( regarray[6][4:0]  ), 
-    .noise  ( noise             ) 
+    .rst_n  ( rst_n             ),
+    .period ( regarray[6][4:0]  ),
+    .noise  ( noise             )
 );
 
 // envelope generator
@@ -106,13 +106,13 @@ wire eg_step;
 wire [15:0] eg_period   = {regarray[4'hc],regarray[4'hb]};
 wire        null_period = eg_period == 16'h0;
 
-jt49_div #(16) u_envdiv( 
-    .clk    ( clk               ), 
+jt49_div #(16) u_envdiv(
+    .clk    ( clk               ),
     .cen    ( cen256            ),
     .rst_n  ( rst_n             ),
-    .period ( eg_period         ), 
-    .div    ( eg_step           ) 
-);  
+    .period ( eg_period         ),
+    .div    ( eg_step           )
+);
 
 reg eg_restart;
 
@@ -157,7 +157,7 @@ always @(posedge clk) if( clk_en ) begin
     logA <= !Amix ? 5'd0 : (use_envA ? envelope : volA );
     logB <= !Bmix ? 5'd0 : (use_envB ? envelope : volB );
     logC <= !Cmix ? 5'd0 : (use_envC ? envelope : volC );
-end   
+end
 
 reg [9:0] acc;
 
@@ -165,6 +165,10 @@ always @(posedge clk, negedge rst_n) begin
     if( !rst_n ) begin
         acc_st <= 4'b1;
         acc    <= 10'd0;
+        A      <= 8'd0;
+        B      <= 8'd0;
+        C      <= 8'd0;
+        sound  <= 10'd0;
     end else if(clk_en) begin
         acc_st <= { acc_st[2:0], acc_st[3] };
         acc <= acc + {2'b0,lin};
@@ -198,33 +202,38 @@ always @(*)
             read_mask = 8'hff;
         4'h1,4'h3,4'h5,4'hd:
             read_mask = 8'h0f;
-        4'h6,4'h8,4'h9,4'ha: 
+        4'h6,4'h8,4'h9,4'ha:
             read_mask = 8'h1f;
     endcase // addr
 
 // register array
-reg  last_wrn;
-wire wrn_edge = ~(wr_n|cs_n) & last_wrn;
+wire write;
+reg  last_write;
+wire wr_edge = write & ~last_write;
+
+assign write = !wr_n && !cs_n;
 
 always @(posedge clk, negedge rst_n) begin
     if( !rst_n ) begin
-        dout      <= 8'd0;
-        last_wrn  <= 0;
-        eg_restart<= 0;
+        dout       <= 8'd0;
+        last_write <= 0;
+        eg_restart <= 0;
         regarray[0]<=8'd0; regarray[4]<=8'd0; regarray[ 8]<=8'd0; regarray[12]<=8'd0;
         regarray[1]<=8'd0; regarray[5]<=8'd0; regarray[ 9]<=8'd0; regarray[13]<=8'd0;
         regarray[2]<=8'd0; regarray[6]<=8'd0; regarray[10]<=8'd0; regarray[14]<=8'd0;
         regarray[3]<=8'd0; regarray[7]<=8'd0; regarray[11]<=8'd0; regarray[15]<=8'd0;
     end else begin
-        last_wrn  <= wr_n & cs_n;
-        if( !cs_n ) begin
-            dout <= regarray[ addr ] & read_mask;
-            if( !wr_n ) begin
-                regarray[addr] <= din;
-                if(addr == 4'he && !regarray[7][6]) dout <= IOA_in;
-                if(addr == 4'hf && !regarray[7][7]) dout <= IOB_in;
-            end
-            if ( addr == 4'hD && wrn_edge ) eg_restart <= 1;
+        last_write  <= write;
+        // Data read
+        case( addr )
+            4'he: dout <= !regarray[7][6] ? IOA_in : 8'hff;
+            4'hf: dout <= !regarray[7][7] ? IOB_in : 8'hff;
+            default: dout <= regarray[ addr ] & read_mask;
+        endcase
+        // Data write
+        if( write ) begin
+            regarray[addr] <= din;
+            if ( addr == 4'hD && wr_edge ) eg_restart <= 1;
         end else begin
             eg_restart <= 0;
         end
