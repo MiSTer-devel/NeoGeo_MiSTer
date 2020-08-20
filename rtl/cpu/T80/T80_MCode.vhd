@@ -74,6 +74,7 @@
 library IEEE;
 use IEEE.std_logic_1164.all;
 use IEEE.numeric_std.all;
+use work.T80_Pack.all;
 
 entity T80_MCode is
 	generic(
@@ -148,14 +149,6 @@ entity T80_MCode is
 end T80_MCode;
 
 architecture rtl of T80_MCode is
-
-	constant aNone : std_logic_vector(2 downto 0) := "111";
-	constant aBC   : std_logic_vector(2 downto 0) := "000";
-	constant aDE   : std_logic_vector(2 downto 0) := "001";
-	constant aXY   : std_logic_vector(2 downto 0) := "010";
-	constant aIOA  : std_logic_vector(2 downto 0) := "100";
-	constant aSP   : std_logic_vector(2 downto 0) := "101";
-	constant aZI   : std_logic_vector(2 downto 0) := "110";
 
 	function is_cc_true(
 		F : std_logic_vector(7 downto 0);
@@ -1598,7 +1591,7 @@ begin
 				|"11110000"|"11110001"|"11110010"|"11110011"|"11110100"|"11110101"|"11110110"|"11110111"
 				|"11111000"|"11111001"|"11111010"|"11111011"|"11111100"|"11111101"|"11111110"|"11111111" =>
 				null; -- NOP, undocumented
-			when "01111110"|"01111111" =>
+			when "01110111"|"01111111" =>
 				-- NOP, undocumented
 				null;
 -- 8 BIT LOAD GROUP
@@ -1754,7 +1747,7 @@ begin
 			when "01010110"|"01110110" =>
 				-- IM 1
 				IMode <= "01";
-			when "01011110"|"01110111" =>
+			when "01011110"|"01111110" =>
 				-- IM 2
 				IMode <= "10";
 -- 16 bit arithmetic

@@ -79,6 +79,7 @@ library IEEE;
 use IEEE.std_logic_1164.all;
 use IEEE.numeric_std.all;
 use IEEE.STD_LOGIC_UNSIGNED.all;
+use work.T80_Pack.all;
 
 entity T80 is
 	generic(
@@ -126,14 +127,6 @@ entity T80 is
 end T80;
 
 architecture rtl of T80 is
-
-	constant aNone              : std_logic_vector(2 downto 0) := "111";
-	constant aBC                : std_logic_vector(2 downto 0) := "000";
-	constant aDE                : std_logic_vector(2 downto 0) := "001";
-	constant aXY                : std_logic_vector(2 downto 0) := "010";
-	constant aIOA               : std_logic_vector(2 downto 0) := "100";
-	constant aSP                : std_logic_vector(2 downto 0) := "101";
-	constant aZI                : std_logic_vector(2 downto 0) := "110";
 
 	-- Registers
 	signal ACC, F               : std_logic_vector(7 downto 0);
@@ -256,13 +249,18 @@ architecture rtl of T80 is
 	signal XYbit_undoc          : std_logic;
 	signal DOR                  : std_logic_vector(127 downto 0);
 
+	signal ABus                 : std_logic_vector(15 downto 0);
+	signal ABus_last            : std_logic_vector(15 downto 0);
+	signal NoRead_int           : std_logic;
+	signal Write_int            : std_logic;
+
 begin
 
 	REG <= IntE_FF2 & IntE_FF1 & IStatus & DOR & std_logic_vector(PC) & std_logic_vector(SP) & std_logic_vector(R) & I & Fp & Ap & F & ACC when Alternate = '0'
 			 else IntE_FF2 & IntE_FF1 & IStatus & DOR(127 downto 112) & DOR(47 downto 0) & DOR(63 downto 48) & DOR(111 downto 64) &
 						std_logic_vector(PC) & std_logic_vector(SP) & std_logic_vector(R) & I & Fp & Ap & F & ACC;
 
-	mcode : work.T80_MCode
+	mcode : T80_MCode
 		generic map(
 			Mode   => Mode,
 			Flag_C => Flag_C,
@@ -326,11 +324,11 @@ begin
 			SetEI       => SetEI,
 			IMode       => IMode,
 			Halt        => Halt,
-			NoRead      => NoRead,
-			Write       => Write,
+			NoRead      => NoRead_int,
+			Write       => Write_int,
 			XYbit_undoc => XYbit_undoc);
 
-	alu : work.T80_ALU
+	alu : T80_ALU
 		generic map(
 			Mode   => Mode,
 			Flag_C => Flag_C,
@@ -374,7 +372,7 @@ begin
 	begin
 		if RESET_n = '0' then
 			PC <= (others => '0');  -- Program Counter
-			A <= (others => '0');
+			ABus <= (others => '0');
 			WZ <= (others => '0');
 			IR <= "00000000";
 			ISet <= "00";
@@ -413,7 +411,7 @@ begin
 				R   <= unsigned(DIR(47 downto 40));
 				SP  <= unsigned(DIR(63 downto 48));
 				PC  <= unsigned(DIR(79 downto 64));
-				A   <= DIR(79 downto 64);
+				ABus <= DIR(79 downto 64);
 				IStatus <= DIR(209 downto 208);
 
 			elsif ClkEn = '1' then
@@ -440,8 +438,8 @@ begin
 
 					if TState = 2 and Wait_n = '1' then
 						if Mode < 2 then
-							A(7 downto 0) <= std_logic_vector(R);
-							A(15 downto 8) <= I;
+							ABus(7 downto 0) <= std_logic_vector(R);
+							ABus(15 downto 8) <= I;
 							R(6 downto 0) <= R(6 downto 0) + 1;
 						end if;
 
@@ -491,57 +489,57 @@ begin
 					if T_Res = '1' then
 						BTR_r <= (I_BT or I_BC or I_BTR) and not No_BTR;
 						if Jump = '1' then
-							A(15 downto 8) <= DI_Reg;
-							A(7 downto 0) <= WZ(7 downto 0);
+							ABus(15 downto 8) <= DI_Reg;
+							ABus(7 downto 0) <= WZ(7 downto 0);
 							PC(15 downto 8) <= unsigned(DI_Reg);
 							PC(7 downto 0) <= unsigned(WZ(7 downto 0));
 						elsif JumpXY = '1' then
-							A <= RegBusC;
+							ABus <= RegBusC;
 							PC <= unsigned(RegBusC);
 						elsif Call = '1' or RstP = '1' then
-							A <= WZ;
+							ABus <= WZ;
 							PC <= unsigned(WZ);
 						elsif MCycle = MCycles and NMICycle = '1' then
-							A <= "0000000001100110";
+							ABus <= "0000000001100110";
 							PC <= "0000000001100110";
 						elsif MCycle = "011" and IntCycle = '1' and IStatus = "10" then
-							A(15 downto 8) <= I;
-							A(7 downto 0) <= WZ(7 downto 0);
+							ABus(15 downto 8) <= I;
+							ABus(7 downto 0) <= WZ(7 downto 0);
 							PC(15 downto 8) <= unsigned(I);
 							PC(7 downto 0) <= unsigned(WZ(7 downto 0));
 						else
 							case Set_Addr_To is
 							when aXY =>
 								if XY_State = "00" then
-									A <= RegBusC;
+									ABus <= RegBusC;
 								else
 									if NextIs_XY_Fetch = '1' then
-										A <= std_logic_vector(PC);
+										ABus <= std_logic_vector(PC);
 									else
-										A <= WZ;
+										ABus <= WZ;
 									end if;
 								end if;
 							when aIOA =>
 								if Mode = 3 then
 									-- Memory map I/O on GBZ80
-									A(15 downto 8) <= (others => '1');
+									ABus(15 downto 8) <= (others => '1');
 								elsif Mode = 2 then
 									-- Duplicate I/O address on 8080
-									A(15 downto 8) <= DI_Reg;
+									ABus(15 downto 8) <= DI_Reg;
 								else
-									A(15 downto 8) <= ACC;
+									ABus(15 downto 8) <= ACC;
 								end if;
-								A(7 downto 0) <= DI_Reg;
+								ABus(7 downto 0) <= DI_Reg;
 								WZ <= (ACC & DI_Reg) + "1";
 							when aSP =>
-								A <= std_logic_vector(SP);
+								ABus <= std_logic_vector(SP);
 							when aBC =>
 								if Mode = 3 and IORQ_i = '1' then
 									-- Memory map I/O on GBZ80
-									A(15 downto 8) <= (others => '1');
-									A(7 downto 0) <= RegBusC(7 downto 0);
+									ABus(15 downto 8) <= (others => '1');
+									ABus(7 downto 0) <= RegBusC(7 downto 0);
 								else
-									A <= RegBusC;
+									ABus <= RegBusC;
 									if SetWZ = "01" then
 										WZ <= RegBusC + "1";
 									end if;
@@ -551,24 +549,24 @@ begin
 									end if;
 								end if;
 							when aDE =>
-								A <= RegBusC;
+								ABus <= RegBusC;
 								if SetWZ = "10" then
 									WZ(7 downto 0) <= RegBusC(7 downto 0) + "1";
 									WZ(15 downto 8) <= ACC;
 								end if;
 							when aZI =>
 								if Inc_WZ = '1' then
-									A <= std_logic_vector(unsigned(WZ) + 1);
+									ABus <= std_logic_vector(unsigned(WZ) + 1);
 								else
-									A(15 downto 8) <= DI_Reg;
-									A(7 downto 0) <= WZ(7 downto 0);
+									ABus(15 downto 8) <= DI_Reg;
+									ABus(7 downto 0) <= WZ(7 downto 0);
 									if SetWZ = "10" then
 										WZ(7 downto 0) <= WZ(7 downto 0) + "1";
 										WZ(15 downto 8) <= ACC;
 									end if;
 								end if;
 							when others =>
-								A <= std_logic_vector(PC);
+								ABus <= std_logic_vector(PC);
 							end case;
 						end if;
 
@@ -929,7 +927,7 @@ begin
 		end if;
 	end process;
 
-	Regs : work.T80_Reg
+	Regs : T80_Reg
 		port map(
 			Clk => CLK_n,
 			CEN => ClkEn,
@@ -1036,6 +1034,9 @@ begin
 				else
 					RFSH_n <= '1';
 				end if;
+				if (TState = 1 and (NoRead_int = '0' and IORQ_i = '0')) or (TState = 3 and MCycle = "001") then
+					ABus_last <= ABus;
+				end if;
 			end if;
 		end if;
 	end process;
@@ -1049,6 +1050,10 @@ begin
 	IntE <= IntE_FF1;
 	IORQ <= IORQ_i;
 	Stop <= I_DJNZ;
+	NoRead <= NoRead_int;
+	Write <= Write_int;
+	A <= ABus when NoRead_int = '0' or Write_int = '1' else ABus_last;
+
 
 -------------------------------------------------------------------------
 --
@@ -1171,5 +1176,5 @@ begin
 		end if;
 	end process;
 
-	Auto_Wait <= '1' when IntCycle = '1' and MCycle = "001" else '0';
+	Auto_Wait <= '1' when (IntCycle = '1' or NMICycle = '1') and MCycle = "001" else '0';
 end;

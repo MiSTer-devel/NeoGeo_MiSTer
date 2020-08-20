@@ -69,6 +69,7 @@ library IEEE;
 use IEEE.std_logic_1164.all;
 use IEEE.numeric_std.all;
 use IEEE.STD_LOGIC_UNSIGNED.all;
+use work.T80_Pack.all;
 
 entity T80s is
 	generic(
@@ -111,7 +112,7 @@ architecture rtl of T80s is
 
 begin
 
-	u0 : work.T80
+	u0 : T80
 	generic map(
 		Mode => Mode,
 		IOWait => IOWait)
