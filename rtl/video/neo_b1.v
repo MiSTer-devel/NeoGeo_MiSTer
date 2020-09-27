@@ -86,10 +86,10 @@ module neo_b1(
 
 	assign SPR_PAL = PBUS[23:16];
 	
-	linebuffer RAMBL(CLK, CK[0], WE[0], LD1, SS1, GAD, PCK2, SPR_PAL, PBUS[7:0], RAMBL_OUT);
-	linebuffer RAMBR(CLK, CK[1], WE[1], LD1, SS1, GBD, PCK2, SPR_PAL, PBUS[15:8], RAMBR_OUT);
-	linebuffer RAMTL(CLK, CK[2], WE[2], LD2, SS2, GAD, PCK2, SPR_PAL, PBUS[7:0], RAMTL_OUT);
-	linebuffer RAMTR(CLK, CK[3], WE[3], LD2, SS2, GBD, PCK2, SPR_PAL, PBUS[15:8], RAMTR_OUT);
+	linebuffer RAMBR(CLK, CK[0], WE[0], LD1, SS1, GAD, PCK2, SPR_PAL, PBUS[7:0], RAMBR_OUT);
+	linebuffer RAMBL(CLK, CK[1], WE[1], LD1, SS1, GBD, PCK2, SPR_PAL, PBUS[15:8], RAMBL_OUT);
+	linebuffer RAMTR(CLK, CK[2], WE[2], LD2, SS2, GAD, PCK2, SPR_PAL, PBUS[7:0], RAMTR_OUT);
+	linebuffer RAMTL(CLK, CK[3], WE[3], LD2, SS2, GBD, PCK2, SPR_PAL, PBUS[15:8], RAMTL_OUT);
 	
 	assign MUX_BA = {TMS0, S1H1};
 	
