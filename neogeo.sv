@@ -57,8 +57,8 @@ module emu
 	output        CE_PIXEL,
 
 	//Video aspect ratio for HDMI. Most retro systems have ratio 4:3.
-	output  [7:0] VIDEO_ARX,
-	output  [7:0] VIDEO_ARY,
+	output [11:0] VIDEO_ARX,
+	output [11:0] VIDEO_ARY,
 
 	output  [7:0] VGA_R,
 	output  [7:0] VGA_G,
@@ -67,7 +67,35 @@ module emu
 	output        VGA_VS,
 	output        VGA_DE,    // = ~(VBlank | HBlank)
 	output        VGA_F1,
-	output  [1:0] VGA_SL,
+	output [1:0]  VGA_SL,
+	output        VGA_SCALER, // Force VGA scaler
+
+`ifdef USE_FB
+	// Use framebuffer in DDRAM (USE_FB=1 in qsf)
+	// FB_FORMAT:
+	//    [2:0] : 011=8bpp(palette) 100=16bpp 101=24bpp 110=32bpp
+	//    [3]   : 0=16bits 565 1=16bits 1555
+	//    [4]   : 0=RGB  1=BGR (for 16/24/32 modes)
+	//
+	// FB_STRIDE either 0 (rounded to 256 bytes) or multiple of pixel size (in bytes)
+	output        FB_EN,
+	output  [4:0] FB_FORMAT,
+	output [11:0] FB_WIDTH,
+	output [11:0] FB_HEIGHT,
+	output [31:0] FB_BASE,
+	output [13:0] FB_STRIDE,
+	input         FB_VBL,
+	input         FB_LL,
+	output        FB_FORCE_BLANK,
+
+	// Palette control for 8bit modes.
+	// Ignored for other video modes.
+	output        FB_PAL_CLK,
+	output  [7:0] FB_PAL_ADDR,
+	output [23:0] FB_PAL_DOUT,
+	input  [23:0] FB_PAL_DIN,
+	output        FB_PAL_WR,
+`endif
 
 	output        LED_USER,  // 1 - ON, 0 - OFF.
 
@@ -98,6 +126,7 @@ module emu
 	output        SD_CS,
 	input         SD_CD,
 
+`ifdef USE_DDRAM
 	//High latency DDR3 RAM interface
 	//Use for non-critical time purposes
 	output        DDRAM_CLK,
@@ -110,7 +139,9 @@ module emu
 	output [63:0] DDRAM_DIN,
 	output  [7:0] DDRAM_BE,
 	output        DDRAM_WE,
+`endif
 
+`ifdef USE_SDRAM
 	//SDRAM interface with lower latency
 	output        SDRAM_CLK,
 	output        SDRAM_CKE,
@@ -123,24 +154,12 @@ module emu
 	output        SDRAM_nCAS,
 	output        SDRAM_nRAS,
 	output        SDRAM_nWE,
+`endif
 
-	output        SDRAM2_CLK,
 `ifdef DUAL_SDRAM
-	//
-	// Secondary SDRAM notes:
-	// SDRAM2_EN: 
-	//
-	//    1 - MiSTer is configured for SDRAM2 use, core can use SDRAM2_* signals.
-	//        It doesn't mean SDRAM module is plugged.
-	//
-	//    0 - MiSter is not configured for SDRAM2 module, the core
-	//        has to set all output SDRAM2_* signals to Z ASAP to avoid signal collision!
-	//
-	// {DQMH,DQML} are mapped to A[12:11]
-	// You need to set A[12:11] appropriately in READ/WRITE commands for correct operations.
-	// in ACTIVATE command the whole A[12:0] can be used as it doesn't affect the input/output of data.
-	// CKE is hardwired to 1 on the module.
-	//
+	//Secondary SDRAM
+	input         SDRAM2_EN,
+	output        SDRAM2_CLK,
 	output [12:0] SDRAM2_A,
 	output  [1:0] SDRAM2_BA,
 	inout  [15:0] SDRAM2_DQ,
@@ -148,7 +167,6 @@ module emu
 	output        SDRAM2_nCAS,
 	output        SDRAM2_nRAS,
 	output        SDRAM2_nWE,
-	input         SDRAM2_EN, 
 `endif
 
 	input         UART_CTS,
@@ -183,9 +201,12 @@ assign LED_USER  = status[0] | bk_pending;
 assign LED_DISK  = 0;
 assign LED_POWER = 0;
 assign BUTTONS   = osd_btn;
+assign VGA_SCALER= 0;
 
-assign VIDEO_ARX = status[17] ? 8'd16 : 8'd10;	// 320/32
-assign VIDEO_ARY = status[17] ? 8'd9  : 8'd7;	// 224/32
+wire [1:0] ar = status[33:32];
+
+assign VIDEO_ARX = (!ar) ? 12'd10 : (ar - 1'd1);
+assign VIDEO_ARY = (!ar) ? 12'd7 : 12'd0;
 
 // status bit definition:
 // 31       23       15       7
@@ -248,7 +269,7 @@ localparam CONF_STR = {
 	"H2O9,[DIP] Freeze,OFF,ON;",
 	"-;",
 	"OG,Width,320px,304px;",
-	"OH,Aspect Ratio,Original,Wide;",
+	"o01,Aspect ratio,Original,Full Screen,[ARC1],[ARC2];",
 	"OIK,Scandoubler Fx,None,HQ2x,CRT 25%,CRT 50%,CRT 75%;",
 	"O56,Stereo Mix,none,25%,50%,100%;",
 	"-;",
@@ -932,7 +953,6 @@ assign sdram2_ready = 1;
 assign sdr2_cprd = 0;
 assign sdr2_cpbusy = 0;
 assign sdr2_en = 0;
-assign SDRAM2_CLK = 1'bZ;
 `endif
 
 assign sdram_dout  = sdr_pri_sel ? sdram1_dout : sdram2_dout;
