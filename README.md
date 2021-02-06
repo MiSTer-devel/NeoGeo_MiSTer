@@ -14,7 +14,7 @@ This is an FPGA implementation of the NEO GEO/MVS system by [Furrtek](https://ww
 
 Note: Core doesn't support encrypted ROMs. Make sure the ROM has no encrypted parts before use. MAME ROM pack includes many encrypted ROMs so it's not recommended for inexperienced users. Using the .neo conversion tool with a MAME ROM set will result in some ROMs still being encrypted. There is an alternate .neo conversion tool for the Darksoft ROM set that will give you a fully decrypted set.
 
-[MAME to .neo conversion tool](https://preview.npmjs.com/package/neosdconv/)
+[MAME to .neo conversion tool](https://github.com/city41/neosdconv)
 
 [Darksoft to .neo conversion tool](https://gitlab.com/loic.petit/darksoft-to-neosd/)
 
