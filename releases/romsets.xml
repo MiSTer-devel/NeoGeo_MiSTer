@@ -245,7 +245,8 @@ https://lmgtfy.com/?q=darksoft+neo+geo+roll-up+pack
 		<file name="271-v1cd.bin" index="16"/>
 		<file name="271-v2cd.bin" index="32"/>
 	</romset>
-
+	<romset name="samsh5fe" pcm="1" altname="Samurai Shodown V Perfect" publisher="SNK" year="2020" ram="2"/>
+	
 	<!-- ROMs requiring 128MB SDRAM (2x64MB) -->
 
 	<!-- Not in darksoft pack -->
