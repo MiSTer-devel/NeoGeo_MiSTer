@@ -40,7 +40,7 @@ folders - they are just here to let MiSTer know these versions should be
 displayed. Note: you must keep the main folder, as it contains the ROMs
 actually being used.
 
-## GOG game list
+## Game list
 
 Grouped by MiSTer SDRAM requirements.
 
