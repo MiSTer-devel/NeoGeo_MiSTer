@@ -1,4 +1,4 @@
-# gog-romset.xml
+# Using purchased ROMs (gog-romset.xml)
 
 Good Old Games (at least the Linux versions), Humble Bundle store and possibly
 other sellers contain the image of individual ROM chips, unlike the Darksoft
@@ -6,6 +6,8 @@ rom pack which preprocessed these images.
 
 This document will help you locate the ROM files in an installed game, get them
 where you need them, and get the most out of your purchase.
+
+Note: gog-romsets.xml needs to be renamed to romsets.xml for these games to function.
 
 ## BIOS images
 
@@ -27,7 +29,7 @@ Chances are these files will be in a `.zip` archive. For Metal Slug, they would
 be in a file named `mslug.zip`, for example.
 
 Locate your game in the table below. In your MiSTer NeoGeo folder
-(`/media/fat/NeoGeo` or something like this), create a folder named like the
+(`/games/NeoGeo`), create a folder named like the
 game (this would be `mslug` for Metal Slug) and put the ROM images there
 (extracted from the `.zip` file if any).
 
