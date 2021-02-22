@@ -57,8 +57,9 @@ module emu
 	output        CE_PIXEL,
 
 	//Video aspect ratio for HDMI. Most retro systems have ratio 4:3.
-	output [11:0] VIDEO_ARX,
-	output [11:0] VIDEO_ARY,
+	//if VIDEO_ARX[12] or VIDEO_ARY[12] is set then [11:0] contains scaled size instead of aspect ratio.
+	output [12:0] VIDEO_ARX,
+	output [12:0] VIDEO_ARY,
 
 	output  [7:0] VGA_R,
 	output  [7:0] VGA_G,
@@ -217,14 +218,15 @@ always @(posedge CLK_VIDEO) begin
 end
 
 wire vga_de;
-video_crop video_crop
+video_freak video_freak
 (
 	.*,
 	.VGA_DE_IN(vga_de),
 	.ARX((!ar) ? 12'd10 : (ar - 1'd1)),
 	.ARY((!ar) ? 12'd7  : 12'd0),
 	.CROP_SIZE((en216p & vcrop_en) ? 10'd216 : 10'd0),
-	.CROP_OFF(voff)
+	.CROP_OFF(voff),
+	.SCALE(status[40:39])
 );
 
 // status bit definition:
@@ -293,6 +295,7 @@ localparam CONF_STR = {
 	"-;",
 	"d5o2,Vertical Crop,Disabled,216p(5x);",
 	"d5o36,Crop Offset,0,2,4,8,10,12,-12,-10,-8,-6,-4,-2;",
+	"o78,Scale,Normal,V-Integer,Narrower HV-Integer,Wider HV-Integer;",
 	"-;",
 	"O56,Stereo Mix,none,25%,50%,100%;",
 	"-;",
@@ -1759,7 +1762,7 @@ video_cleaner video_cleaner
 
 	.HSync(HSync),
 	.VSync(VSync),
-	.HBlank(HBlank[2]),
+	.HBlank(HBlank[0]),
 	.VBlank(~nBNKB),
 
 	.VGA_R(r),
