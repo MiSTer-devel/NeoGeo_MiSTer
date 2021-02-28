@@ -343,8 +343,12 @@ always @(posedge clk_sys) counter_p <= counter_p + 1'd1;
 reg osd_btn = 0;
 always @(posedge CLK_24M) begin
 	integer timeout = 0;
+	reg     last_rst = 0;
+
+	if (RESET) last_rst = 0;
+	if (status[0]) last_rst = 1;
 	
-	if(!RESET) begin
+	if (last_rst & ~status[0]) begin
 		osd_btn <= 0;
 		if(timeout < 24000000) begin
 			timeout <= timeout + 1;
