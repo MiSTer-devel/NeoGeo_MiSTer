@@ -19,7 +19,6 @@
 //============================================================================
 
 // Current status:
-// ADPCM kinda works, many loud glitches. DDR3 latency issue ? Signal are ready in Signaltap
 // Neo CD CD check ok but crashes when loading. No more video glitches.
 
 // How about not using a cache at all and DMAing directly from the data fed by the HPS ?
@@ -73,8 +72,9 @@ module emu
 
 	input  [11:0] HDMI_WIDTH,
 	input  [11:0] HDMI_HEIGHT,
+	output        HDMI_FREEZE,
 
-`ifdef USE_FB
+`ifdef MISTER_FB
 	// Use framebuffer in DDRAM (USE_FB=1 in qsf)
 	// FB_FORMAT:
 	//    [2:0] : 011=8bpp(palette) 100=16bpp 101=24bpp 110=32bpp
@@ -92,6 +92,7 @@ module emu
 	input         FB_LL,
 	output        FB_FORCE_BLANK,
 
+`ifdef MISTER_FB_PALETTE
 	// Palette control for 8bit modes.
 	// Ignored for other video modes.
 	output        FB_PAL_CLK,
@@ -99,6 +100,7 @@ module emu
 	output [23:0] FB_PAL_DOUT,
 	input  [23:0] FB_PAL_DIN,
 	output        FB_PAL_WR,
+`endif
 `endif
 
 	output        LED_USER,  // 1 - ON, 0 - OFF.
@@ -130,7 +132,6 @@ module emu
 	output        SD_CS,
 	input         SD_CD,
 
-`ifdef USE_DDRAM
 	//High latency DDR3 RAM interface
 	//Use for non-critical time purposes
 	output        DDRAM_CLK,
@@ -143,9 +144,7 @@ module emu
 	output [63:0] DDRAM_DIN,
 	output  [7:0] DDRAM_BE,
 	output        DDRAM_WE,
-`endif
 
-`ifdef USE_SDRAM
 	//SDRAM interface with lower latency
 	output        SDRAM_CLK,
 	output        SDRAM_CKE,
@@ -158,10 +157,10 @@ module emu
 	output        SDRAM_nCAS,
 	output        SDRAM_nRAS,
 	output        SDRAM_nWE,
-`endif
 
-`ifdef DUAL_SDRAM
+`ifdef MISTER_DUAL_SDRAM
 	//Secondary SDRAM
+	//Set all output SDRAM_* signals to Z ASAP if SDRAM2_EN is 0
 	input         SDRAM2_EN,
 	output        SDRAM2_CLK,
 	output [12:0] SDRAM2_A,
@@ -206,6 +205,7 @@ assign LED_DISK  = 0;
 assign LED_POWER = 0;
 assign BUTTONS   = osd_btn;
 assign VGA_SCALER= 0;
+assign HDMI_FREEZE = 0;
 
 wire [1:0] ar       = status[33:32];
 wire       vcrop_en = status[34];
@@ -364,22 +364,17 @@ end
 // VD 0: Save file
 // VD 1: CD bin file
 // VD 2: CD cue file, let MiSTer binary take care of it, do not touch !
-wire [1:0] img_mounted;
-wire [1:0] sd_rd;
-wire [1:0] sd_wr;
-assign sd_rd[0] = bk_rd;
-assign sd_wr[0] = bk_wr;
-assign sd_wr[1] = 0;
-
-wire sd_ack, sd_buff_wr, img_readonly;
-
+wire  [1:0] img_mounted;
+wire        sd_buff_wr, img_readonly;
 wire  [7:0] sd_buff_addr;	// Address inside 256-word sector
 wire [15:0] sd_buff_dout;
-wire [15:0] sd_buff_din;
+wire [15:0] sd_buff_din[2];
 wire [15:0] sd_req_type;
 wire [63:0] img_size;
-reg  [31:0] sd_lba;
-wire [31:0] CD_sd_lba;
+wire [31:0] sd_lba[2];
+wire  [1:0] sd_wr;
+wire  [1:0] sd_rd;
+wire  [1:0] sd_ack;
 
 wire [15:0] joystick_0;	// ----HNLS DCBAUDLR
 wire [15:0] joystick_1;
@@ -404,13 +399,12 @@ wire SYSTEM_CDx = SYSTEM_TYPE[1];
 wire [15:0] sdram_sz;
 wire [21:0] gamma_bus;
 
-hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1), .VDNUM(2)) hps_io
+hps_io #(.CONF_STR(CONF_STR), .WIDE(1), .VDNUM(2)) hps_io
 (
 	.clk_sys(clk_sys),
 	.HPS_BUS(HPS_BUS),
 	.EXT_BUS(),
 
-	.conf_str(CONF_STR),
 	.forced_scandoubler(forced_scandoubler),
 
 	.joystick_0(joystick_0), .joystick_1(joystick_1),
@@ -434,14 +428,14 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1), .VDNUM(2)) hps_io
 	.ioctl_index(ioctl_index),
 	.ioctl_wait(ddram_wait | memcp_wait),
 	
-	.sd_lba(sd_req_type ? CD_sd_lba : sd_lba),
-	.sd_rd(sd_rd), .sd_wr(sd_wr),
+	.sd_lba(sd_lba),
+	.sd_rd(sd_rd),
+	.sd_wr(sd_wr),
 	.sd_ack(sd_ack),
 	.sd_buff_addr(sd_buff_addr),
 	.sd_buff_dout(sd_buff_dout),
 	.sd_buff_din(sd_buff_din),
 	.sd_buff_wr(sd_buff_wr),
-	.sd_req_type(sd_req_type),
 	
 	.img_mounted(img_mounted),
 	.img_readonly(img_readonly),
@@ -594,10 +588,17 @@ wire [1:0] cart_chip  = cfg[25:24]; // legacy option: 0 - none, 1 - PRO-CT0, 2 -
 wire [1:0] cmc_chip   = cfg[27:26]; // type 1/2
 
 // Memory card and backup ram image save/load
+assign sd_rd[0]       = bk_rd;
+assign sd_wr[0]       = bk_wr;
+assign sd_lba[0]      = bk_lba;
+assign sd_buff_din[0] = bk_dout;
+wire   bk_ack         = sd_ack[0];
+
 wire downloading = status[0];
 reg bk_rd, bk_wr;
 reg bk_ena = 0;
 reg bk_pending = 0;
+reg [31:0] bk_lba;
 
 wire bk_autosave = status[24];
 // Memory write flag for backup memory & memory card
@@ -641,15 +642,15 @@ always @(posedge clk_sys) begin
 
 	old_load <= bk_load;
 	old_save <= bk_save;
-	old_ack  <= sd_ack;
+	old_ack  <= bk_ack;
 
-	if(~old_ack & sd_ack) {bk_rd, bk_wr} <= 0;
+	if(~old_ack & bk_ack) {bk_rd, bk_wr} <= 0;
 
 	if(!bk_state) begin
 		if(bk_ena & ((~old_load & bk_load) | (~old_save & bk_save & bk_pending))) begin
 			bk_state <= 1;
 			bk_loading <= bk_load;
-			sd_lba <= 0;
+			bk_lba <= 0;
 			bk_rd  <=  bk_load;
 			bk_wr  <= ~bk_load;
 		end
@@ -657,17 +658,17 @@ always @(posedge clk_sys) begin
 		if(old_downloading & ~downloading & bk_ena) begin
 			bk_state <= 1;
 			bk_loading <= 1;
-			sd_lba <= 0;
+			bk_lba <= 0;
 			bk_rd  <= 1;
 			bk_wr  <= 0;
 		end
 	end else begin
-		if(old_ack & ~sd_ack) begin
-			if (sd_lba >= 'h8F) begin // 64KB + 8KB regardless the selected system
+		if(old_ack & ~bk_ack) begin
+			if (bk_lba >= 'h8F) begin // 64KB + 8KB regardless the selected system
 				bk_loading <= 0;
 				bk_state <= 0;
 			end else begin
-				sd_lba <= sd_lba + 1'd1;
+				bk_lba <= bk_lba + 1'd1;
 				bk_rd  <=  bk_loading;
 				bk_wr  <= ~bk_loading;
 			end
@@ -708,6 +709,9 @@ wire [23:0] DMA_ADDR_OUT;
 wire DMA_SDRAM_BUSY;
 wire PROM_DATA_READY;
 
+assign sd_wr[1]       = 0;
+assign sd_buff_din[1] = 0;
+
 cd_sys cdsystem(
 	.nRESET(nRESET),
 	.clk_sys(clk_sys), .CLK_68KCLK(CLK_68KCLK),
@@ -726,8 +730,8 @@ cd_sys cdsystem(
 	.CD_TR_WR_DATA(CD_TR_WR_DATA), .CD_TR_WR_ADDR(CD_TR_WR_ADDR),
 	.CD_IRQ(CD_IRQ), .IACK(IACK),
 	.sd_req_type(sd_req_type),
-	.sd_rd(sd_rd[1]), .sd_ack(sd_ack), .sd_buff_wr(sd_buff_wr),
-	.sd_buff_dout(sd_buff_dout), .sd_lba(CD_sd_lba),
+	.sd_rd(sd_rd[1]), .sd_ack(sd_ack[1]), .sd_buff_wr(sd_buff_wr),
+	.sd_buff_dout(sd_buff_dout), .sd_lba(sd_lba[1]),
 	.DMA_RUNNING(DMA_RUNNING),
 	.DMA_DATA_IN(PROM_DATA), .DMA_DATA_OUT(DMA_DATA_OUT),
 	.DMA_WR_OUT(DMA_WR_OUT), .DMA_RD_OUT(DMA_RD_OUT),
@@ -1124,17 +1128,17 @@ neo_sma neo_sma
 assign M68K_DATA[7:0]  = nWRL ? 8'bzzzzzzzz : SYSTEM_CDx ? PROM_DATA[7:0]  : WRAML_OUT;
 assign M68K_DATA[15:8] = nWRU ? 8'bzzzzzzzz : SYSTEM_CDx ? PROM_DATA[15:8] : WRAMU_OUT;
 
-wire save_wr    = (!SYSTEM_CDx || (sd_req_type == 16'h0000)) & sd_buff_wr & sd_ack;
-wire sram_wr    = ~sd_lba[7] & save_wr; // 000000~00FFFF
-wire memcard_wr =  sd_lba[7] & save_wr; // 010000-011FFF
-wire [14:0] sram_addr    = {sd_lba[6:0], sd_buff_addr}; //64KB
-wire [11:0] memcard_addr = {sd_lba[3:0], sd_buff_addr}; //8KB
+wire save_wr    =  sd_buff_wr & bk_ack;
+wire sram_wr    = ~bk_lba[7] & save_wr; // 000000~00FFFF
+wire memcard_wr =  bk_lba[7] & save_wr; // 010000-011FFF
+wire [14:0] sram_addr    = {bk_lba[6:0], sd_buff_addr}; //64KB
+wire [11:0] memcard_addr = {bk_lba[3:0], sd_buff_addr}; //8KB
 
 // Backup RAM
 wire nBWL = nSRAMWEL | nSRAMWEN_G;
 wire nBWU = nSRAMWEU | nSRAMWEN_G;
 
-wire [15:0] sd_buff_din_sram;
+wire [15:0] sram_buff_dout;
 backup BACKUP(
 	.CLK_24M(CLK_24M),
 	.M68K_ADDR(M68K_ADDR[15:1]),
@@ -1145,7 +1149,7 @@ backup BACKUP(
 	.sram_addr(sram_addr),
 	.sram_wr(sram_wr),
 	.sd_buff_dout(sd_buff_dout),
-	.sd_buff_din_sram(sd_buff_din_sram)
+	.sd_buff_din_sram(sram_buff_dout)
 );
 
 // Backup RAM is only for MVS
@@ -1156,7 +1160,7 @@ assign M68K_DATA[15:8] = (nSRAMOEU | ~SYSTEM_MVS) ? 8'bzzzzzzzz : SRAM_OUT[15:8]
 assign {nCD1, nCD2} = {2{status[4] & ~SYSTEM_CDx}};	// Always plugged in CD systems
 assign CARD_WE = (SYSTEM_CDx | (~nCARDWEN & CARDWENB)) & ~nCRDW;
 
-wire [15:0] sd_buff_din_memcard;
+wire [15:0] memcard_buff_dout;
 memcard MEMCARD(
 	.CLK_24M(CLK_24M),
 	.SYSTEM_CDx(SYSTEM_CDx),
@@ -1167,12 +1171,11 @@ memcard MEMCARD(
 	.memcard_addr(memcard_addr),
 	.memcard_wr(memcard_wr),
 	.sd_buff_dout(sd_buff_dout),
-	.sd_buff_din_memcard(sd_buff_din_memcard)
+	.sd_buff_din_memcard(memcard_buff_dout)
 );
 
 // Feed save file writer with backup RAM data or memory card data
-assign sd_buff_din = SYSTEM_CDx ? sd_buff_din_memcard :
-							sd_lba[7] ? sd_buff_din_memcard : sd_buff_din_sram;
+wire [15:0] bk_dout = bk_lba[7] ? memcard_buff_dout : sram_buff_dout;
 
 assign CROM_ADDR = {C_LATCH_EXT, C_LATCH, 3'b000} & CROM_MASK;
 
@@ -1830,6 +1833,7 @@ video_mixer #(.LINE_LENGTH(320), .HALF_DEPTH(0), .GAMMA(1)) video_mixer
 	.*,
 	.scandoubler(scale || forced_scandoubler),
 	.hq2x(scale==1),
+	.freeze_sync(),
 
 	.VGA_DE(vga_de),
 	.R(r),
