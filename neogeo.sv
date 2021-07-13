@@ -277,7 +277,7 @@ localparam CONF_STR = {
 	"OM,BIOS,UniBIOS,Original;",
 	"O3,Video Mode,NTSC,PAL;",
 	"-;",
-	"o9A,Input,Auto,Joystick,Mouse/Spinner;",
+	"o9A,Input,Joystick or Spinner,Joystick,Spinner,Mouse(Irr.Maze);",
 	"-;",
 	"H0O4,Memory Card,Plugged,Unplugged;",
 	"RL,Reload Memory Card;",
@@ -1311,8 +1311,8 @@ neo_c1 C1(
 	.nLSPOE(nLSPOE), .nLSPWE(nLSPWE),
 	.nCRDO(nCRDO), .nCRDW(nCRDW), .nCRDC(nCRDC),
 	.nSDW(nSDW),
-	.P1_IN(~{use_sp ? {joystick_0[9:8], joystick_0[7] || ps2_mouse[1:0],sp0} : {joystick_0[9:4] | {3{joystick_0[11]}}, joystick_0[0], joystick_0[1], joystick_0[2], joystick_0[3]}}),
-	.P2_IN(~{use_sp ? {joystick_1[9:7],sp1} : {joystick_1[9:4] | {3{joystick_1[11]}}, joystick_1[0], joystick_1[1], joystick_1[2], joystick_1[3]}}),
+	.P1_IN(~{(joystick_0[9:8]|ps2_mouse[2]), {use_mouse ? ms_pos : use_sp ? {joystick_0[7]||ps2_mouse[1:0],sp0} : {joystick_0[7:4]|{3{joystick_0[11]}}, joystick_0[0], joystick_0[1], joystick_0[2], joystick_0[3]}}}),
+	.P2_IN(~{ joystick_1[9:8],               {use_mouse ? ms_btn : use_sp ? {joystick_1[7],                sp1} : {joystick_1[7:4]|{3{joystick_1[11]}}, joystick_1[0], joystick_1[1], joystick_1[2], joystick_1[3]}}}),
 	.nCD1(nCD1), .nCD2(nCD2),
 	.nWP(0),			// Memory card is never write-protected
 	.nROMWAIT(1), .nPWAIT0(1), .nPWAIT1(1), .PDTACK(1),
@@ -1327,7 +1327,7 @@ neo_c1 C1(
 	.SYSTEM_TYPE(SYSTEM_TYPE)
 );
 
-reg use_sp;
+reg       use_sp;
 reg [6:0] sp0, sp1;
 always @(posedge clk_sys) begin
 	reg old_sp0, old_sp1, old_ms;
@@ -1346,6 +1346,25 @@ always @(posedge clk_sys) begin
 	else begin
 		if((old_sp0 ^ spinner_0[8]) || (old_sp1 ^ spinner_1[8]) || (old_ms ^ ps2_mouse[24])) use_sp <= 1;
 		if(joystick_0[6:0] || joystick_1[6:0]) use_sp <= 0;
+	end
+end
+
+wire       use_mouse = &status[42:41];
+
+reg        ms_xy;
+reg  [7:0] ms_x, ms_y;
+wire [7:0] ms_pos = ms_xy ? ms_y : ms_x;
+wire [7:0] ms_btn = {2'b00, ps2_mouse[1:0], 4'b0000};
+
+always @(posedge clk_sys) begin
+	reg old_ms;
+
+	if(!nBITW0 && !M68K_ADDR[6:3]) ms_xy <= M68K_DATA[0];
+
+	old_ms <= ps2_mouse[24];
+	if(old_ms ^ ps2_mouse[24]) begin
+		ms_x <= ms_x + ps2_mouse[15:8];
+		ms_y <= ms_y - ps2_mouse[23:16];
 	end
 end
 
