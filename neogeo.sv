@@ -1314,8 +1314,8 @@ neo_c1 C1(
 	.nLSPOE(nLSPOE), .nLSPWE(nLSPWE),
 	.nCRDO(nCRDO), .nCRDW(nCRDW), .nCRDC(nCRDC),
 	.nSDW(nSDW),
-	.P1_IN(~{(joystick_0[9:8]|ps2_mouse[2]), {use_mouse ? ms_pos : use_sp ? {joystick_0[7]||ps2_mouse[1:0],sp0} : {joystick_0[7:4]|{3{joystick_0[11]}}, joystick_0[0], joystick_0[1], joystick_0[2], joystick_0[3]}}}),
-	.P2_IN(~{ joystick_1[9:8],               {use_mouse ? ms_btn : use_sp ? {joystick_1[7],                sp1} : {joystick_1[7:4]|{3{joystick_1[11]}}, joystick_1[0], joystick_1[1], joystick_1[2], joystick_1[3]}}}),
+	.P1_IN(~{(joystick_0[9:8]|ps2_mouse[2]), {use_mouse ? ms_pos : use_sp ? {|{joystick_0[7:4],ps2_mouse[1:0]},sp0} : {joystick_0[7:4]|{3{joystick_0[11]}}, joystick_0[0], joystick_0[1], joystick_0[2], joystick_0[3]}}}),
+	.P2_IN(~{ joystick_1[9:8],               {use_mouse ? ms_btn : use_sp ? {|{joystick_1[7:4]},               sp1} : {joystick_1[7:4]|{3{joystick_1[11]}}, joystick_1[0], joystick_1[1], joystick_1[2], joystick_1[3]}}}),
 	.nCD1(nCD1), .nCD2(nCD2),
 	.nWP(0),			// Memory card is never write-protected
 	.nROMWAIT(1), .nPWAIT0(1), .nPWAIT1(1), .PDTACK(1),
@@ -1348,7 +1348,7 @@ always @(posedge clk_sys) begin
 	else if(status[41]) use_sp <= 0;
 	else begin
 		if((old_sp0 ^ spinner_0[8]) || (old_sp1 ^ spinner_1[8]) || (old_ms ^ ps2_mouse[24])) use_sp <= 1;
-		if(joystick_0[6:0] || joystick_1[6:0]) use_sp <= 0;
+		if(joystick_0[3:0] || joystick_1[3:0]) use_sp <= 0;
 	end
 end
 
