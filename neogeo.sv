@@ -277,6 +277,8 @@ localparam CONF_STR = {
 	"OM,BIOS,UniBIOS,Original;",
 	"O3,Video Mode,NTSC,PAL;",
 	"-;",
+	"o9A,Input,Auto,Joystick,Spinner;",
+	"-;",
 	"H0O4,Memory Card,Plugged,Unplugged;",
 	"RL,Reload Memory Card;",
 	"D4RC,Save Memory Card;",
@@ -381,6 +383,7 @@ wire [31:0] CD_sd_lba;
 
 wire [15:0] joystick_0;	// ----HNLS DCBAUDLR
 wire [15:0] joystick_1;
+wire  [8:0] spinner_0, spinner_1;
 wire  [1:0] buttons;
 wire [10:0] ps2_key;
 wire        forced_scandoubler;
@@ -410,6 +413,7 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .WIDE(1), .VDNUM(2)) hps_io
 	.forced_scandoubler(forced_scandoubler),
 
 	.joystick_0(joystick_0), .joystick_1(joystick_1),
+	.spinner_0(spinner_0), .spinner_1(spinner_1),
 	.buttons(buttons),
 	.ps2_key(ps2_key),
 
@@ -1305,8 +1309,8 @@ neo_c1 C1(
 	.nLSPOE(nLSPOE), .nLSPWE(nLSPWE),
 	.nCRDO(nCRDO), .nCRDW(nCRDW), .nCRDC(nCRDC),
 	.nSDW(nSDW),
-	.P1_IN(~{joystick_0[9:4] | {3{joystick_0[11]}}, joystick_0[0], joystick_0[1], joystick_0[2], joystick_0[3]}),
-	.P2_IN(~{joystick_1[9:4] | {3{joystick_1[11]}}, joystick_1[0], joystick_1[1], joystick_1[2], joystick_1[3]}),
+	.P1_IN(~{use_sp ? {joystick_0[9:7],sp0} : {joystick_0[9:4] | {3{joystick_0[11]}}, joystick_0[0], joystick_0[1], joystick_0[2], joystick_0[3]}}),
+	.P2_IN(~{use_sp ? {joystick_1[9:7],sp1} : {joystick_1[9:4] | {3{joystick_1[11]}}, joystick_1[0], joystick_1[1], joystick_1[2], joystick_1[3]}}),
 	.nCD1(nCD1), .nCD2(nCD2),
 	.nWP(0),			// Memory card is never write-protected
 	.nROMWAIT(1), .nPWAIT0(1), .nPWAIT1(1), .PDTACK(1),
@@ -1320,6 +1324,25 @@ neo_c1 C1(
 	.nPAL_ZONE(nPAL),
 	.SYSTEM_TYPE(SYSTEM_TYPE)
 );
+
+reg use_sp;
+reg [6:0] sp0, sp1;
+always @(posedge clk_sys) begin
+	reg old_sp0, old_sp1;
+
+	old_sp0 <= spinner_0[8];
+	if(old_sp0 ^ spinner_0[8]) sp0 <= sp0 - spinner_0[6:0];
+
+	old_sp1 <= spinner_1[8];
+	if(old_sp1 ^ spinner_1[8]) sp1 <= sp1 - spinner_1[6:0];
+
+	if(status[42]) use_sp <= 1;
+	else if(status[41]) use_sp <= 0;
+	else begin
+		if((old_sp0 ^ spinner_0[8]) || (old_sp1 ^ spinner_1[8])) use_sp <= 1;
+		if(joystick_0[6:0] || joystick_1[6:0]) use_sp <= 0;
+	end
+end
 
 // This is used to split burst-read sprite gfx data in half at the right time
 reg LOAD_SR;
