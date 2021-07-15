@@ -320,8 +320,67 @@ pll pll(
 	.rst(0),
 	.outclk_0(clk_sys),
 	.outclk_1(CLK_VIDEO),
+	.reconfig_to_pll(reconfig_to_pll),
+	.reconfig_from_pll(reconfig_from_pll),
 	.locked(locked)
 );
+
+wire [63:0] reconfig_to_pll;
+wire [63:0] reconfig_from_pll;
+wire        cfg_waitrequest;
+reg         cfg_write;
+reg   [5:0] cfg_address;
+reg  [31:0] cfg_data;
+
+pll_cfg pll_cfg
+(
+	.mgmt_clk(CLK_50M),
+	.mgmt_reset(0),
+	.mgmt_waitrequest(cfg_waitrequest),
+	.mgmt_read(0),
+	.mgmt_readdata(),
+	.mgmt_write(cfg_write),
+	.mgmt_address(cfg_address),
+	.mgmt_writedata(cfg_data),
+	.reconfig_to_pll(reconfig_to_pll),
+	.reconfig_from_pll(reconfig_from_pll)
+);
+
+always @(posedge CLK_50M) begin
+	reg sys_mvs = 0, sys_mvs2 = 0;
+	reg [2:0] state = 0;
+	reg sys_mvs_r;
+
+	sys_mvs  <= SYSTEM_MVS;
+	sys_mvs2 <= sys_mvs;
+
+	cfg_write <= 0;
+	if(sys_mvs2 == sys_mvs && sys_mvs2 != sys_mvs_r) begin
+		state <= 1;
+		sys_mvs_r <= sys_mvs2;
+	end
+
+	if(!cfg_waitrequest) begin
+		if(state) state<=state+1'd1;
+		case(state)
+			1: begin
+					cfg_address <= 0;
+					cfg_data <= 0;
+					cfg_write <= 1;
+				end
+			5: begin
+					cfg_address <= 7;
+					cfg_data <= sys_mvs_r ? 2576980378 : 2865308404;
+					cfg_write <= 1;
+				end
+			7: begin
+					cfg_address <= 2;
+					cfg_data <= 0;
+					cfg_write <= 1;
+				end
+		endcase
+	end
+end
 
 // The watchdog should output nRESET but it makes video sync stop for a moment, so the
 // MiSTer OSD jumps around. Provide an indication for devs that a watchdog reset happened ?
