@@ -100,7 +100,7 @@ always @(posedge clk or negedge rst_n)
             restart <= 'd0;
             chon <= 'd1;
         end else if( chon && adv ) begin
-            if( { addr, nibble_sel } < { aend, 8'hFF, 1'b1 } ) begin
+            if( { addr, nibble_sel } != { aend, 8'hFF, 1'b1 } ) begin
                 { addr, nibble_sel } <= { addr, nibble_sel } + 25'd1;
                 set_flag <= 'd0;
             end else if(arepeat) begin
