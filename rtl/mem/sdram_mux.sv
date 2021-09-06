@@ -235,11 +235,11 @@ module sdram_mux(
 					DMA_SDRAM_BUSY <= 0;
 				end
 				if (SROM_RD_RUN) begin
-					SROM_DATA      <= SDRAM_DOUT[63:48];
+					SROM_DATA      <= SDRAM_DOUT[15:0];
 					SROM_RD_RUN    <= 0;
 				end
 				if (M68K_RD_RUN) begin
-					PROM_DATA      <= SDRAM_DOUT[63:48];
+					PROM_DATA      <= SDRAM_DOUT[15:0];
 					PROM_DATA_READY<= 1;
 					M68K_RD_RUN    <= 0;
 					DMA_SDRAM_BUSY <= 0;
