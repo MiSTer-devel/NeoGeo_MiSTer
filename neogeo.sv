@@ -255,57 +255,65 @@ video_freak video_freak
 // +   O   +  +  SYSTEM_MVS; 
 // +   +   O  O  SYSTEM_CDx;   
 
+// Status Bit Map:
+// 0         1         2         3          4         5         6   
+// 01234567890123456789012345678901 23456789012345678901234567890123
+// 0123456789ABCDEFGHIJKLMNOPQRSTUV 0123456789ABCDEFGHIJKLMNOPQRSTUV
+// XXXX XXXXXXX XXXXXXXXXX  XXXXXX  XXXXXXXXXXX  XXXXX       XXXXXXX
+
 `include "build_id.v"
 localparam CONF_STR = {
 	"NEOGEO;;",
 	"-;",
-	"H0FS1,*,Load ROM set;",
-	"H1S1,ISOBIN,Load CD Image;",
+	"H0FS1,*,Load ROM;",
+	//"H1S1,ISOBIN,Load CD Image;",
 	"-;",
-	"H3OP,FM,ON,OFF;",
-	"H3OQ,ADPCMA,ON,OFF;",
-	"H3OR,ADPCMB,ON,OFF;",
-	"H3OS,PSG,ON,OFF;",
-	"H3oP,ADPCMA CH 1,ON,OFF;",
-	"H3oQ,ADPCMA CH 2,ON,OFF;",
-	"H3oR,ADPCMA CH 3,ON,OFF;",
-	"H3oS,ADPCMA CH 4,ON,OFF;",
-	"H3oT,ADPCMA CH 5,ON,OFF;",
-	"H3oU,ADPCMA CH 6,ON,OFF;",
-	"H3-;",
-	"O12,System Type,Console(AES),Arcade(MVS);", //,CD,CDZ;",
-	"OM,BIOS,UniBIOS,Original;",
-	"O3,Video Mode,NTSC,PAL;",
+	//"H3OP,FM,ON,OFF;",
+	//"H3OQ,ADPCMA,ON,OFF;",
+	//"H3OR,ADPCMB,ON,OFF;",
+	//"H3OS,PSG,ON,OFF;",
+	//"H3oP,ADPCMA CH 1,ON,OFF;",
+	//"H3oQ,ADPCMA CH 2,ON,OFF;",
+	//"H3oR,ADPCMA CH 3,ON,OFF;",
+	//"H3oS,ADPCMA CH 4,ON,OFF;",
+	//"H3oT,ADPCMA CH 5,ON,OFF;",
+	//"H3oU,ADPCMA CH 6,ON,OFF;",
+	//"H3-;",
+	"O12,Select System,AES,MVS;", //,CD,CDZ;",
+	"OM,Select BIOS,UniBIOS,Original;",
+	"H2O9,System Pause (MVS),Off,On;",
 	"-;",
-	"o9A,Input,Joystick or Spinner,Joystick,Spinner,Mouse(Irr.Maze);",
+	"P1,System Settings;",
+	"H2P1O7,Service Menu,Off,On;",
+	"H2P1O8,Freeplay,Off,On;",
+	"H2P1O9,Freeze/Pause,Off,On;",
+	"P1RE,Apply Settings (Reset);",
+	"P1-;",
+	"H0P1O4,Memory Card,Plugged,Unplugged;",
+	"P1RL,Reload Memory Card;",
+	"D4P1RC,Save Memory Card;",
+	"P1OO,Autosave,Off,On;",
+	"P1-;",
+	"P1o9A,Input,Joystick or Spinner,Joystick,Spinner,Mouse(Irr.Maze);",
+	//"H1P1OAB,Region,US,EU,JP,AS;",
+	//"H1P1OF,CD lid,Opened,Closed;",
+	"P2,Audio & Video;",
+	"P2O3,Video Mode,NTSC,PAL;",
+	"P2OG,Width,320px,304px;",
+	"P2o01,Aspect Ratio,Original,Full Screen,[ARC1],[ARC2];",
+	"P2-;",
+	"P2OIK,Scandoubler Fx,None,N/A,CRT 25%,CRT 50%,CRT 75%;",
+	"P2-;",
+	"d5P2o2,Vertical Crop,Disabled,216p(5x);",
+	"d5P2o36,Crop Offset,0,2,4,8,10,12,-12,-10,-8,-6,-4,-2;",
+	"P2o78,Scale,Normal,V-Integer,Narrower HV-Integer,Wider HV-Integer;",
+	"P2-;",
+	"P2O56,Stereo Mix,none,25%,50%,100%;",
 	"-;",
-	"H0O4,Memory Card,Plugged,Unplugged;",
-	"RL,Reload Memory Card;",
-	"D4RC,Save Memory Card;",
-	"OO,Autosave,OFF,ON;",
-	"H1-;",
-	"H1OAB,Region,US,EU,JP,AS;",
-	"H1OF,CD lid,Opened,Closed;",
-	"H2-;",
-	"H2O7,[DIP] Settings,OFF,ON;",
-	"H2O8,[DIP] Freeplay,OFF,ON;",
-	"H2O9,[DIP] Freeze,OFF,ON;",
-	"-;",
-	"OG,Width,320px,304px;",
-	"o01,Aspect ratio,Original,Full Screen,[ARC1],[ARC2];",
-	"OIK,Scandoubler Fx,None,HQ2x,CRT 25%,CRT 50%,CRT 75%;",
-	"-;",
-	"d5o2,Vertical Crop,Disabled,216p(5x);",
-	"d5o36,Crop Offset,0,2,4,8,10,12,-12,-10,-8,-6,-4,-2;",
-	"o78,Scale,Normal,V-Integer,Narrower HV-Integer,Wider HV-Integer;",
-	"-;",
-	"O56,Stereo Mix,none,25%,50%,100%;",
-	"-;",
-	"RE,Reset & apply;",  // decouple manual reset from system reset 
-	"J1,A,B,C,D,Start,Select,Coin,ABC;",	// ABC is a special key to press A+B+C at once, useful for
-	"V,v",`BUILD_DATE								// keyboards that don't allow more than 2 keypresses at once
+	"RE,Reset & Apply;",							// decouple manual reset from system reset
+	"J1,A,B,C,D,Start,Select,Coin,ABC;",			// ABC is a special key to press A+B+C at once, useful for keyboards that don't allow more than 2 keypresses at once and to access UniBIOS
+	"V,v",`BUILD_DATE
 };
-
 
 ////////////////////   CLOCKS   ///////////////////
 
