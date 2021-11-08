@@ -144,12 +144,29 @@ module sdram_mux(
 		reg nDS_PREV, nAS_PREV, DMA_WR_OUT_PREV;
 		reg old_ready;
 
+`ifndef MVS_ARCADE_LOAD
+		// Standard (slow) ioctl ROM loader
 		if(DL_WR & DL_EN) begin
 			dl_addr <= DL_ADDR[26:1];
 			dl_data <= DL_DATA;
 			SDRAM_WR <= 1;
 		end
-		
+`else
+		// When loading ROM set via MRA we use ioctl method excusively
+		// to load 8 bit FIX ROMs. It is being reordered during
+		// transfer to optimize for burst reads. We need to cache bytes in
+		// block ram as input is 8-bit and output in 16-bit words.
+		reg [7:0] bram_cache[512];
+		if(DL_WR & DL_EN) begin
+			dl_addr <= DL_ADDR[26:1];
+			if(~DL_ADDR[0])
+				bram_cache[DL_ADDR[9:1]] <= DL_DATA[7:0];
+			else
+				dl_data <= {DL_DATA[7:0],bram_cache[DL_ADDR[9:1]]};
+			SDRAM_WR <= 1 & DL_ADDR[0];
+		end
+`endif
+
 		old_ready <= SDRAM_READY;
 		if(old_ready & ~SDRAM_READY) begin
 			SDRAM_WR <= 0;
@@ -176,7 +193,7 @@ module sdram_mux(
 			CD_WR_RUN   <= 0;
 
 			DMA_SDRAM_BUSY <= 0;
-			
+
 			if(~DL_EN) begin
 				SDRAM_WR <= 0;
 				SDRAM_RD <= 0;
