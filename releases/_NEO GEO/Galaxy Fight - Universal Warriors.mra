@@ -1,0 +1,64 @@
+<!-- This file is intended for use with unencrypted NEO GEO rom set (Dark Soft pack) -->
+<misterromdescription>
+	<name>Galaxy Fight - Universal Warriors</name>
+	<setname>galaxyfg</setname>
+	<rbf>NeoGeo-MVS</rbf>
+	<year>1995</year>
+	<manufacturer>Sunsoft</manufacturer>
+	<players>2</players>
+	<joystick>8-way</joystick>
+	<rotation>horizontal</rotation>
+	<region>World</region>
+	<mratimestamp>20211105105417</mratimestamp>
+	<platform>Neo Geo MVS</platform>
+	<!-- bios -->
+	<rom address="0x38000000" index="0" zip="neogeo.zip" type="merged" md5="None">
+		<part name="uni-bios.rom"/>
+	</rom>
+	<rom index="10" md5="None"><part>0000 0000 0200 0100 0000</part></rom>
+
+	<!-- lorom -->
+	<rom index="1" zip="neogeo.zip" type="merged" md5="None">
+		<interleave output="16">
+			<part name="000-lo.lo" map="10"/>
+			<part name="000-lo.lo" map="01"/>
+		</interleave>
+	</rom>
+
+	<!-- sfix -->
+	<rom index="2" zip="neogeo.zip" type="merged" md5="None">
+		<part name="sfix.sfix"/>
+	</rom>
+
+	<!-- prom -->
+	<rom address="0x38000000" index="4" zip="galaxyfg.zip" type="merged" md5="None">
+		<part name="prom"/>
+	</rom>
+	<rom index="10" md5="None"><part>0400 00002000 0100 0000</part></rom>
+
+	<!-- srom -->
+	<rom index="8" zip="galaxyfg.zip" type="merged" md5="None">
+		<part name="srom"/>
+	</rom>
+
+	<!-- croms -->
+	<rom address="0x38000000" index="15" zip="galaxyfg.zip" type="merged" md5="None">
+		<part name="crom0"/>
+	</rom>
+	<rom index="10" md5="None"><part>0f00 0000e000 0100 0000</part></rom>
+
+	<!-- mrom -->
+	<rom address="0x32000000" index="9" zip="galaxyfg.zip" type="merged" md5="None">
+		<part name="m1rom"/>
+	</rom>
+	<rom index="10" md5="None"><part>0900 00000200 0000 0000</part></rom>
+
+	<!-- vrom -->
+	<rom address="0x30000000" index="16" zip="galaxyfg.zip" type="merged" md5="None">
+		<part name="vroma0"/>
+	</rom>
+	<rom index="10" md5="None"><part>1000 00005000 0000 0000</part></rom>
+
+	<!-- config -->
+	<rom index="10" md5="None"><part>0080 00008000 0000 0000</part></rom>
+</misterromdescription>
