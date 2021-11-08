@@ -25,7 +25,7 @@ module neo_f0(
 	input nBITW0,
 	output nBITWD0,				// "nBITW0 for NEO-D0"
 	input [7:0] DIPSW,
-	input COIN1, COIN2,
+	input COIN1, COIN2, COIN3, COIN4, SERVICE, TEST,
 	input [7:4] M68K_ADDR,
 	inout [7:0] M68K_DATA,
 	input SYSTEMB,
@@ -64,13 +64,13 @@ module neo_f0(
 	// REG_DIPSW $300001~?, odd bytes
 	// REG_SYSTYPE $300081~?, odd bytes (TODO: Test switch and stuff... Neutral for now)
 	assign M68K_DATA = nDIPRD0 ? 8'bzzzzzzzz :
-								(M68K_ADDR[7]) ? 8'b10000000 :
+								(M68K_ADDR[7]) ? {TEST, 7'b0000000} :
 								DIPSW;
 	
 	// REG_STATUS_A $320001~?, odd bytes
 	// In console mode, reading REG_STATUS_A returns 00. This is used by the Unibios to detect the system type.
 	assign M68K_DATA = nDIPRD1 ? 8'bzzzzzzzz :
-								SYSTEM_TYPE ? {RTC_DOUT, RTC_TP, 4'b1111, COIN2, COIN1} : 8'h00;
+								SYSTEM_TYPE ? {RTC_DOUT, RTC_TP, 4'b1, COIN4, COIN3, SERVICE, COIN2, COIN1} : 8'h00;
 	
 	always @(negedge nRESET or negedge nBITW0)
 	begin

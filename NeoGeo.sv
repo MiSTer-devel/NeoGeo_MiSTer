@@ -403,7 +403,7 @@ reg nRESET;
 always @(posedge CLK_24M) begin
 	nRESET <= &TRASH_ADDR;
 	if (~&TRASH_ADDR) TRASH_ADDR <= TRASH_ADDR + 1'b1;
-	if (ioctl_download | status[0] | status[14] | buttons[1] | bk_loading | RESET) begin
+	if (ioctl_download | status[0] | status[14] | buttons[1] | bk_loading | RESET | key_reset) begin
 		TRASH_ADDR <= 0;
 		SYSTEM_TYPE <= status[2:1];	// Latch the system type on reset
 	end
@@ -448,6 +448,8 @@ wire  [1:0] sd_ack;
 
 wire [15:0] joystick_0;	// ----HNLS DCBAUDLR
 wire [15:0] joystick_1;
+wire [15:0] joy0 = joystick_0 | {key_select1, key_start1, key_p1_d, key_p1_c, key_p1_b, key_p1_a, key_p1_up, key_p1_down, key_p1_left, key_p1_right};
+wire [15:0] joy1 = joystick_1 | {key_select2, key_start2, key_p2_d, key_p2_c, key_p2_b, key_p2_a, key_p2_up, key_p2_down, key_p2_left, key_p2_right};
 wire  [8:0] spinner_0, spinner_1;
 wire  [1:0] buttons;
 wire [10:0] ps2_key;
@@ -506,24 +508,68 @@ hps_io #(.CONF_STR(CONF_STR), .WIDE(1), .VDNUM(2)) hps_io
 	.sd_buff_dout(sd_buff_dout),
 	.sd_buff_din(sd_buff_din),
 	.sd_buff_wr(sd_buff_wr),
-	
+
 	.img_mounted(img_mounted),
 	.img_readonly(img_readonly),
 	.img_size(img_size)
 );
+
+wire key_start1, key_start2, key_select1, key_select2;
+wire key_coin1, key_coin2, key_coin3, key_coin4;
+wire key_test, key_reset, key_service;
+
+wire key_p1_up, key_p1_left, key_p1_down, key_p1_right, key_p1_a, key_p1_b, key_p1_c, key_p1_d;
+wire key_p2_up, key_p2_left, key_p2_down, key_p2_right, key_p2_a, key_p2_b, key_p2_c, key_p2_d;
+
+wire pressed = ps2_key[9];
 
 reg dbg_menu = 0;
 always @(posedge clk_sys) begin
 	reg old_stb;
 	reg enter = 0;
 	reg esc = 0;
-	
+
 	old_stb <= ps2_key[10];
 	if(old_stb ^ ps2_key[10]) begin
-		if(ps2_key[7:0] == 'h5A) enter <= ps2_key[9];
-		if(ps2_key[7:0] == 'h76) esc   <= ps2_key[9];
+		casex(ps2_key[8:0])
+			'h05A: enter        <= pressed;
+			'h076: esc          <= pressed;
+			'h016: key_start1   <= pressed; // 1
+			'h01e: key_start2   <= pressed; // 2
+			'h02E: begin // 5
+				key_coin1   <= pressed & SYSTEM_MVS;
+				key_select1 <= pressed & ~SYSTEM_MVS;
+			end
+			'h036: begin // 6
+				key_coin2    <= pressed & SYSTEM_MVS;
+				key_select2  <= pressed & ~SYSTEM_MVS;
+			end
+			'h03d: key_coin3    <= pressed; // 7
+			'h03e: key_coin4    <= pressed; // 8
+			'h006: key_test     <= pressed; // F2
+			'h004: key_reset    <= pressed; // F3
+			'h046: key_service  <= pressed; // 9
+
+			'hX75: key_p1_up    <= pressed; // up
+			'hX6b: key_p1_left  <= pressed; // left
+			'hX72: key_p1_down  <= pressed; // down
+			'hX74: key_p1_right <= pressed; // right
+			'h014: key_p1_a     <= pressed; // lctrl
+			'h011: key_p1_b     <= pressed; // lalt
+			'h029: key_p1_c     <= pressed; // space
+			'h012: key_p1_d     <= pressed; // lshift
+
+			'h02d: key_p2_up    <= pressed; // r
+			'h023: key_p2_left  <= pressed; // d
+			'h02b: key_p2_down  <= pressed; // f
+			'h034: key_p2_right <= pressed; // g
+			'h01c: key_p2_a     <= pressed; // a
+			'h01b: key_p2_b     <= pressed; // s
+			'h015: key_p2_c     <= pressed; // q
+			'h01d: key_p2_d     <= pressed; // d
+		endcase
 	end
-	
+
 	if(enter & esc) begin
 		dbg_menu <= ~dbg_menu;
 		enter <= 0;
@@ -1347,7 +1393,12 @@ neo_f0 F0(
 	.nDIPRD0(nDIPRD0), .nDIPRD1(nDIPRD1),
 	.nBITW0(nBITW0), .nBITWD0(nBITWD0),
 	.DIPSW({~status[9:8], 5'b11111, ~status[7]}),
-	.COIN1(~joystick_0[10]), .COIN2(~joystick_1[10]),
+	.COIN1(~(joystick_0[10]|key_coin1)),
+	.COIN2(~(joystick_1[10]|key_coin2)),
+	.COIN3(~key_coin3),
+	.COIN4(~key_coin4),
+	.SERVICE(~key_service),
+	.TEST(~key_test),
 	.M68K_ADDR(M68K_ADDR[7:4]),
 	.M68K_DATA(M68K_DATA[7:0]),
 	.SYSTEMB(~nSYSTEM_G),
@@ -1384,8 +1435,14 @@ neo_c1 C1(
 	.nLSPOE(nLSPOE), .nLSPWE(nLSPWE),
 	.nCRDO(nCRDO), .nCRDW(nCRDW), .nCRDC(nCRDC),
 	.nSDW(nSDW),
-	.P1_IN(~{(joystick_0[9:8]|ps2_mouse[2]), {use_mouse ? ms_pos : use_sp ? {|{joystick_0[7:4],ps2_mouse[1:0]},sp0} : {joystick_0[7:4]|{3{joystick_0[11]}}, joystick_0[0], joystick_0[1], joystick_0[2], joystick_0[3]}}}),
-	.P2_IN(~{ joystick_1[9:8],               {use_mouse ? ms_btn : use_sp ? {|{joystick_1[7:4]},               sp1} : {joystick_1[7:4]|{3{joystick_1[11]}}, joystick_1[0], joystick_1[1], joystick_1[2], joystick_1[3]}}}),
+	.P1_IN(~{(joy0[9:8]|ps2_mouse[2]),
+	         {use_mouse ? ms_pos :
+		  use_sp ? {|{joy0[7:4],ps2_mouse[1:0]},sp0} :
+		  {joy0[7:4]|{3{joy0[11]}}, joy0[0], joy0[1], joy0[2], joy0[3]}}}),
+	.P2_IN(~{joy1[9:8],
+	         {use_mouse ? ms_btn :
+		  use_sp ? {|{joy1[7:4]},               sp1} :
+		  {joy1[7:4]|{3{joy1[11]}}, joy1[0], joy1[1], joy1[2], joy1[3]}}}),
 	.nCD1(nCD1), .nCD2(nCD2),
 	.nWP(0),			// Memory card is never write-protected
 	.nROMWAIT(1), .nPWAIT0(1), .nPWAIT1(1), .PDTACK(1),
@@ -1407,7 +1464,7 @@ always @(posedge clk_sys) begin
 
 	old_sp0 <= spinner_0[8];
 	if(old_sp0 ^ spinner_0[8]) sp0 <= sp0 - spinner_0[6:0];
-	
+
 	old_ms <= ps2_mouse[24];
 	if(old_ms ^ ps2_mouse[24]) sp0 <= sp0 - ps2_mouse[14:8];
 
@@ -1418,7 +1475,7 @@ always @(posedge clk_sys) begin
 	else if(status[41]) use_sp <= 0;
 	else begin
 		if((old_sp0 ^ spinner_0[8]) || (old_sp1 ^ spinner_1[8]) || (old_ms ^ ps2_mouse[24])) use_sp <= 1;
-		if(joystick_0[3:0] || joystick_1[3:0]) use_sp <= 0;
+		if(joy0[3:0] || joy1[3:0]) use_sp <= 0;
 	end
 end
 
@@ -1616,12 +1673,12 @@ wire [7:0] ADPCMB_DATA;
 reg [27:0] ddr_waddr;
 ddram DDRAM(
 	.*,
-	
+
 	.wraddr(ddr_waddr),
 	.din(ioctl_dout),
 	.we_req(adpcm_wr),
 	.we_ack(adpcm_wrack),
-	
+
 	.rdaddr(ADPCMA_ADDR_LATCH),
 	.dout(ADPCMA_DATA),
 	.rd_req(ADPCMA_READ_REQ),
