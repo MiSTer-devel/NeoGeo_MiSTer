@@ -49,7 +49,7 @@ https://lmgtfy.com/?q=darksoft+neo+geo+roll-up+pack
 	<romset name="fatfury1" pcm="1" altname="Fatal Fury - King of Fighters" altnamej="Garou Densetsu - Shukumei no Tatakai" publisher="SNK" year="1991"/>
 	<romset name="fatfury2" ct0="1" pcm="1" altname="Fatal Fury 2" altnamej="Garou Densetsu 2 - Arata-naru Tatakai" publisher="SNK" year="1992"/>
 	<romset name="fatfury3" pcm="1" altname="Fatal Fury 3 - Road to the Final Victory" altnamej="Garou Densetsu 3 - Haruka-naru Tatakai" publisher="SNK" year="1995"/>
-	<romset name="fbfrenzy" pcm="1" altname="Football Frenzy " publisher="SNK" year="1992"/>
+	<romset name="fbfrenzy" pcm="1" altname="Football Frenzy" publisher="SNK" year="1992"/>
 	<romset name="fightfev,fghtfeva,fightfeva" pcm="1" altname="Fight Fever" altnamej="Wang Jung Wang" publisher="Viccom" year="1994"/>
 	<romset name="flipshot" pcm="1" altname="Battle Flip Shot" publisher="Visco" year="1998"/>
 	<romset name="frogfest" pcm="1" altname="Frog Feast" publisher="RasterSoft" year="2005"/>
@@ -67,7 +67,7 @@ https://lmgtfy.com/?q=darksoft+neo+geo+roll-up+pack
 	<romset name="janshin" pcm="1" altname="Janshin Densetsu - Quest of Jongmaster" publisher="Aicom" year="1994"/>
 	<romset name="joyjoy" pcm="0" altname="Puzzled" altnamej="Joy Joy Kid" publisher="SNK" year="1990" vromb_offset="0x200000"/>
 	<romset name="kabukikl" pcm="1" altname="Far East of Eden - Kabuki Klash" altnamej="Tengai Makyou - Shin Den" publisher="Hudson" year="1995"/>
-	<romset name="karnovr" pcm="1" altname="Karnovs Revenge" altnamej="Fighters History Dynamite" publisher="Data East Corporation" year="1994"/>
+	<romset name="karnovr" pcm="1" altname="Karnov's Revenge" altnamej="Fighters History Dynamite" publisher="Data East Corporation" year="1994"/>
 	<romset name="kizuna" pcm="1" altname="Kizuna Encounter" altnamej="Super Tag Battle - Fuun Super Tag Battle" publisher="SNK" year="1996"/>
 	<romset name="kof94" pcm="1" altname="King of Fighters 94, The" publisher="SNK" year="1994"/>
 	<romset name="kof95,kof95a,kof95h" pcm="1" altname="King of Fighters 95, The" publisher="SNK" year="1995"/>
@@ -85,7 +85,7 @@ https://lmgtfy.com/?q=darksoft+neo+geo+roll-up+pack
 	<romset name="marukodq" pcm="1" altname="Chibi Marukochan Deluxe Quiz" publisher="Takara" year="1995"/>
 	<romset name="miexchng" pcm="1" altname="Money Puzzle Exchanger" altnamej="Money Idol Exchanger" publisher="Face" year="1997"/>
 	<romset name="minasan" pcm="0" altname="Minasan no Okagesamadesu! Dai Sugoroku Taikai" publisher="Monolith Corp." year="1990" vromb_offset="0x280000"/>
-	<romset name="MonitorTest" pcm="1" altname="Monitor Test ROM"/>
+	<romset name="montest" pcm="1" altname="Monitor Test ROM"/>
 	<romset name="moshougi" pcm="1" altname="Shougi no Tatsujin - Master of Shougi" publisher="ADK / SNK" year="1995"/>
 	<romset name="mslug" pcm="1" altname="Metal Slug - Super Vehicle-001" publisher="Nazca" year="1996"/>
 	<romset name="mslug2" pcm="1" altname="Metal Slug 2 - Super Vehicle-001-II" publisher="SNK" year="1998"/>
@@ -170,6 +170,8 @@ https://lmgtfy.com/?q=darksoft+neo+geo+roll-up+pack
 		<file name="ngdt-300-v2.bin" index="20"/>
 		<file name="ngdt-300-v3.bin" index="24"/>
 	</romset>
+	<romset name="hyprnoid" pcm="1" altname="Hypernoid" publisher="NeoHomeBrew" year="2021"/>
+	<romset name="wjammss" pcm="1" altname="Windjammers Supersonic" publisher="Hack" year="1994"/>
 
 	<!-- ROMs requiring 64MB SDRAM -->
 
@@ -218,7 +220,7 @@ https://lmgtfy.com/?q=darksoft+neo+geo+roll-up+pack
 	<romset name="matrim" cmc="2" pcm="1" altname="Matrimelee" publisher="Noise Factory / Atlus" year="2002" ram="2"/>
 	<romset name="mslug3,mslug3h" cmc="1" sma="4" pcm="1" altname="Metal Slug 3" publisher="Nazca" year="2000" ram="2"/>
 	<romset name="mslug6,mslug3b6" pcm="1" altname="Metal Slug 6" publisher="Nazca" year="2000" ram="2"/>
-	<romset name="mslug5,mslug5h,ms5pcb" pvc="1" pcm="1" altname="Metal Slug 5" publisher="?" year="2003" ram="2"/>
+	<romset name="mslug5,mslug5h,ms5pcb" pvc="1" pcm="1" altname="Metal Slug 5" publisher="SNK Playmore" year="2003" ram="2"/>
 	<romset name="rotd,rotdh" pcm="1" altname="Rage of the Dragons" publisher="SNK" year="2002"/>
 	<romset name="s1945p" pcm="1" altname="Strikers 1945 Plus" publisher="Psikyo" year="1999" ram="2"/>
 	<romset name="samsho5,samsho5h,samsho5b,samsho5x" pcm="1" altname="Samurai Shodown V" publisher="SNK" year="2002" ram="2"/>
@@ -246,7 +248,9 @@ https://lmgtfy.com/?q=darksoft+neo+geo+roll-up+pack
 		<file name="271-v2cd.bin" index="32"/>
 	</romset>
 	<romset name="samsh5fe" pcm="1" altname="Samurai Shodown V Perfect" publisher="SNK" year="2020" ram="2"/>
-	
+	<romset name="nblktigr" pcm="1" altname="Neo Black Tiger Demo" publisher="Hack" year="2020" ram="2"/>
+	<romset name="smbng" pcm="1" altname="Neo Super Mario Bros Demo" publisher="Hack" year="2020" ram="2"/>
+
 	<!-- ROMs requiring 128MB SDRAM (2x64MB) -->
 
 	<!-- Not in darksoft pack -->
