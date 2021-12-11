@@ -20,9 +20,9 @@ https://lmgtfy.com/?q=darksoft+neo+geo+roll-up+pack
 	<!-- ROMs working with 32MB SDRAM -->
 
 	<romset name="2020bb,2020bba,2020bbh" pcm="1" altname="2020 Super Baseball" publisher="SNK / Pallas" year="1991"/>
-	<romset name="3countb" pcm="1" altname="3 Count Bout: Fire Suplex" publisher="SNK" year="1993"/>
-	<romset name="alpham2" pcm="1" altname="Alpha Mission II" altnamej="ASO II: Last Guardian" publisher="SNK" year="1991"/>
-	<romset name="alpham2p" pcm="1" altname="Alpha Mission II (prototype)" altnamej="ASO II: Last Guardian" publisher="SNK" year="1991"/>
+	<romset name="3countb" pcm="1" altname="3 Count Bout" altnamej="Fire Suplex" publisher="SNK" year="1993"/>
+	<romset name="alpham2" pcm="1" altname="Alpha Mission II" altnamej="ASO II: The Last Guardian" publisher="SNK" year="1991"/>
+	<romset name="alpham2p" pcm="1" altname="Alpha Mission II (prototype)" altnamej="ASO II: The Last Guardian (prototype)" publisher="SNK" year="1991"/>
 	<romset name="androdun" pcm="1" altname="Andro Dunos" publisher="Visco" year="1992"/>
 	<romset name="aodk" pcm="1" altname="Aggressors of Dark Kombat" altnamej="Tsuukai GANGAN Koushinkyoku" publisher="ADK / SNK" year="1994"/>
 	<romset name="aof" pcm="1" altname="Art of Fighting" altnamej="Ryuuko no Ken" publisher="SNK" year="1992"/>
@@ -102,7 +102,7 @@ https://lmgtfy.com/?q=darksoft+neo+geo+roll-up+pack
 	<romset name="neomrdo" pcm="1" altname="Neo Mr. Do!" publisher="Visco" year="1996"/>
 	<romset name="neothund" pcm="1" altname="Neo Thunder" publisher="Sebastian Mihai" year="2012"/>
 	<romset name="nitd,nitdbl" pcm="1" altname="Nightmare in the Dark" publisher="Eleven / Gavaking" year="2000"/>
-	<romset name="overtop" pcm="1" altname="Over Top" publisher="ADK" year="1996"/>
+	<romset name="overtop" pcm="1" altname="OverTop" publisher="ADK" year="1996"/>
 	<romset name="panicbom" pcm="1" altname="Panic Bomber" publisher="Eighting / Hudson" year="1995"/>
 	<romset name="pbobbl2n" pcm="1" altname="Puzzle Bobble 2" altnamej="Bust-A-Move Again" publisher="Taito" year="1999"/>
 	<romset name="pbobblen,pbbblenb,pbobblenb" pcm="1" altname="Puzzle Bobble" altnamej="Bust-A-Move" publisher="Taito" year="1994"/>
@@ -142,7 +142,7 @@ https://lmgtfy.com/?q=darksoft+neo+geo+roll-up+pack
 	<romset name="tetrismn" pcm="1" altname="Tetris"/>
 	<romset name="tophuntr,tphuntrh" pcm="1" altname="Top Hunter: Roddy &amp; Cathy" publisher="SNK" year="1994"/>
 	<romset name="totc" pcm="1" altname="Treasure of the Caribbean" publisher="Face Corporation / N.C.I - Le Cortex" year="2011"/>
-	<romset name="tpgolf" pcm="0" altname="Top Players Golf" publisher="SNK" year="1990" vromb_offset="0x200000"/>
+	<romset name="tpgolf" pcm="0" altname="Top Player's Golf" publisher="SNK" year="1990" vromb_offset="0x200000"/>
 	<romset name="trally" pcm="1" altname="Thrash Rally" publisher="Alpha Denshi Co." year="1991"/>
 	<romset name="turfmast" pcm="1" altname="Neo Turf Masters" altnamej="Big Tournament Golf" publisher="Nazca" year="1996"/>
 	<romset name="twinspri" pcm="1" altname="Twinkle Star Sprites" publisher="ADK / SNK" year="1996"/>
@@ -157,8 +157,8 @@ https://lmgtfy.com/?q=darksoft+neo+geo+roll-up+pack
 	<romset name="wjammers" pcm="1" altname="Windjammers" altnamej="Flying Power Disc" publisher="Data East Corporation" year="1994"/>
 	<romset name="wjammss" pcm="1" altname="Windjammers Supersonic" publisher="Hack / Bootleg" year="1994"/>
 	<romset name="zedblade" pcm="1" altname="Zed Blade" altnamej="Operation Ragnarok" publisher="NMK" year="1994"/>
-	<romset name="zintrckb" pcm="1" altname="Zintrick" altnamej="Oshidashi Zentrix" publisher="Hack / Bootleg" year="1996"/>
-	<romset name="zintrkcd" pcm="1" altname="Zintrick (CD conversion)" altnamej="Oshidashi Zentrix (CD conversion)" publisher="ADK / Razoola" year="1996"/>
+	<romset name="zintrckb" pcm="1" altname="ZinTricK" altnamej="Oshidashi Zentrix" publisher="Hack / Bootleg" year="1996"/>
+	<romset name="zintrkcd" pcm="1" altname="ZinTricK (CD conversion)" altnamej="Oshidashi Zentrix (CD conversion)" publisher="ADK / Razoola" year="1996"/>
 	<romset name="zupapa" pcm="1" altname="Zupapa!" publisher="Video System Co." year="2001"/>
 	<!-- Not in darksoft pack -->
 	<romset name="abyssal" pcm="1" altname="Abyssal Infants" publisher="Kako Eimon" year="2021">
@@ -198,6 +198,7 @@ https://lmgtfy.com/?q=darksoft+neo+geo+roll-up+pack
 	<romset name="mslug4,mslug4h" cmc="1" pcm="1" altname="Metal Slug 4" publisher="SNK Playmore" year="2002" ram="1"/>
 	<romset name="ms4plus" pcm="1" altname="Metal Slug 4 Plus (bootleg)" publisher="Hack / Bootleg" year="2002" ram="1"/>
 	<romset name="mslugx" pcm="1" altname="Metal Slug X: Super Vehicle-001" publisher="SNK" year="1999" ram="1"/>
+	<romset name="neotris" pcm="1" altname="NeoTRIS (free beta version)" publisher="Chipsonsteroids" year="2020" ram="1"/>
 	<romset name="ninjamas" pcm="1" altname="Ninja Master's" altnamej="Haoh-ninpo-cho" publisher="ADK / SNK" year="1996" ram="1"/>
 	<romset name="preisle2" pcm="1" altname="Prehistoric Isle 2" publisher="Yumekobo / Saurus" year="1999" ram="1"/>
 	<romset name="pulstar" pcm="1" altname="Pulstar" publisher="Aicom" year="1995" ram="1"/>
@@ -209,8 +210,6 @@ https://lmgtfy.com/?q=darksoft+neo+geo+roll-up+pack
 	<romset name="sengoku3" pcm="1" altname="Sengoku 3" altnamej="Sengoku Densho 2001" publisher="Noise Factory / SNK Playmore" year="2001" ram="1"/>
 	<romset name="shocktr2" pcm="1" altname="Shock Troopers: 2nd Squad" publisher="Saurus" year="1998" ram="1"/>
 	<romset name="shocktro,shcktroa" pcm="1" altname="Shock Troopers" publisher="Saurus" year="1997" ram="1"/>
-	<!-- Not in darksoft pack -->
-	<romset name="neotris" pcm="1" altname="NeoTRIS (free beta version)" publisher="Chipsonsteroids" year="2020" ram="1"/>
 
 	<!-- ROMs requiring 96MB SDRAM (32MB+64MB) -->
 
@@ -247,7 +246,7 @@ https://lmgtfy.com/?q=darksoft+neo+geo+roll-up+pack
 	<romset name="samsho5x" pcm="1" altname="Samurai Shodown V (XBOX version hack)" altnamej="Samurai Spirits Zero (XBOX version hack)" publisher="Hack / Bootleg" year="2003" ram="2"/>
 	<romset name="smbng" pcm="1" altname="New Super Mario Bros. Demo" publisher="OzzyOuzo" year="2020" ram="2"/>
 	<romset name="smsh5sph" pcm="1" altname="Samurai Shodown V Special (2nd release, less censored)" altnamej="Samurai Spirits Zero Special (2nd release, less censored)" publisher="SNK Playmore / Yuki Enterprise" year="2004" ram="2"/>
-	<romset name="smsh5spo" pcm="1" altname="Samurai Shodown V Special (1st release, censored))" altnamej="Samurai Spirits Zero Special (1st release, censored)" publisher="SNK Playmore / Yuki Enterprise" year="2004" ram="2"/>
+	<romset name="smsh5spo" pcm="1" altname="Samurai Shodown V Special (1st release, censored)" altnamej="Samurai Spirits Zero Special (1st release, censored)" publisher="SNK Playmore / Yuki Enterprise" year="2004" ram="2"/>
 	<romset name="svc" cmc="2" pcm="1" pvc="1" altname="SNK vs. Capcom: SVC Chaos" publisher="SNK Playmore" year="2003" ram="2"/>
 	<romset name="svcplus" pcm="1" altname="SNK vs. Capcom Plus (bootleg)" publisher="Hack / Bootleg" year="2003" ram="2"/>
 	<romset name="svcsplus" pcm="1" altname="SNK vs. Capcom Super Plus (bootleg)" publisher="Hack / Bootleg" year="2003" ram="2"/>
@@ -255,6 +254,20 @@ https://lmgtfy.com/?q=darksoft+neo+geo+roll-up+pack
 	<!-- Non-NeoGeo titles made for specific board. Do not work <romset name="svcpcb,svcpcba" pcm="1" altname="SNK vs. Capcom (PCB)" publisher="SNK Playmore" year="2003"/> -->
 
 	<!-- Not in darksoft pack -->
+	<romset name="cphd" pcm="1" altname="Crouching Pony Hidden Dragon Demo" publisher="Le Cortex" year="2013" ram="2">
+		<file name="cphd.p1" index="4"/>
+		<file name="cphd.p2" index="6"/>
+		<file name="cphd.s1" index="8"/>
+		<file name="cphd.c1" index="64" size="0x1800000"/>
+		<file name="cphd.c2" index="65" size="0x1800000"/>
+		<!-- Blank
+		<file name="cphd.c3" index="192"/>
+		<file name="cphd.c4" index="193"/>
+		-->
+		<file name="cphd.m1" index="9"/>
+		<file name="cphd.v1" index="16" size="0x1000000"/>
+		<file name="cphd.v2" index="48" size="0x1000000"/>
+	</romset>
 	<romset name="kof2003ps2" pcm="1" altname="King of Fighters 2003, The (PS2)" year="2003" ram="2">
 		<file name="271ps2-p1.bin" index="4"/>
 		<file name="271ps2-s1.bin" index="8"/>
@@ -292,7 +305,9 @@ https://lmgtfy.com/?q=darksoft+neo+geo+roll-up+pack
 		<file name="202-v8.bin" index="30"/>
 		<file name="202-v9.bin" index="32"/>
 	</romset>
-	<romset name="teot" pcm="1" altname="Eye of Typhoon: Tsunami Edition, The" publisher="Viccom / OzzyOuzo" year="2021" ram="2">
+	<romset name="samsh5fe" pcm="1" altname="Samurai Shodown V Special Final Edition" altnamej="Samurai Shodown Zero Special Final Edition" publisher="Yuki Enterprise / SNK Playmore" year="2004" ram="2"/>
+	<romset name="samsh5pf" pcm="1" altname="Samurai Shodown V Perfect" altnamej="Samurai Spirits Zero Perfect" publisher="SNK" year="2020" ram="2"/>
+	<romset name="teot" pcm="1" altname="Eye of Typhoon, The: Tsunami Edition" publisher="Viccom / OzzyOuzo" year="2021" ram="2">
 		<file name="202-p1.bin" index="4"/>
 		<file name="202-p2.bin" index="6"/>
 		<file name="202-s1.bin" index="8"/>
@@ -304,7 +319,6 @@ https://lmgtfy.com/?q=darksoft+neo+geo+roll-up+pack
 		<file name="202-v1.bin" index="16"/>
 		<file name="202-v2.bin" index="32"/>
 	</romset>
-	<romset name="samsh5fe" pcm="1" altname="Samurai Shodown V Perfect" altnamej="Samurai Spirits Zero Perfect" publisher="SNK" year="2020" ram="2"/>
 
 	<!-- ROMs requiring 128MB SDRAM (2x64MB) -->
 
