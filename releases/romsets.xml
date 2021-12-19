@@ -319,6 +319,7 @@ https://lmgtfy.com/?q=darksoft+neo+geo+roll-up+pack
 		<file name="202-v1.bin" index="16"/>
 		<file name="202-v2.bin" index="32"/>
 	</romset>
+        <romset name="xenocrisis" vromb_offset="0x1000000" altname="Xeno Crisis" altnamej="Xeno Crisis" publisher="Bitmap Bureau Ltd" year="2021"/>
 
 	<!-- ROMs requiring 128MB SDRAM (2x64MB) -->
 
