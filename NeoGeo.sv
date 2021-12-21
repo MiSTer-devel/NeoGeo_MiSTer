@@ -440,11 +440,14 @@ always @(posedge CLK_24M) begin
 	nRESET <= &TRASH_ADDR;
 	if (~&TRASH_ADDR) TRASH_ADDR <= TRASH_ADDR + 1'b1;
 	if (ioctl_download | status[0] | status[14] | buttons[1] | bk_loading | RESET | key_reset) begin
-		TRASH_ADDR <= 0;
 `ifndef MVS_ARCADE_LOAD
+		TRASH_ADDR <= 0;
 		SYSTEM_TYPE <= status[2:1];	// Latch the system type on reset
 `else
 		SYSTEM_TYPE <= 'd1;
+		// Ugly but delays reset in MRA mitigating issue with sound initialization
+		// at the start on some titles (like twinspri, mslugx etc.)
+		TRASH_ADDR <= 15'h7f00;
 `endif
 	end
 end
