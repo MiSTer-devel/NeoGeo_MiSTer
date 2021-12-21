@@ -1373,7 +1373,12 @@ assign M68K_DATA[7:0] = (nSRAMOEL | ~SYSTEM_MVS) ? 8'bzzzzzzzz : SRAM_OUT[7:0];
 assign M68K_DATA[15:8] = (nSRAMOEU | ~SYSTEM_MVS) ? 8'bzzzzzzzz : SRAM_OUT[15:8];
 
 // Memory card
-assign {nCD1, nCD2} = {2{status[4] & ~SYSTEM_CDx | SYSTEM_MVS}};	// Always plugged in CD systems
+
+`ifndef MVS_ARCADE_LOAD
+assign {nCD1, nCD2} = {2{status[4] & ~SYSTEM_CDx}};	// Always plugged in CD systems
+`else
+assign {nCD1, nCD2} = 2'b11;
+`endif
 assign CARD_WE = (SYSTEM_CDx | (~nCARDWEN & CARDWENB)) & ~nCRDW;
 
 wire [15:0] memcard_buff_dout;
@@ -1625,9 +1630,16 @@ neo_zmc2 ZMC2(
 	.DOTA(DOTA), .DOTB(DOTB)
 );
 
+reg [15:0] lorom_load_addr;
+`ifndef MVS_ARCADE_LOAD
+assign lorom_load_addr = ioctl_addr[16:1];
+`else
+assign lorom_load_addr = ioctl_addr[15:0];
+`endif
+
 dpram #(16) LO(
 	.clock_a(clk_sys),
-	.address_a(ioctl_addr[16:1]),
+	.address_a(lorom_load_addr),
 	.data_a(ioctl_dout[7:0]),
 	.wren_a(ioctl_download & (ioctl_index == INDEX_LOROM) & ioctl_wr),
 	.clock_b(CLK_24M),

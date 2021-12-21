@@ -108,20 +108,21 @@ module cpram
 reg [8:0] rdaddress;
 reg [6:0] wraddress;
 
-// SDRAM address reordered to optimize burst reads from sprite ROMS
+// SDRAM address reordered to optimize burst reads from sprite ROMS in the MVS
+// mode
 wire [8:0] rdaddress_sprite_rom;
+`ifndef MVS_ARCADE_LOAD
+assign rdaddress_sprite_rom = rdaddress;
+`else
 assign rdaddress_sprite_rom = {rdaddress[8:6], ~rdaddress[1], rdaddress[5:2], ~rdaddress[0]};
+`endif
 
 always @(posedge clock) begin
-	if(wr) begin
-		wraddress <= wraddress + 1'd1;
-		rdaddress <= 0;
-	end
+	if(wr) wraddress <= wraddress + 1'd1;
+	if(rd) rdaddress <= rdaddress + 1'd1;
 
-	if(rd) begin
-		rdaddress <= rdaddress + 1'd1;
-		wraddress <= 0;
-	end
+	if(wr) rdaddress <= 0;
+	if(rd) wraddress <= 0;
 
 	if(reset) begin
 		wraddress <= 0;
