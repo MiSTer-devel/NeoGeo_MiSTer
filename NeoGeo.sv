@@ -251,6 +251,9 @@ video_freak video_freak
 //  :   status[34]		vcrop_en
 //  :   status[38:35]		vcopt
 //  :   status[40:39]           scale
+//  :   status[47:44]           H-sync adjust
+//  :   status[51:48]           V-sync adjust
+//  :   status[57:62]           sound debug (ADPCMA channels)
 // 0123456789 ABCDEFGHIJKLMNO
 
 // Conditional modification of the CONF strings chaining according to chosen system type
@@ -281,18 +284,8 @@ localparam CONF_STR = {
 `endif
 	"-;",
 `endif
-
-	"H3OP,FM,ON,OFF;",
-	"H3OQ,ADPCMA,ON,OFF;",
-	"H3OR,ADPCMB,ON,OFF;",
-	"H3OS,PSG,ON,OFF;",
-	"H3oP,ADPCMA CH 1,ON,OFF;",
-	"H3oQ,ADPCMA CH 2,ON,OFF;",
-	"H3oR,ADPCMA CH 3,ON,OFF;",
-	"H3oS,ADPCMA CH 4,ON,OFF;",
-	"H3oT,ADPCMA CH 5,ON,OFF;",
-	"H3oU,ADPCMA CH 6,ON,OFF;",
-	"H3-;",
+	"D6H2O9,Pause (Stop Mode),Off,On;",
+	"H2-;",
 
 `ifdef NGCD_SUPPORT
 	"O12,System Type,Console(AES),Arcade(MVS),CD,CDZ;",
@@ -301,51 +294,73 @@ localparam CONF_STR = {
 	"O12,System Type,Console(AES),Arcade(MVS);"
 `endif
 
+	// Page 1 - System Settings
 `ifndef MVS_ARCADE_LOAD
-	"OM,Select BIOS,UniBIOS,Original;",
-`endif
-	"H2O9,Pause (Stop Mode),Off,On;",
-	"-;",
-
-`ifdef MVS_ARCADE_LOAD
-	"P1,HARD DIP Settings;",
+	"P1,System Settings;",
 	"P1-;",
-	"H2P1O7,Setting Mode,Off,On;",
-	"H2P1O8,Free Play,Off,On;",
-	"H2P1O9,Stop Mode,Off,On;",
-`endif
-`ifndef MVS_ARCADE_LOAD
-	"P2,Memory Card;",
-	"P2-;",
-	"H0P2O4,Memory Card,Plugged,Unplugged;",
-	"P2RL,Reload Memory Card;",
-	"D4P2RC,Save Memory Card;",
-	"P2OO,Autosave,OFF,ON;",
-`endif
-
 `ifdef NGCD_SUPPORT
+	"P1O12,Select System,AES,MVS,CD,CDZ;",
 	"H1P1OAB,Region,US,EU,JP,AS;",
 	"H1P1OF,CD lid,Opened,Closed;",
+`else
+	"P1O12,Select System,AES,MVS;",
+`endif
+	"P1OM,Select BIOS,UniBIOS,Original;",
+	"P1-;",
+	"H0P1O4,Memory Card,Plugged,Unplugged;",
+	"P1RL,Reload Memory Card;",
+	"D4P1RC,Save Memory Card;",
+	"P1OO,Autosave,OFF,ON;",
+	"P1-;",
+	"P1RE,Reset & Apply;",                            // decouple manual reset from system reset
 `endif
 
-	"P2,Video & Audio Settings;",
-	"P2-;",
+	// Page 2 - HARD DIPS
+	"H2P2,HARD DIP Settings;",
+	"H2P2-;",
+	"H2P2O7,Setting Mode,Off,On;",
+	"H2P2O8,Free Play,Off,On;",
+	"H2P2O9,Stop Mode,Off,On;",
+
+	// Page 3 - Video & Audio Settings
+	"P3,Video & Audio Settings;",
+	"P3-;",
 `ifndef MVS_ARCADE_LOAD
-	"P2O3,Video Mode,NTSC,PAL;",
+	"P3O3,Video Mode,NTSC,PAL;",
 `endif
-	"P2OG,Width,320px,304px;",
-	"P2o01,Aspect Ratio,Original,Full Screen,[ARC1],[ARC2];",
-	"P2OIK,Scandoubler Fx,None,N/A,CRT 25%,CRT 50%,CRT 75%;",
-	"P2-;",
-	"d5P2o2,Vertical Crop,Disabled,216p(5x);",
-	"d5P2o36,Crop Offset,0,2,4,8,10,12,-12,-10,-8,-6,-4,-2;",
-	"P2o78,Scale,Normal,V-Integer,Narrower HV-Integer,Wider HV-Integer;",
-	"P2-;",
-	"P2O56,Stereo Mix,none,25%,50%,100%;",
-	"P2-;",
+	"P3OG,Width,320px,304px;",
+	"P3OIK,Scandoubler Fx,None,N/A,CRT 25%,CRT 50%,CRT 75%;",
+	"P3-;",
+	"P3oCF,H-sync Adjust,0,1,2,3,4,5,6,7,-8,-7,-6,-5,-4,-3,-2,-1;",
+	"P3oGJ,V-sync Adjust,0,1,2,3,4,5,6,7,-8,-7,-6,-5,-4,-3,-2,-1;",
+	"P3-;",
+	"P3o01,Aspect Ratio,Original,Full Screen,[ARC1],[ARC2];",
+	"d5P3o2,Vertical Crop,Disabled,216p(5x);",
+	"d5P3o36,Crop Offset,0,2,4,8,10,12,-12,-10,-8,-6,-4,-2;",
+	"P3o78,Scale,Normal,V-Integer,Narrower HV-Integer,Wider HV-Integer;",
+	"P3-;",
+	"P3O56,Stereo Mix,none,25%,50%,100%;",
+	"P3-;",
+
+`ifdef SOUND_DEBUG
+	// Page 4 - Hidden sound debug menu
+	"P4H3,Sound Debug;",
+	"P4H3OP,FM,ON,OFF;",
+	"P4H3OQ,ADPCMA,ON,OFF;",
+	"P4H3OR,ADPCMB,ON,OFF;",
+	"P4H3OS,PSG,ON,OFF;",
+	"P4H3oP,ADPCMA CH 1,ON,OFF;",
+	"P4H3oQ,ADPCMA CH 2,ON,OFF;",
+	"P4H3oR,ADPCMA CH 3,ON,OFF;",
+	"P4H3oS,ADPCMA CH 4,ON,OFF;",
+	"P4H3oT,ADPCMA CH 5,ON,OFF;",
+	"P4H3oU,ADPCMA CH 6,ON,OFF;",
+	"P4H3-;",
+`endif
 
 	"-;",
 	"o9A,Input,Joystick or Spinner,Joystick,Spinner,Mouse(Irr.Maze);",
+	"oB,Pause Mode,DIP,OSD;",
 	"-;",
 	"RE,Reset & Apply;",                    // decouple manual reset from system reset
 	"J1,A,B,C,D,Start,Select,Coin,ABC;",    // ABC is a special key to press A+B+C at once, useful for keyboards that don't allow more than 2 keypresses at once and to access UniBIOS
@@ -540,7 +555,7 @@ hps_io #(.CONF_STR(CONF_STR), .WIDE(WIDE_IOCTL), .VDNUM(2)) hps_io
 	.ps2_key(ps2_key),
 
 	.status(status),				// status read (64 bits)
-	.status_menumask({status[22], 9'd0, en216p, bk_autosave | ~bk_pending, ~dbg_menu,~SYSTEM_MVS,~SYSTEM_CDx,SYSTEM_CDx}),
+	.status_menumask({status[22], 8'd0, pause_mode, en216p, bk_autosave | ~bk_pending, ~dbg_menu,~SYSTEM_MVS,~SYSTEM_CDx,SYSTEM_CDx}),
 
 	.RTC(rtc),
 	.sdram_sz(sdram_sz),
@@ -1473,11 +1488,14 @@ neo_e0 E0(
 	.CDA(CDA)
 );
 
+wire pause_mode = status[43];
+wire pause = pause_mode ? OSD_STATUS : status[9];
+
 neo_f0 F0(
 	.nRESET(nRESET),
 	.nDIPRD0(nDIPRD0), .nDIPRD1(nDIPRD1),
 	.nBITW0(nBITW0), .nBITWD0(nBITWD0),
-	.DIPSW({~status[9:8], 5'b11111, ~status[7]}),
+	.DIPSW({~pause, ~status[8], 5'b11111, ~status[7]}),
 	.COIN1(~(joystick_0[10]|key_coin1)),
 	.COIN2(~(joystick_1[10]|key_coin2)),
 	.COIN3(~key_coin3),
@@ -2021,26 +2039,38 @@ always @(posedge CLK_VIDEO) begin
 	end
 end
 
-//Re-create VSync as original one is barely equals to VBlank
+//Re-create VSync as original one barely equals to VBlank
 reg VSync;
+wire [8:0] v_offset = {{6{status[51]}},status[50:48]};
+wire [8:0] h_offset = {{6{status[47]}},status[46:44]};
 always @(posedge CLK_VIDEO) begin
 	reg       old_hs;
 	reg       old_vbl;
 	reg [2:0] vbl;
 	reg [7:0] vblcnt, vspos;
+	reg [8:0] hspos, hsend, hwidth;
 
 	if(ce_pix) begin
 		old_hs <= HSync;
+		hspos <= hspos + 1'b1;
+		if(old_hs & ~HSync)
+			hsend <= hspos;
 		if(~old_hs & HSync) begin
+			hwidth <= hspos;
+			hspos <= 0;
 			old_vbl <= nBNKB;
 
 			if(~nBNKB) vblcnt <= vblcnt+1'd1;
 			if(old_vbl & ~nBNKB) vblcnt <= 0;
-			if(~old_vbl & nBNKB) vspos <= (vblcnt>>1) - 8'd7;
+			if(~old_vbl & nBNKB) vspos <= (vblcnt>>1) - 8'd7 + v_offset;
 
 			{VSync,vbl} <= {vbl,1'b0};
 			if(vblcnt == vspos) {VSync,vbl} <= '1;
 		end
+		if (hspos == h_offset || hspos == hwidth + h_offset)
+			HSync_adjusted <= 1'b1;
+		else if (hspos == hsend + h_offset)
+			HSync_adjusted <= 1'b0;
 	end
 end
 
@@ -2068,7 +2098,7 @@ video_cleaner video_cleaner
 	.G(~SHADOW ? G8 : {1'b0, G8[7:1]}),
 	.B(~SHADOW ? B8 : {1'b0, B8[7:1]}),
 
-	.HSync(HSync),
+	.HSync(HSync_adjusted),
 	.VSync(VSync),
 	.HBlank(HBlank[0]),
 	.VBlank(~nBNKB),
