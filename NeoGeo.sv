@@ -360,7 +360,7 @@ localparam CONF_STR = {
 
 	"-;",
 	"o9A,Input,Joystick or Spinner,Joystick,Spinner,Mouse(Irr.Maze);",
-	"oB,Pause Mode,DIP,OSD;",
+	"H2oB,Pause Mode,OSD,DIP;",
 	"-;",
 	"RE,Reset & Apply;",                    // decouple manual reset from system reset
 	"J1,A,B,C,D,Start,Select,Coin,ABC;",    // ABC is a special key to press A+B+C at once, useful for keyboards that don't allow more than 2 keypresses at once and to access UniBIOS
@@ -1493,7 +1493,7 @@ neo_e0 E0(
 	.CDA(CDA)
 );
 
-wire pause_mode = status[43];
+wire pause_mode = ~status[43];
 wire pause = pause_mode ? OSD_STATUS : status[9];
 
 neo_f0 F0(
