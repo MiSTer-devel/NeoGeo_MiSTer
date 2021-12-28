@@ -303,7 +303,9 @@ localparam CONF_STR = {
 	"-;",
 	"RE,Reset & apply;",  // decouple manual reset from system reset 
 	"J1,A,B,C,D,Start,Select,Coin,ABC;",	// ABC is a special key to press A+B+C at once, useful for
-	"V,v",`BUILD_DATE								// keyboards that don't allow more than 2 keypresses at once
+	"jn,A,B,X,Y,Start,Select,L,R;",	        // name mapping 
+	"jp,B,A,D,C,Start,Select,L,R;",	        // positional mapping consistent with NeoGeoCD controller
+	"V,v",`BUILD_DATE						// keyboards that don't allow more than 2 keypresses at once
 };
 
 
