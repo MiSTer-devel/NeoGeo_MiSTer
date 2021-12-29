@@ -9,25 +9,22 @@
 	<joystick>8-way</joystick>
 	<rotation>horizontal</rotation>
 	<region>World</region>
-	<mratimestamp>20211105105425</mratimestamp>
+	<mratimestamp>20211112130332</mratimestamp>
 	<platform>Neo Geo MVS</platform>
 	<!-- bios -->
 	<rom address="0x38000000" index="0" zip="neogeo.zip" type="merged" md5="None">
-		<part name="uni-bios.rom"/>
+		<part crc="a7aab458" name="uni-bios.rom"/>
 	</rom>
 	<rom index="10" md5="None"><part>0000 0000 0200 0100 0000</part></rom>
 
 	<!-- lorom -->
 	<rom index="1" zip="neogeo.zip" type="merged" md5="None">
-		<interleave output="16">
-			<part name="000-lo.lo" map="10"/>
-			<part name="000-lo.lo" map="01"/>
-		</interleave>
+		<part crc="5a86cff2" name="000-lo.lo" length="0x10000"/>
 	</rom>
 
 	<!-- sfix -->
 	<rom index="2" zip="neogeo.zip" type="merged" md5="None">
-		<part name="sfix.sfix"/>
+		<part crc="c2ea0cfd" name="sfix.sfix"/>
 	</rom>
 
 	<!-- prom -->
