@@ -169,6 +169,7 @@ https://lmgtfy.com/?q=darksoft+neo+geo+roll-up+pack
 		<file name="052-m1.m1" index="9"/>
 		<file name="052-v1.v1" index="16"/>
 	</romset>
+	<romset name="cabalng" pcm="1" altname="Cabal" publisher="iq_132" year="2021"/>
 	<romset name="lasthope" pcm="1" altname="Last Hope" publisher="NG:DEV.TEAM" year="2005">
 		<file name="ngdt-300-p1.bin" index="4"/>
 		<file name="ngdt-300-s1.bin" index="8"/>
