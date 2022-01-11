@@ -64,9 +64,9 @@ https://lmgtfy.com/?q=darksoft+neo+geo+roll-up+pack
 	<romset name="flipshot" pcm="1" altname="Battle Flip Shot" publisher="Visco" year="1998"/>
 	<romset name="frogfest" pcm="1" altname="Frog Feast" publisher="RasterSoft" year="2005"/>
 	<romset name="froman2b" pcm="1" altname="Idol Mahjong Final Romance 2 (CD conversion)" publisher="Video System Co." year="1995"/>
-	<romset name="fswords" pcm="1" altname="Fighters Swords" publisher="RasterSoft" year="2005"/>
+	<romset name="fswords" pcm="1" altname="Fighters Swords (Korean release of Samurai Shodown III)" publisher="SNK" year="1995"/>
 	<romset name="galaxyfg" pcm="1" altname="Galaxy Fight: Universal Warriors" publisher="Sunsoft" year="1995"/>
-	<romset name="ganryu" pcm="1" altname="Ganryu: Musashi Ganryuki" publisher="Visco" year="1999"/>
+	<romset name="ganryu" pcm="1" altname="Ganryu" altnamej="Musashi Ganryuki" publisher="Visco" year="1999"/>
 	<romset name="ghostlop" pcm="1" altname="Ghostlop" publisher="Data East Corporation" year="1996"/>
 	<romset name="goalx3" pcm="1" altname="Goal! Goal! Goal!" publisher="Visco" year="1995"/>
 	<romset name="gowcaizr" pcm="1" altname="Voltage Fighter Gowcaizer" altnamej="Choujin Gakuen Gowcaizer" publisher="Technos Japan" year="1995"/>
@@ -167,7 +167,7 @@ https://lmgtfy.com/?q=darksoft+neo+geo+roll-up+pack
 	<romset name="ssideki4" pcm="1" altname="Ultimate 11, The: The SNK Football Championship" altnamej="Tokuten Ou: Honoo no Libero" publisher="SNK" year="1996"/>
 	<romset name="stakwin" pcm="1" altname="Stakes Winner" altnamej="Stakes Winner: GI Kinzen Seiha e no Michi" publisher="Saurus" year="1995"/>
 	<romset name="stakwin2" pcm="1" altname="Stakes Winner 2" publisher="Saurus" year="1996"/>
-	<romset name="strhoop" pcm="1" altname="Street Slam" altnamej="Street Hoop: Dunk Dream" publisher="Data East Corporation" year="1994"/>
+	<romset name="strhoop" pcm="1" altname="Street Hoop / Street Slam" altnamej="Dunk Dream" publisher="Data East Corporation" year="1994"/>
 	<romset name="superspy" pcm="0" altname="Super Spy, The" publisher="SNK" year="1990" vromb_offset="0x280000"/>
 	<romset name="tetrismn" pcm="1" altname="Tetris"/>
 	<romset name="tophuntr" pcm="1" altname="Top Hunter: Roddy &amp; Cathy" publisher="SNK" year="1994"/>
