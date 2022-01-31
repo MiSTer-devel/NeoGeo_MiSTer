@@ -1,7 +1,6 @@
-<!-- This file is intended for use with unencrypted NEO GEO rom set (Dark Soft pack) -->
 <misterromdescription>
-	<name>Samurai Shodown III</name>
-	<setname>samsho3h</setname>
+	<name>Samurai Shodown III (NGM-087)</name>
+	<setname>samsho3</setname>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1995</year>
 	<manufacturer>SNK</manufacturer>
@@ -9,7 +8,7 @@
 	<joystick>8-way</joystick>
 	<rotation>horizontal</rotation>
 	<region>World</region>
-	<mratimestamp>20211112130347</mratimestamp>
+	<mratimestamp>20220104</mratimestamp>
 	<platform>Neo Geo MVS</platform>
 	<!-- bios -->
 	<rom address="0x38000000" index="0" zip="neogeo.zip" type="merged" md5="None">
@@ -28,30 +27,30 @@
 	</rom>
 
 	<!-- prom -->
-	<rom address="0x38000000" index="4" zip="samsho3h.zip" type="merged" md5="None">
+	<rom address="0x38000000" index="4" zip="samsho3.zip" type="merged" md5="None">
 		<part name="prom"/>
 	</rom>
 	<rom index="10" md5="None"><part>0400 00003000 0100 0000</part></rom>
 
 	<!-- srom -->
-	<rom index="8" zip="samsho3h.zip" type="merged" md5="None">
+	<rom index="8" zip="samsho3.zip" type="merged" md5="None">
 		<part name="srom"/>
 	</rom>
 
 	<!-- croms -->
-	<rom address="0x38000000" index="15" zip="samsho3h.zip" type="merged" md5="None">
+	<rom address="0x38000000" index="15" zip="samsho3.zip" type="merged" md5="None">
 		<part name="crom0"/>
 	</rom>
 	<rom index="10" md5="None"><part>0f00 0000a001 0100 0000</part></rom>
 
 	<!-- mrom -->
-	<rom address="0x32000000" index="9" zip="samsho3h.zip" type="merged" md5="None">
+	<rom address="0x32000000" index="9" zip="samsho3.zip" type="merged" md5="None">
 		<part name="m1rom"/>
 	</rom>
 	<rom index="10" md5="None"><part>0900 00000200 0000 0000</part></rom>
 
 	<!-- vrom -->
-	<rom address="0x30000000" index="16" zip="samsho3h.zip" type="merged" md5="None">
+	<rom address="0x30000000" index="16" zip="samsho3.zip" type="merged" md5="None">
 		<part name="vroma0"/>
 	</rom>
 	<rom index="10" md5="None"><part>1000 00006000 0000 0000</part></rom>

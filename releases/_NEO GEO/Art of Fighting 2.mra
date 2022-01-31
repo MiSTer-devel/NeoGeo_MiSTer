@@ -1,7 +1,6 @@
-<!-- This file is intended for use with unencrypted NEO GEO rom set (Dark Soft pack) -->
 <misterromdescription>
-	<name>Art of Fighting 2</name>
-	<setname>aof2a</setname>
+	<name>Art of Fighting 2 (NGM-056)</name>
+	<setname>aof2</setname>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1994</year>
 	<manufacturer>SNK</manufacturer>
@@ -9,7 +8,7 @@
 	<joystick>8-way</joystick>
 	<rotation>horizontal</rotation>
 	<region>World</region>
-	<mratimestamp>20211112130318</mratimestamp>
+	<mratimestamp>20220103</mratimestamp>
 	<platform>Neo Geo MVS</platform>
 	<!-- bios -->
 	<rom address="0x38000000" index="0" zip="neogeo.zip" type="merged" md5="None">
@@ -28,30 +27,30 @@
 	</rom>
 
 	<!-- prom -->
-	<rom address="0x38000000" index="4" zip="aof2a.zip" type="merged" md5="None">
+	<rom address="0x38000000" index="4" zip="aof2.zip" type="merged" md5="None">
 		<part name="prom"/>
 	</rom>
 	<rom index="10" md5="None"><part>0400 00001000 0100 0000</part></rom>
 
 	<!-- srom -->
-	<rom index="8" zip="aof2a.zip" type="merged" md5="None">
+	<rom index="8" zip="aof2.zip" type="merged" md5="None">
 		<part name="srom"/>
 	</rom>
 
 	<!-- croms -->
-	<rom address="0x38000000" index="15" zip="aof2a.zip" type="merged" md5="None">
+	<rom address="0x38000000" index="15" zip="aof2.zip" type="merged" md5="None">
 		<part name="crom0"/>
 	</rom>
 	<rom index="10" md5="None"><part>0f00 00000001 0100 0000</part></rom>
 
 	<!-- mrom -->
-	<rom address="0x32000000" index="9" zip="aof2a.zip" type="merged" md5="None">
+	<rom address="0x32000000" index="9" zip="aof2.zip" type="merged" md5="None">
 		<part name="m1rom"/>
 	</rom>
 	<rom index="10" md5="None"><part>0900 00000200 0000 0000</part></rom>
 
 	<!-- vrom -->
-	<rom address="0x30000000" index="16" zip="aof2a.zip" type="merged" md5="None">
+	<rom address="0x30000000" index="16" zip="aof2.zip" type="merged" md5="None">
 		<part name="vroma0"/>
 	</rom>
 	<rom index="10" md5="None"><part>1000 00005000 0000 0000</part></rom>

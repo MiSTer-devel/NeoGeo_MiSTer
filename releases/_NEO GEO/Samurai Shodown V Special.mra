@@ -1,15 +1,14 @@
-<!-- This file is intended for use with unencrypted NEO GEO rom set (Dark Soft pack) -->
 <misterromdescription>
 	<name>Samurai Shodown V Special</name>
-	<setname>smsh5spo</setname>
+	<setname>samsh5sp</setname>
 	<rbf>NeoGeo-MVS</rbf>
-	<year>2002</year>
-	<manufacturer>SNK</manufacturer>
+	<year>2004</year>
+	<manufacturer>SNK Playmore / Yuki Enterprise</manufacturer>
 	<players>2</players>
 	<joystick>8-way</joystick>
 	<rotation>horizontal</rotation>
 	<region>World</region>
-	<mratimestamp>20211112130351</mratimestamp>
+	<mratimestamp>20220104112213</mratimestamp>
 	<platform>Neo Geo MVS</platform>
 	<!-- bios -->
 	<rom address="0x38000000" index="0" zip="neogeo.zip" type="merged" md5="None">
@@ -28,30 +27,30 @@
 	</rom>
 
 	<!-- prom -->
-	<rom address="0x38000000" index="4" zip="smsh5spo.zip" type="merged" md5="None">
+	<rom address="0x38000000" index="4" zip="samsh5sp.zip" type="merged" md5="None">
 		<part name="prom"/>
 	</rom>
 	<rom index="10" md5="None"><part>0400 00008000 0100 0000</part></rom>
 
 	<!-- srom -->
-	<rom index="8" zip="smsh5spo.zip" type="merged" md5="None">
+	<rom index="8" zip="samsh5sp.zip" type="merged" md5="None">
 		<part name="srom"/>
 	</rom>
 
 	<!-- croms -->
-	<rom address="0x38000000" index="15" zip="smsh5spo.zip" type="merged" md5="None">
+	<rom address="0x38000000" index="15" zip="samsh5sp.zip" type="merged" md5="None">
 		<part name="crom0"/>
 	</rom>
 	<rom index="10" md5="None"><part>0f00 00000004 0100 0000</part></rom>
 
 	<!-- mrom -->
-	<rom address="0x32000000" index="9" zip="smsh5spo.zip" type="merged" md5="None">
+	<rom address="0x32000000" index="9" zip="samsh5sp.zip" type="merged" md5="None">
 		<part name="m1rom"/>
 	</rom>
 	<rom index="10" md5="None"><part>0900 00000800 0000 0000</part></rom>
 
 	<!-- vrom -->
-	<rom address="0x30000000" index="16" zip="smsh5spo.zip" type="merged" md5="None">
+	<rom address="0x30000000" index="16" zip="samsh5sp.zip" type="merged" md5="None">
 		<part name="vroma0"/>
 	</rom>
 	<rom index="10" md5="None"><part>1000 00000001 0000 0000</part></rom>

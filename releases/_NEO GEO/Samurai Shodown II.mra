@@ -1,7 +1,6 @@
-<!-- This file is intended for use with unencrypted NEO GEO rom set (Dark Soft pack) -->
 <misterromdescription>
 	<name>Samurai Shodown II</name>
-	<setname>smsho2k2</setname>
+	<setname>samsho2</setname>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1994</year>
 	<manufacturer>SNK</manufacturer>
@@ -28,30 +27,30 @@
 	</rom>
 
 	<!-- prom -->
-	<rom address="0x38000000" index="4" zip="smsho2k2.zip" type="merged" md5="None">
+	<rom address="0x38000000" index="4" zip="samsho2.zip" type="merged" md5="None">
 		<part name="prom"/>
 	</rom>
 	<rom index="10" md5="None"><part>0400 00002000 0100 0000</part></rom>
 
 	<!-- srom -->
-	<rom index="8" zip="smsho2k2.zip" type="merged" md5="None">
+	<rom index="8" zip="samsho2.zip" type="merged" md5="None">
 		<part name="srom"/>
 	</rom>
 
 	<!-- croms -->
-	<rom address="0x38000000" index="15" zip="smsho2k2.zip" type="merged" md5="None">
+	<rom address="0x38000000" index="15" zip="samsho2.zip" type="merged" md5="None">
 		<part name="crom0"/>
 	</rom>
 	<rom index="10" md5="None"><part>0f00 00000001 0100 0000</part></rom>
 
 	<!-- mrom -->
-	<rom address="0x32000000" index="9" zip="smsho2k2.zip" type="merged" md5="None">
+	<rom address="0x32000000" index="9" zip="samsho2.zip" type="merged" md5="None">
 		<part name="m1rom"/>
 	</rom>
 	<rom index="10" md5="None"><part>0900 00000200 0000 0000</part></rom>
 
 	<!-- vrom -->
-	<rom address="0x30000000" index="16" zip="smsho2k2.zip" type="merged" md5="None">
+	<rom address="0x30000000" index="16" zip="samsho2.zip" type="merged" md5="None">
 		<part name="vroma0"/>
 	</rom>
 	<rom index="10" md5="None"><part>1000 00007000 0000 0000</part></rom>

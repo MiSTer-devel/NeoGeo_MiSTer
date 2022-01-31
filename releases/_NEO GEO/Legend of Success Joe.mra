@@ -1,15 +1,14 @@
-<!-- This file is intended for use with unencrypted NEO GEO rom set (Dark Soft pack) -->
 <misterromdescription>
 	<name>Legend of Success Joe</name>
 	<setname>legendos</setname>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1991</year>
-	<manufacturer>SNK</manufacturer>
+	<manufacturer>SNK / Wave</manufacturer>
 	<players>2</players>
 	<joystick>8-way</joystick>
 	<rotation>horizontal</rotation>
 	<region>World</region>
-	<mratimestamp>20211112130334</mratimestamp>
+	<mratimestamp>20220106172101</mratimestamp>
 	<platform>Neo Geo MVS</platform>
 	<!-- bios -->
 	<rom address="0x38000000" index="0" zip="neogeo.zip" type="merged" md5="None">
