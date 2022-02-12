@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Samurai Shodown V Special (2nd release, less censored)</name>
 	<setname>samsh5sph</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>2004</year>
 	<manufacturer>SNK Playmore / Yuki Enterprise</manufacturer>

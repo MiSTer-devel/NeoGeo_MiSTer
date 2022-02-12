@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Zed Blade</name>
 	<setname>zedblade</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1994</year>
 	<manufacturer>NMK</manufacturer>

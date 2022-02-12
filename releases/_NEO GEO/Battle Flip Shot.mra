@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Battle Flip Shot</name>
 	<setname>flipshot</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1998</year>
 	<manufacturer>Visco</manufacturer>

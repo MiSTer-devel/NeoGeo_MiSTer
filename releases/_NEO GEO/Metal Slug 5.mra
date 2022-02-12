@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Metal Slug 5 (NGM-2680)</name>
 	<setname>mslug5</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>2003</year>
 	<manufacturer>SNK Playmore</manufacturer>

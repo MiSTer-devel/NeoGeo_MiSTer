@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Magical Drop II</name>
 	<setname>magdrop2</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1996</year>
 	<manufacturer>Data East Corporation</manufacturer>

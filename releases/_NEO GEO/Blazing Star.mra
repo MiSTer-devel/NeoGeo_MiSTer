@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Blazing Star</name>
 	<setname>blazstar</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1998</year>
 	<manufacturer>Yumekobo</manufacturer>

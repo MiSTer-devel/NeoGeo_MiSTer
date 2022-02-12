@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Matrimelee</name>
 	<setname>matrim</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>2002</year>
 	<manufacturer>Noise Factory / Atlus</manufacturer>

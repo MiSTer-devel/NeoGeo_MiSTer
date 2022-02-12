@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>The King of Fighters '98 - The Slugfest (Korean board, set 1)</name>
 	<setname>kof98k</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1998</year>
 	<manufacturer>SNK</manufacturer>

@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Rage of the Dragons (NGM-2640)</name>
 	<setname>rotd</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>2002</year>
 	<manufacturer>Evoga / Playmore</manufacturer>

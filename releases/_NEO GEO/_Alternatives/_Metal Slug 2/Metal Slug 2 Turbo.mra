@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Metal Slug 2 Turbo (NGM-9410) (hack)</name>
 	<setname>mslug2t</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>2015</year>
 	<manufacturer>hack (trap15)</manufacturer>

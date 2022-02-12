@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>World Heroes 2 (ALM-006 ~ ALH-006)</name>
 	<setname>wh2</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1993</year>
 	<manufacturer>ADK</manufacturer>

@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Captain Tomaday</name>
 	<setname>ctomaday</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1999</year>
 	<manufacturer>Visco</manufacturer>

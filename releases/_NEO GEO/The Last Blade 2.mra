@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>The Last Blade 2</name>
 	<setname>lastbld2</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1998</year>
 	<manufacturer>SNK</manufacturer>

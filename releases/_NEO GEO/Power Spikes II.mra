@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Power Spikes II (NGM-068)</name>
 	<setname>pspikes2</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1994</year>
 	<manufacturer>Video System Co.</manufacturer>

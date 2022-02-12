@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Fight Fever</name>
 	<setname>fightfev</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1994</year>
 	<manufacturer>Viccom</manufacturer>

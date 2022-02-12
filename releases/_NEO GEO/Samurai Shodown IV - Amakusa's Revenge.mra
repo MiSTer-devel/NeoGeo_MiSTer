@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Samurai Shodown IV - Amakusa's Revenge</name>
 	<setname>samsho4</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1996</year>
 	<manufacturer>SNK</manufacturer>

@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Burning Fight (prototype, near final, ver 23.3, 910326)</name>
 	<setname>brnngfpa</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1991</year>
 	<manufacturer>SNK</manufacturer>

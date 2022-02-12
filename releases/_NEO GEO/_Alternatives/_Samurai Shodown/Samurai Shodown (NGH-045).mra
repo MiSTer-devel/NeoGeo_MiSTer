@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Samurai Shodown (NGH-045)</name>
 	<setname>samshoh</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1993</year>
 	<manufacturer>SNK</manufacturer>

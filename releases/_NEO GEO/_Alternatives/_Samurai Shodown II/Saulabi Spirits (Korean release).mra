@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Saulabi Spirits (Korean release of Samurai Shodown II)</name>
 	<setname>samsho2k</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1994</year>
 	<manufacturer>SNK</manufacturer>

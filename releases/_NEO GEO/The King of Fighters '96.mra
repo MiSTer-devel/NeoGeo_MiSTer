@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>The King of Fighters '96 (NGM-214)</name>
 	<setname>kof96</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1996</year>
 	<manufacturer>SNK</manufacturer>

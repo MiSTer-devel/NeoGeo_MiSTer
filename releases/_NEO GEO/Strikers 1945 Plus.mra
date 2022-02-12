@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Strikers 1945 Plus</name>
 	<setname>s1945p</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1999</year>
 	<manufacturer>Psikyo</manufacturer>

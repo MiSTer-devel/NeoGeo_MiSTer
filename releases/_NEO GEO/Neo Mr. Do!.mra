@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Neo Mr. Do!</name>
 	<setname>neomrdo</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1996</year>
 	<manufacturer>Visco</manufacturer>

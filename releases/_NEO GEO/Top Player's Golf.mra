@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Top Player's Golf (NGM-003 ~ NGH-003)</name>
 	<setname>tpgolf</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1990</year>
 	<manufacturer>SNK</manufacturer>

@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Samurai Shodown V Perfect</name>
 	<setname>samsh5pf</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>2020</year>
 	<manufacturer>SNK</manufacturer>

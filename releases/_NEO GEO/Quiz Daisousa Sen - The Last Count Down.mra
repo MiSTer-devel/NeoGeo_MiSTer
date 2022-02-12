@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Quiz Daisousa Sen - The Last Count Down (NGM-023 ~ NGH-023)</name>
 	<setname>quizdais</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1991</year>
 	<manufacturer>SNK</manufacturer>

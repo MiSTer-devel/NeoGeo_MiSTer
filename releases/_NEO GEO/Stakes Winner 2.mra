@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Stakes Winner 2</name>
 	<setname>stakwin2</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1996</year>
 	<manufacturer>Saurus</manufacturer>

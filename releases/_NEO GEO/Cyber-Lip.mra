@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Cyber-Lip (NGM-010)</name>
 	<setname>cyberlip</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1990</year>
 	<manufacturer>SNK</manufacturer>

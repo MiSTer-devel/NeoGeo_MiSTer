@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Metal Slug 2 - Super Vehicle-001/II</name>
 	<setname>mslug2</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1998</year>
 	<manufacturer>SNK</manufacturer>

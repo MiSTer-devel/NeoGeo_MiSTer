@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Eight Man (NGM-025 ~ NGH-025)</name>
 	<setname>eightman</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1991</year>
 	<manufacturer>SNK / Pallas</manufacturer>

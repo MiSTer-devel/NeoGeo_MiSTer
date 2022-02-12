@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Baseball Stars Professional (NGH-002)</name>
 	<setname>bstarsh</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1990</year>
 	<manufacturer>SNK</manufacturer>

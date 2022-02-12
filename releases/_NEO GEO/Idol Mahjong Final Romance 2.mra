@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Idol Mahjong Final Romance 2 (Neo-Geo, bootleg of CD version)</name>
 	<setname>froman2b</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1995</year>
 	<manufacturer>bootleg</manufacturer>

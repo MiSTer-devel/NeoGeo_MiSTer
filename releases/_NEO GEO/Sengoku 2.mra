@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Sengoku 2</name>
 	<setname>sengoku2</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1993</year>
 	<manufacturer>SNK</manufacturer>

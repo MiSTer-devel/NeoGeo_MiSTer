@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Nightmare in the Dark</name>
 	<setname>nitd</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>2000</year>
 	<manufacturer>Eleven / Gavaking</manufacturer>

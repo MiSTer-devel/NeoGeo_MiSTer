@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Far East of Eden - Kabuki Klash</name>
 	<setname>kabukikl</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1995</year>
 	<manufacturer>Hudson</manufacturer>

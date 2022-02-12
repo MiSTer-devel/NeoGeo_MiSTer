@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Art of Fighting 3 - The Path of the Warrior</name>
 	<setname>aof3</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1996</year>
 	<manufacturer>SNK</manufacturer>

@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Ghost Pilots (NGM-020 ~ NGH-020)</name>
 	<setname>gpilots</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1991</year>
 	<manufacturer>SNK</manufacturer>

@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Super Sidekicks 2 - The World Championship</name>
 	<setname>ssideki2</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1994</year>
 	<manufacturer>SNK</manufacturer>

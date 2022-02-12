@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Garou - Mark of the Wolves (bootleg)</name>
 	<setname>garoubl</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1999</year>
 	<manufacturer>bootleg</manufacturer>

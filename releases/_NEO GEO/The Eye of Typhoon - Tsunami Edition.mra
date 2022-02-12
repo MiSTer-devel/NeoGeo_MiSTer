@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>The Eye of Typhoon: Tsunami Edition</name>
 	<setname>teot</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>2021</year>
 	<manufacturer>Viccom / OzzyOuzo</manufacturer>

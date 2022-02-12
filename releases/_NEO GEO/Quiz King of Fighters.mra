@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Quiz King of Fighters (SAM-080 ~ SAH-080)</name>
 	<setname>quizkof</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1995</year>
 	<manufacturer>Saurus (SNK license)</manufacturer>

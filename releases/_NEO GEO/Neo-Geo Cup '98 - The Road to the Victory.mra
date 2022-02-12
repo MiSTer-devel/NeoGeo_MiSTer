@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Neo-Geo Cup '98 - The Road to the Victory</name>
 	<setname>neocup98</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1998</year>
 	<manufacturer>SNK</manufacturer>

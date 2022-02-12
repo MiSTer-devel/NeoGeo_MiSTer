@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Gururin</name>
 	<setname>gururin</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1994</year>
 	<manufacturer>Face</manufacturer>

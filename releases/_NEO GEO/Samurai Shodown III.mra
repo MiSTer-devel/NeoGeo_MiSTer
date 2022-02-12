@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Samurai Shodown III (NGM-087)</name>
 	<setname>samsho3</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1995</year>
 	<manufacturer>SNK</manufacturer>

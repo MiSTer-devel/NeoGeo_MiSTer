@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Pulstar</name>
 	<setname>pulstar</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1995</year>
 	<manufacturer>Aicom</manufacturer>

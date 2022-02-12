@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Legend of Success Joe</name>
 	<setname>legendos</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1991</year>
 	<manufacturer>SNK / Wave</manufacturer>

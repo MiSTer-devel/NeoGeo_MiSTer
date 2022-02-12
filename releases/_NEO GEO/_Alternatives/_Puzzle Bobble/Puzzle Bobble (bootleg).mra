@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Puzzle Bobble (bootleg)</name>
 	<setname>pbbblenb</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1994</year>
 	<manufacturer>Bootleg</manufacturer>

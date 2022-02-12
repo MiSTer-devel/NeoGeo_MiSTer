@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Metal Slug 4 Plus (bootleg)</name>
 	<setname>ms4plus</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>2002</year>
 	<manufacturer>bootleg</manufacturer>

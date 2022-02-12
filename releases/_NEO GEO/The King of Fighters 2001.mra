@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>The King of Fighters 2001 (NGM-262)</name>
 	<setname>kof2001</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>2001</year>
 	<manufacturer>Eolith / SNK</manufacturer>

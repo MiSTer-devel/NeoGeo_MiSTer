@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Samurai Shodown</name>
 	<setname>samsho</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1993</year>
 	<manufacturer>SNK</manufacturer>

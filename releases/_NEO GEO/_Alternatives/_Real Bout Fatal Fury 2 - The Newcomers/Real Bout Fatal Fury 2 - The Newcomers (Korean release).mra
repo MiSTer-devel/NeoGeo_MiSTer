@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Real Bout Fatal Fury 2 - The Newcomers (Korean release)</name>
 	<setname>rbff2k</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1998</year>
 	<manufacturer>SNK</manufacturer>

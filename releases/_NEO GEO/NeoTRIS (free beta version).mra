@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>NeoTRIS (free beta version)</name>
 	<setname>neotris</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>2020</year>
 	<manufacturer>SNK</manufacturer>

@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>The King of Fighters '97 (NGM-2320)</name>
 	<setname>kof97</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1997</year>
 	<manufacturer>SNK</manufacturer>

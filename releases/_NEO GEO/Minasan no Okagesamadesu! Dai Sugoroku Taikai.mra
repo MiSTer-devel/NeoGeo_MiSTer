@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Minasan no Okagesamadesu! Dai Sugoroku Taikai (MOM-001 ~ MOH-001)</name>
 	<setname>minasan</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1990</year>
 	<manufacturer>Monolith Corp.</manufacturer>

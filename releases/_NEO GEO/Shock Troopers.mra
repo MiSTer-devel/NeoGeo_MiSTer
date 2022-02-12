@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Shock Troopers (set 1)</name>
 	<setname>shocktro</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1997</year>
 	<manufacturer>Saurus</manufacturer>

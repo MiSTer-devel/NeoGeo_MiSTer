@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Twinkle Star Sprites</name>
 	<setname>twinspri</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1996</year>
 	<manufacturer>ADK / SNK</manufacturer>

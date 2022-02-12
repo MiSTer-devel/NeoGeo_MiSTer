@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Goal! Goal! Goal!</name>
 	<setname>goalx3</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1995</year>
 	<manufacturer>Visco</manufacturer>

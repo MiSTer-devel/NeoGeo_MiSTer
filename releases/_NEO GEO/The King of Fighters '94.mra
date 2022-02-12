@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>The King of Fighters '94 (NGM-055 ~ NGH-055)</name>
 	<setname>kof94</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1994</year>
 	<manufacturer>SNK</manufacturer>

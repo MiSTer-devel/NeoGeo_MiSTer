@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Ghostlop (prototype)</name>
 	<setname>ghostlop</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1996</year>
 	<manufacturer>Data East Corporation</manufacturer>

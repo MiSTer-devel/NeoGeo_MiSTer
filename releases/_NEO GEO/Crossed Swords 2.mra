@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Crossed Swords 2 (bootleg of CD version)</name>
 	<setname>crswd2bl</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1996</year>
 	<manufacturer>bootleg (Razoola)</manufacturer>

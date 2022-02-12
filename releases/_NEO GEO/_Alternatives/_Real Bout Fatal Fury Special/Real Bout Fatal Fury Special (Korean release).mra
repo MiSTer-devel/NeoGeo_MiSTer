@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Real Bout Fatal Fury Special (Korean release)</name>
 	<setname>rbffspck</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1996</year>
 	<manufacturer>SNK</manufacturer>

@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Puzzle Bobble</name>
 	<setname>pbobblen</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1994</year>
 	<manufacturer>Taito</manufacturer>

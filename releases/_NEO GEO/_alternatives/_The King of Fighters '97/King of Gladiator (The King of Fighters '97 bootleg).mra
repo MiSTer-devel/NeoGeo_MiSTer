@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>King of Gladiator (The King of Fighters '97 bootleg)</name>
 	<setname>kog</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1997</year>
 	<manufacturer>bootleg</manufacturer>

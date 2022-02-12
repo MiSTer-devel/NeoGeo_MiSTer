@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>The King of Fighters '99 - Millennium Battle (earlier)</name>
 	<setname>kof99e</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1999</year>
 	<manufacturer>SNK</manufacturer>

@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Bang Bang Busters (2010 NCI release)</name>
 	<setname>b2b</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>2000</year>
 	<manufacturer>Visco</manufacturer>

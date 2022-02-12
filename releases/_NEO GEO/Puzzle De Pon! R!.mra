@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Puzzle De Pon! R!</name>
 	<setname>puzzldpr</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1997</year>
 	<manufacturer>Visco</manufacturer>

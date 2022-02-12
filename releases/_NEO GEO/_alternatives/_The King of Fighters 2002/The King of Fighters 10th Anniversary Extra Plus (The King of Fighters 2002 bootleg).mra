@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>The King of Fighters 10th Anniversary Extra Plus (The King of Fighters 2002 bootleg)</name>
 	<setname>kf10thep</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>2005</year>
 	<manufacturer>bootleg</manufacturer>

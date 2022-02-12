@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Garou - Mark of the Wolves (NGM-2530)</name>
 	<setname>garou</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1999</year>
 	<manufacturer>SNK</manufacturer>

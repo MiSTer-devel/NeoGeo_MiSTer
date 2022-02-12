@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Sengoku (NGH-017, US)</name>
 	<setname>sengokuh</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1991</year>
 	<manufacturer>SNK</manufacturer>

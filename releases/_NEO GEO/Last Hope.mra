@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Last Hope (bootleg AES to MVS conversion, no coin support)</name>
 	<setname>lasthope</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>2005</year>
 	<manufacturer>NG:DEV.TEAM</manufacturer>

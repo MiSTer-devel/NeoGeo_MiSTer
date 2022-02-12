@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Janshin Densetsu - Quest of Jongmaster</name>
 	<setname>janshin</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1994</year>
 	<manufacturer>Aicom</manufacturer>

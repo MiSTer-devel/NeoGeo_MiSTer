@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>World Heroes 2 Jet (ADM-007 ~ ADH-007)</name>
 	<setname>wh2j</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1994</year>
 	<manufacturer>ADK / SNK</manufacturer>

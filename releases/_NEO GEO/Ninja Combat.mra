@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Ninja Combat (NGM-009)</name>
 	<setname>ncombat</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1990</year>
 	<manufacturer>Alpha Denshi Co.</manufacturer>

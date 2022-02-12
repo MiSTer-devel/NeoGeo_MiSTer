@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Nightmare in the Dark (bootleg)</name>
 	<setname>nitdbl</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>2001</year>
 	<manufacturer>bootleg</manufacturer>

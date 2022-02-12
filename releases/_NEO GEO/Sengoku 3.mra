@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Sengoku 3</name>
 	<setname>sengoku3</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>2001</year>
 	<manufacturer>Noise Factory / SNK</manufacturer>

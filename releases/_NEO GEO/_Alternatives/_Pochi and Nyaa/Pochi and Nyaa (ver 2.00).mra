@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Pochi and Nyaa (ver 2.00)</name>
 	<setname>pnyaaa</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>2003</year>
 	<manufacturer>Aiky / Taito</manufacturer>

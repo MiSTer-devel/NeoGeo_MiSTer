@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Samurai Shodown V Special Final Edition</name>
 	<setname>samsh5fe</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>2004</year>
 	<manufacturer>SNK Playmore / Yuki Enterprise</manufacturer>

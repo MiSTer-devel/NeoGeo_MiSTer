@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Frog Feast</name>
 	<setname>frogfest</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>2005</year>
 	<manufacturer>SNK</manufacturer>

@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Crouching Tiger Hidden Dragon 2003 Super Plus alternate (The King of Fighters 2001 bootleg)</name>
 	<setname>ct2k3sa</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>2003</year>
 	<manufacturer>bootleg</manufacturer>

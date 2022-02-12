@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>The Last Blade (NGH-2340)</name>
 	<setname>lastbladh</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1997</year>
 	<manufacturer>SNK</manufacturer>

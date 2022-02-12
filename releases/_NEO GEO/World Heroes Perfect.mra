@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>World Heroes Perfect</name>
 	<setname>whp</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1995</year>
 	<manufacturer>ADK / SNK</manufacturer>

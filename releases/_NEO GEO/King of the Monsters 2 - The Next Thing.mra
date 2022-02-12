@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>King of the Monsters 2 - The Next Thing (NGM-039 ~ NGH-039)</name>
 	<setname>kotm2</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1992</year>
 	<manufacturer>SNK</manufacturer>

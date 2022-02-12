@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>The Super Spy (NGM-011 ~ NGH-011)</name>
 	<setname>superspy</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1990</year>
 	<manufacturer>SNK</manufacturer>

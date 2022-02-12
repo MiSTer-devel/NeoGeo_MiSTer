@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>King of the Monsters (set 1)</name>
 	<setname>kotm</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1991</year>
 	<manufacturer>SNK</manufacturer>

@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Fighters Swords (Korean release of Samurai Shodown III)</name>
 	<setname>fswords</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1995</year>
 	<manufacturer>SNK</manufacturer>

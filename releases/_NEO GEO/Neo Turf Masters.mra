@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Neo Turf Masters</name>
 	<setname>turfmast</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1996</year>
 	<manufacturer>Nazca</manufacturer>

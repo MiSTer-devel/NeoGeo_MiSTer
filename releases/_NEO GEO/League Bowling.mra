@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>League Bowling (NGM-019 ~ NGH-019)</name>
 	<setname>lbowling</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1990</year>
 	<manufacturer>SNK</manufacturer>

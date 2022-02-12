@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Xeno Crisis</name>
 	<setname>xenocrisis</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>2021</year>
 	<manufacturer>Bitmap Bureau</manufacturer>

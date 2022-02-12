@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Soccer Brawl (NGM-031)</name>
 	<setname>socbrawl</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1991</year>
 	<manufacturer>SNK</manufacturer>

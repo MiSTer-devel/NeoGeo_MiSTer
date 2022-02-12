@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>3 Count Bout</name>
 	<setname>3countb</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1993</year>
 	<manufacturer>SNK</manufacturer>

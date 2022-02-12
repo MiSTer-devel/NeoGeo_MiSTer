@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Super Bubble Pop</name>
 	<setname>sbp</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>2004</year>
 	<manufacturer>Vektorlogic</manufacturer>

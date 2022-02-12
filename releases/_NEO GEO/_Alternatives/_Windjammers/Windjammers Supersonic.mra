@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Windjammers Supersonic</name>
 	<setname>wjammss</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1994</year>
 	<manufacturer>Hack / Bootleg</manufacturer>

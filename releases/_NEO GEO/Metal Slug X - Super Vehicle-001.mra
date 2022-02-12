@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Metal Slug X - Super Vehicle-001 (NGM-2500 ~ NGH-2500)</name>
 	<setname>mslugx</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1999</year>
 	<manufacturer>SNK</manufacturer>

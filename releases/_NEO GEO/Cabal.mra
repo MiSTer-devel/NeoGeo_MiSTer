@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Cabal</name>
 	<setname>cabalng</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>2021</year>
 	<manufacturer>iq_132</manufacturer>

@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Samurai Shodown V (XBOX version hack)</name>
 	<setname>samsho5x</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>2003</year>
 	<manufacturer>Hack / Bootleg</manufacturer>

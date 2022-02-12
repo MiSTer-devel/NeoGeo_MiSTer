@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Lansquenet 2004 (Shock Troopers - 2nd Squad bootleg)</name>
 	<setname>lans2004</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1998</year>
 	<manufacturer>bootleg</manufacturer>

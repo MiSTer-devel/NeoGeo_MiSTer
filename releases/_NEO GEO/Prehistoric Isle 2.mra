@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Prehistoric Isle 2</name>
 	<setname>preisle2</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1999</year>
 	<manufacturer>Yumekobo / Saurus</manufacturer>

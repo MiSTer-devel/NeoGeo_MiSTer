@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>The King of Fighters 2002 Magic Plus II (bootleg)</name>
 	<setname>kf2k2mp2</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>2002</year>
 	<manufacturer>bootleg</manufacturer>

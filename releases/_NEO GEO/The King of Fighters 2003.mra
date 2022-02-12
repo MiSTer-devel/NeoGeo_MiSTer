@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>The King of Fighters 2003 (NGM-2710, Export)</name>
 	<setname>kof2003</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>2003</year>
 	<manufacturer>SNK Playmore</manufacturer>

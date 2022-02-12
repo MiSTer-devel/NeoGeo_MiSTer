@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Crossed Swords (ALM-002 ~ ALH-002)</name>
 	<setname>crsword</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1991</year>
 	<manufacturer>Alpha Denshi Co.</manufacturer>

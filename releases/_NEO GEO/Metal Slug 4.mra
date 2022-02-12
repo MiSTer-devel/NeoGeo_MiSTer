@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Metal Slug 4 (NGM-2630)</name>
 	<setname>mslug4</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>2002</year>
 	<manufacturer>Mega / Noise Factory / Playmore</manufacturer>

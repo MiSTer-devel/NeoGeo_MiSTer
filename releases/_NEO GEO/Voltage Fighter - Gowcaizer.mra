@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Voltage Fighter - Gowcaizer</name>
 	<setname>gowcaizr</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1995</year>
 	<manufacturer>Technos Japan</manufacturer>

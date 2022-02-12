@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Neo Fight</name>
 	<setname>neofight</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year></year>
 	<manufacturer>SNK</manufacturer>

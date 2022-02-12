@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Samurai Shodown V (NGH-2700)</name>
 	<setname>samsho5h</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>2003</year>
 	<manufacturer>SNK Playmore / Yuki Enterprise</manufacturer>

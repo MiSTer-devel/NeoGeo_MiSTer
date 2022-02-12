@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>The Last Blade (NGM-2340, alternate board)</name>
 	<setname>lastblada</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1997</year>
 	<manufacturer>SNK</manufacturer>

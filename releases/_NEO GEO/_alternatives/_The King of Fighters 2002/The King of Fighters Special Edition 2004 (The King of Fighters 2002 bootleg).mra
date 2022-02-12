@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>The King of Fighters Special Edition 2004 (The King of Fighters 2002 bootleg)</name>
 	<setname>kof2k4se</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>2004</year>
 	<manufacturer>bootleg</manufacturer>

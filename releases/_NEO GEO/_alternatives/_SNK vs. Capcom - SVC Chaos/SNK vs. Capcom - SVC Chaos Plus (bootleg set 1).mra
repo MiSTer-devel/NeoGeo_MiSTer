@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>SNK vs. Capcom - SVC Chaos Plus (bootleg set 1)</name>
 	<setname>svcplus</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>2003</year>
 	<manufacturer>bootleg</manufacturer>

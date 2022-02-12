@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Andro Dunos (NGM-049 ~ NGH-049)</name>
 	<setname>androdun</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1992</year>
 	<manufacturer>Visco</manufacturer>

@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Hypernoid</name>
 	<setname>hyprnoid</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>2021</year>
 	<manufacturer>NeoHomeBrew</manufacturer>

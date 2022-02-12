@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Savage Reign</name>
 	<setname>savagere</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1995</year>
 	<manufacturer>SNK</manufacturer>

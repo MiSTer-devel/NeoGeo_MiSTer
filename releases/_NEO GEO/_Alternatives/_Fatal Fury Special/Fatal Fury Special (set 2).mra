@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Fatal Fury Special (NGM-058 ~ NGH-058, set 2)</name>
 	<setname>fatfurspa</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1993</year>
 	<manufacturer>SNK</manufacturer>

@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Bakatonosama Mahjong Manyuuki (MOM-002 ~ MOH-002)</name>
 	<setname>bakatono</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1991</year>
 	<manufacturer>Monolith Corp.</manufacturer>

@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Aero Fighters 3</name>
 	<setname>sonicwi3</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1995</year>
 	<manufacturer>Video System Co.</manufacturer>

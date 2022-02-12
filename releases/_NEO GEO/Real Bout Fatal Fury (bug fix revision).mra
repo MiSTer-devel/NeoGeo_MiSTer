@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Real Bout Fatal Fury (bug fix revision)</name>
 	<setname>rbff1a</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1995</year>
 	<manufacturer>SNK</manufacturer>

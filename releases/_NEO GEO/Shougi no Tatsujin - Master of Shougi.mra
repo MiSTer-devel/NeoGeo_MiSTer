@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Shougi no Tatsujin - Master of Shougi</name>
 	<setname>moshougi</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1995</year>
 	<manufacturer>ADK / SNK</manufacturer>

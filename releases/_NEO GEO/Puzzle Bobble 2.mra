@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Puzzle Bobble 2</name>
 	<setname>pbobbl2n</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1999</year>
 	<manufacturer>Taito (SNK license)</manufacturer>

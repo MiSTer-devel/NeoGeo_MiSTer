@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Quiz King of Fighters (Korea)</name>
 	<setname>quizkofk</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1996</year>
 	<manufacturer>Saurus / Viccom (SNK license)</manufacturer>

@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Real Bout Fatal Fury 2 - The Newcomers (NGH-2400)</name>
 	<setname>rbff2h</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1998</year>
 	<manufacturer>SNK</manufacturer>

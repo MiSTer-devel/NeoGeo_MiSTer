@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>ZinTricK (CD conversion)</name>
 	<setname>zintrkcd</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1996</year>
 	<manufacturer>Bootleg</manufacturer>

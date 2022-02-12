@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>2020 Super Baseball (set 1)</name>
 	<setname>2020bb</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1991</year>
 	<manufacturer>SNK / Pallas</manufacturer>

@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>Metal Slug 3 (NGM-2560)</name>
 	<setname>mslug3</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>2000</year>
 	<manufacturer>SNK</manufacturer>

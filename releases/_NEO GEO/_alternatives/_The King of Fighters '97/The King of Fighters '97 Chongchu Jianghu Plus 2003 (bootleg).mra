@@ -1,6 +1,7 @@
 <misterromdescription>
 	<name>The King of Fighters '97 Chongchu Jianghu Plus 2003 (bootleg)</name>
 	<setname>kof97oro</setname>
+	<mameversion>darksoft_neogeo</mameversion>
 	<rbf>NeoGeo-MVS</rbf>
 	<year>1997</year>
 	<manufacturer>bootleg</manufacturer>
