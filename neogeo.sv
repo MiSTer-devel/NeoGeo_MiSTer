@@ -1022,7 +1022,7 @@ sdram ram1(
 	.cpbusy(sdr1_cpbusy)
 );
 
-`ifdef DUAL_SDRAM
+`ifdef MISTER_DUAL_SDRAM
 sdram ram2(
 	.SDRAM_CLK(SDRAM2_CLK),
 	.SDRAM_A(SDRAM2_A),
