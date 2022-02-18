@@ -28,30 +28,31 @@
 	</rom>
 
 	<!-- prom -->
-	<rom address="0x38000000" index="4" zip="fatfury3a.zip" type="merged" md5="None">
-		<part crc="a10505f6" name="prom"/>
+	<rom address="0x38000000" index="4" zip="fatfury3.zip" type="merged" md5="None">
+		<part name="069-p1.bin"/>
+		<part name="prom" offset="0x100000"/>
 	</rom>
 	<rom index="10" md5="None"><part>0400 00003000 0100 0000</part></rom>
 
 	<!-- srom -->
-	<rom index="8" zip="fatfury3a.zip" type="merged" md5="None">
+	<rom index="8" zip="fatfury3.zip" type="merged" md5="None">
 		<part name="srom"/>
 	</rom>
 
 	<!-- croms -->
-	<rom address="0x38000000" index="15" zip="fatfury3a.zip" type="merged" md5="None">
+	<rom address="0x38000000" index="15" zip="fatfury3.zip" type="merged" md5="None">
 		<part name="crom0"/>
 	</rom>
 	<rom index="10" md5="None"><part>0f00 00004001 0100 0000</part></rom>
 
 	<!-- mrom -->
-	<rom address="0x32000000" index="9" zip="fatfury3a.zip" type="merged" md5="None">
+	<rom address="0x32000000" index="9" zip="fatfury3.zip" type="merged" md5="None">
 		<part name="m1rom"/>
 	</rom>
 	<rom index="10" md5="None"><part>0900 00000200 0000 0000</part></rom>
 
 	<!-- vrom -->
-	<rom address="0x30000000" index="16" zip="fatfury3a.zip" type="merged" md5="None">
+	<rom address="0x30000000" index="16" zip="fatfury3.zip" type="merged" md5="None">
 		<part name="vroma0"/>
 	</rom>
 	<rom index="10" md5="None"><part>1000 0000a000 0000 0000</part></rom>
