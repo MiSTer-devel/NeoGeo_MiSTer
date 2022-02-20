@@ -40,3 +40,6 @@ In AES mode, all saves are to the memory card only. In MVS mode, some games and 
 
 ## RAM and Game Sizes
 Neo Geo uses very large ROMs. About 84% of the library will fit onto a 32 megabyte SDRAM module. Another 12% will fit onto a 64 megabyte SDRAM module. The remaining 8 games require a 128 megabyte module. For more information about which games can be loaded with which sized RAM, open romsets.xml in your favorite text editor or github. The games are organized by size.
+
+## MRA Loading
+Arcade version of the core now can be built by assigning Verilog macro `MVS_ARCADE_LOAD=1`. This version starts Neo Geo in MVS mode and uses the MRA file to load its data. Neo Geo core reorganizes fix layer and sprite data internally to take advantage of faster continuous memory burst reads. The original core relies on a custom loader in the main mister Linux binary program that sends mangled data towards it. Here data is being reordered while transferred to SDRAM on the FPGA side. Also, fast memory transfers of data loaded on the Linux from DDR to SDRAM are emulated in MRA enabling it to load with speeds similar to the optimized custom routines console core uses. This version lacks support for loading and saving backup and memory card data.
