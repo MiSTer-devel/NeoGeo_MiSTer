@@ -833,8 +833,11 @@ wire [63:0] sdram_dout;
 wire [15:0] sdram_din;
 
 // ioctl_download is used to load the system ROM on CD systems, we need it !
-wire ioctl_en = SYSTEM_CDx ? (ioctl_index == INDEX_SPROM) :
+reg ioctl_en;
+always_ff @(posedge clk_sys) begin
+	ioctl_en <= SYSTEM_CDx ? (ioctl_index == INDEX_SPROM) :
 					(ioctl_index != INDEX_LOROM && ioctl_index != INDEX_M1ROM && ioctl_index != INDEX_MEMCP && (ioctl_index < INDEX_VROMS || ioctl_index >= INDEX_CROMS));
+end
 
 wire [26:0] CROM_LOAD_ADDR = ({ioctl_addr[25:0], 1'b0} + {ioctl_index[7:1]-INDEX_CROMS[7:1], 18'h00000, ioctl_index[0], 1'b0});
 wire [26:0] VROM_LOAD_ADDR = ({1'b0, ioctl_addr[25:0]} + {ioctl_index[7:0]-INDEX_VROMS[7:0], 19'h00000});
