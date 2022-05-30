@@ -271,7 +271,7 @@ https://lmgtfy.com/?q=darksoft+neo+geo+roll-up+pack
 	<romset name="kof99h" sma="1" pcm="1" altname="King of Fighters '99, The: Millennium Battle (NGH-2510)" publisher="SNK" year="1999" ram="2"/>
 	<romset name="kof99k" sma="1" pcm="1" altname="King of Fighters '99, The: Millennium Battle (Korean release)" publisher="SNK" year="1999" ram="2"/>
 	<romset name="kof99p" pcm="1" altname="King of Fighters '99, The: Millennium Battle (prototype)" publisher="SNK" year="1999" ram="2"/>
-	<romset name="kof2000,kof2000n" cmc="2" sma="5" pcm="1" altname="King of Fighters 2000, The" publisher="SNK" year="2002"/>
+	<romset name="kof2000,kof2000n" cmc="2" sma="5" pcm="1" altname="King of Fighters 2000, The" publisher="SNK" year="2000"/>
 	<romset name="kof2001" pcm="1" altname="King of Fighters 2001, The" publisher="Eolith / SNK" year="2001" ram="2"/>
 	<romset name="kof2001h" pcm="1" altname="King of Fighters 2001, The (NGH-2621)" publisher="Eolith / SNK" year="2001" ram="2"/>
 	<romset name="ct2k3sa" pcm="1" altname="Crouching Tiger Hidden Dragon 2003 Super Plus (The King of Fighters 2001 bootleg)" publisher="Hack / Bootleg" year="2003" ram="2"/>
@@ -364,17 +364,15 @@ https://lmgtfy.com/?q=darksoft+neo+geo+roll-up+pack
 	</romset>
 	<romset name="samsh5fe" pcm="1" altname="Samurai Shodown V Special Final Edition" altnamej="Samurai Shodown Zero Special Final Edition" publisher="Yuki Enterprise / SNK Playmore" year="2004" ram="2"/>
 	<romset name="samsh5pf" pcm="1" altname="Samurai Shodown V Perfect" altnamej="Samurai Spirits Zero Perfect" publisher="SNK" year="2020" ram="2"/>
-	<romset name="teot" pcm="1" altname="Eye of Typhoon, The: Tsunami Edition" publisher="Viccom / OzzyOuzo" year="2021" ram="2">
-		<file name="202-p1.bin" index="4"/>
-		<file name="202-p2.bin" index="6"/>
-		<file name="202-s1.bin" index="8"/>
-		<file name="202-c1.bin" index="64"/>
-		<file name="202-c2.bin" index="65"/>
-		<file name="202-c3.bin" index="128"/>
-		<file name="202-c4.bin" index="129"/>
-		<file name="202-m1.bin" index="9"/>
-		<file name="202-v1.bin" index="16"/>
-		<file name="202-v2.bin" index="32"/>
+	<romset name="teot" pcm="1" altname="Eye of Typhoon, The: Tsunami Edition" publisher="Viccom / OzzyOuzo" year="2022" ram="2">
+		<file name="teot-p1.bin" index="4"/>
+		<file name="teot-p2.bin" index="6"/>
+		<file name="teot-s1.bin" index="8"/>
+		<file name="teot-c1.bin" index="64"/>
+		<file name="teot-c2.bin" index="65"/>
+		<file name="teot-m1.bin" index="9"/>
+		<file name="teot-v1.bin" index="16"/>
+		<file name="teot-v2.bin" index="32"/>
 	</romset>
 
 	<!-- ROMs requiring 128MB SDRAM (2x64MB) -->
