@@ -215,6 +215,24 @@ https://lmgtfy.com/?q=darksoft+neo+geo+roll-up+pack
 		<file name="ngdt-300-v2.bin" index="20"/>
 		<file name="ngdt-300-v3.bin" index="24"/>
 	</romset>
+	<romset name="looptris" pcm="1" altname="LoopTris" publisher="Blastar" year="2021">
+		<file name="looptris.p1" index="4"/>
+		<file name="looptris.s1" index="8"/>
+		<file name="looptris.m1" index="9"/>
+		<file name="looptris.v1" index="16"/>
+		<file name="looptris.c1" index="64"/>
+		<file name="looptris.c2" index="65"/>
+	</romset>
+	<romset name="teot" pcm="1" altname="Eye of Typhoon, The: Tsunami Edition" publisher="Viccom / OzzyOuzo" year="2022">
+		<file name="teot-p1.bin" index="4"/>
+		<file name="teot-p2.bin" index="6"/>
+		<file name="teot-s1.bin" index="8"/>
+		<file name="teot-m1.bin" index="9"/>
+		<file name="teot-v1.bin" index="16"/>
+		<file name="teot-v2.bin" index="32"/>
+		<file name="teot-c1.bin" index="64" size="0x800000"/>
+		<file name="teot-c2.bin" index="65" size="0x800000"/>
+	</romset>
 
 	<!-- ROMs requiring 64MB SDRAM -->
 
@@ -364,16 +382,6 @@ https://lmgtfy.com/?q=darksoft+neo+geo+roll-up+pack
 	</romset>
 	<romset name="samsh5fe" pcm="1" altname="Samurai Shodown V Special Final Edition" altnamej="Samurai Shodown Zero Special Final Edition" publisher="Yuki Enterprise / SNK Playmore" year="2004" ram="2"/>
 	<romset name="samsh5pf" pcm="1" altname="Samurai Shodown V Perfect" altnamej="Samurai Spirits Zero Perfect" publisher="SNK" year="2020" ram="2"/>
-	<romset name="teot" pcm="1" altname="Eye of Typhoon, The: Tsunami Edition" publisher="Viccom / OzzyOuzo" year="2022" ram="2">
-		<file name="teot-p1.bin" index="4"/>
-		<file name="teot-p2.bin" index="6"/>
-		<file name="teot-s1.bin" index="8"/>
-		<file name="teot-c1.bin" index="64"/>
-		<file name="teot-c2.bin" index="65"/>
-		<file name="teot-m1.bin" index="9"/>
-		<file name="teot-v1.bin" index="16"/>
-		<file name="teot-v2.bin" index="32"/>
-	</romset>
 
 	<!-- ROMs requiring 128MB SDRAM (2x64MB) -->
 
