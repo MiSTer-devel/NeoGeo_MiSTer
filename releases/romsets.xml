@@ -35,7 +35,7 @@ https://lmgtfy.com/?q=darksoft+neo+geo+roll-up+pack
 	<romset name="b2b" pcm="1" altname="Bang Bang Busters" publisher="Visco" year="2000"/>
 	<romset name="bakatono" pcm="1" altname="Bakatonosama Mahjong Manyuuki" publisher="Monolith Corp." year="1991"/>
 	<romset name="bangbead" pcm="1" altname="Bang Bead" publisher="Visco" year="2000"/>
-	<romset name="bjourney" pcm="0" altname="Blue's Journey" altnamej="Raguy" publisher="Alpha Denshi Co." year="1990" vromb_offset="0x200000" vrom_mirror="0"/>
+	<romset name="bjourney" pcm="0" altname="Blue's Journey" altnamej="Raguy" publisher="Alpha Denshi Co." year="1990" vromb_offset="0x200000"/>
 	<romset name="breakers" pcm="1" altname="Breakers" publisher="Visco" year="1996"/>
 	<romset name="breakrev" pcm="1" altname="Breakers Revenge" publisher="Visco" year="1998"/>
 	<romset name="bstars" pcm="0" altname="Baseball Stars Professional" publisher="SNK" year="1990" vromb_offset="0x200000"/>
