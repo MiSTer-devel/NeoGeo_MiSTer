@@ -306,7 +306,7 @@ https://lmgtfy.com/?q=darksoft+neo+geo+roll-up+pack
 	<romset name="kof2003h" cmc="2" pvc="1" pcm="1" altname="King of Fighters 2003, The (NGH-2710)" publisher="SNK Playmore" year="2003" ram="2"/>
 	<romset name="matrim" cmc="2" pcm="1" altname="Power Instinct Matrimelee" altnamej="Shin Goketsuji Ichizoku: Tokon Matrimelee" publisher="Atlus / Noise Factory" year="2003" ram="2"/>
 	<romset name="mslug3" cmc="1" sma="4" pcm="1" altname="Metal Slug 3" publisher="SNK" year="2000" ram="2"/>
-	<romset name="mslug3h" cmc="1" sma="4" pcm="1" altname="Metal Slug 3 (NGH-2560)" publisher="SNK" year="2000" ram="2"/>
+	<romset name="mslug3h" cmc="1"  pcm="1" altname="Metal Slug 3 (NGH-2560)" publisher="SNK" year="2000" ram="2"/>
 	<romset name="mslug3b6,mslug6" pcm="1" altname="Metal Slug 6 (Metal Slug 3 bootleg)" publisher="Hack / Bootleg" year="2000" ram="2"/>
 	<romset name="mslug5" pvc="1" pcm="1" altname="Metal Slug 5" publisher="SNK Playmore" year="2003" ram="2"/>
 	<romset name="mslug5h" pvc="1" pcm="1" altname="Metal Slug 5 (NGH-2680)" publisher="SNK Playmore" year="2003" ram="2"/>
