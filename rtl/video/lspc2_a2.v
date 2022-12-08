@@ -445,7 +445,11 @@ module lspc2_a2(
 	
 	// SS1/2 outputs, periodic
 	wire nFLIP, nCHG_D, R15_QD, S48_nQ;
-	FDPCell O69(CLK_24MB, nFLIP, nRESETP, 1'b1, , FLIP_nQ);
+	
+	// Latch nFLIP at pixel 264 (O62_Q). That will make the line buffers switch at pixel 267.
+	// The first write of the new line to the line buffer happens at pixel 268.
+	//FDPCell O69(CLK_24MB, nFLIP, nRESETP, 1'b1, , FLIP_nQ);
+	FDPCell O69(O62_Q, nFLIP, nRESETP, 1'b1, , FLIP_nQ);
 	FDPCell R63(PIXELC[2], FLIP_nQ, 1'b1, nRESETP, CHG_D, nCHG_D);
 	FDM S48(LSPC_3M, R15_QD, , S48_nQ);
 	// S40A
