@@ -661,6 +661,8 @@ wire [3:0] cart_pchip = cfg[22:20];
 wire       use_pcm    = cfg[23];
 wire [1:0] cart_chip  = cfg[25:24]; // legacy option: 0 - none, 1 - PRO-CT0, 2 - Link MCU
 wire [1:0] cmc_chip   = cfg[27:26]; // type 1/2
+wire       rom_wait   = cfg[28];    // ROMWAIT from cart. 0 - Full speed, 1 - 1 wait cycle
+wire [1:0] p_wait     = cfg[30:29]; // PWAIT from cart. 0 - Full speed, 1 - 1 wait cycle, 2 - 2 cycles
 
 // Memory card and backup ram image save/load
 assign sd_rd[0]       = bk_rd;
@@ -1396,7 +1398,7 @@ neo_c1 C1(
 	.P2_IN(~{ joystick_1[9:8],               {use_mouse ? ms_btn : use_sp ? {|{joystick_1[7:4]},               sp1} : {joystick_1[7:4]|{3{joystick_1[11]}}, joystick_1[0], joystick_1[1], joystick_1[2], joystick_1[3]}}}),
 	.nCD1(nCD1), .nCD2(nCD2),
 	.nWP(0),			// Memory card is never write-protected
-	.nROMWAIT(1), .nPWAIT0(1), .nPWAIT1(1), .PDTACK(1),
+	.nROMWAIT(~rom_wait), .nPWAIT0(~p_wait[0]), .nPWAIT1(~p_wait[1]), .PDTACK(1),
 	.SDD_WR(SDD_OUT),
 	.SDD_RD(SDD_RD_C1),
 	.nSDZ80R(nSDZ80R), .nSDZ80W(nSDZ80W), .nSDZ80CLR(nSDZ80CLR),
