@@ -112,7 +112,7 @@ https://lmgtfy.com/?q=darksoft+neo+geo+roll-up+pack
 	<romset name="nam1975" pcm="0" altname="NAM-1975" publisher="SNK" year="1990" vromb_offset="0x200000"/>
 	<romset name="ncombat" pcm="0" altname="Ninja Combat" publisher="Alpha Denshi Co." year="1990" vromb_offset="0x200000"/>
 	<romset name="ncombath" pcm="0" altname="Ninja Combat (NGH-009)" publisher="Alpha Denshi Co." year="1990" vromb_offset="0x200000"/>
-	<romset name="ncommand" pcm="1" altname="Ninja Commando" publisher="Alpha Denshi Co." year="1992"/>
+	<romset name="ncommand" pcm="1" altname="Ninja Commando" publisher="Alpha Denshi Co." year="1992" rom_wait="1"/>
 	<romset name="neobombe" pcm="1" altname="Neo Bomberman" publisher="Hudson" year="1997"/>
 	<romset name="neocup98" pcm="1" altname="Neo-Geo Cup 98: The Road to the Victory" publisher="SNK" year="1998"/>
 	<romset name="neodrift" pcm="1" altname="Neo Drift Out: New Technology" publisher="Visco" year="1996"/>

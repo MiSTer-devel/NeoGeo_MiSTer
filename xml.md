@@ -31,6 +31,8 @@ Below is an example of an XML entry for a MAME style ROM set.
 |pvc|Indicates the presence of PVC chip if 1.|
 |cmc|Indicates the presence of CMC chip. Valid values are 1 to 2.|
 |link|Indicates the presence of Link chip if 1.|
+|rom_wait|1 wait cycle for ROM zone if 1.|
+|p_wait|Wait cycles for PORT zone. Valid values are 1 to 2.|
 
 #### File Fields
 |Field|Use|
