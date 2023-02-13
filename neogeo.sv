@@ -268,7 +268,7 @@ localparam CONF_STR = {
 	"NEOGEO;;",
 	"-;",
 	"H0FS1,*,Load ROM set;",
-	"H1S1,ISOBIN,Load CD Image;",
+	"h0S1,CUECHD,Load CD Image;",
 	"-;",
 	"H3OP,FM,ON,OFF;",
 	"H3OQ,ADPCMA,ON,OFF;",
@@ -281,9 +281,11 @@ localparam CONF_STR = {
 	"H3oT,ADPCMA CH 5,ON,OFF;",
 	"H3oU,ADPCMA CH 6,ON,OFF;",
 	"H3-;",
-	"O12,System Type,Console(AES),Arcade(MVS);", //,CD,CDZ;",
+	"O12,System Type,Console(AES),Arcade(MVS),CD,CDZ;",
 	"OM,BIOS,UniBIOS,Original;",
 	"O3,Video Mode,NTSC,PAL;",
+	"O[43],FIX layer,On,Off;",
+	"O[44],SPR_layer,On,Off;",
 	"-;",
 	"o9A,Input,Joystick or Spinner,Joystick,Spinner,Mouse(Irr.Maze);",
 	"-;",
@@ -291,9 +293,9 @@ localparam CONF_STR = {
 	"RL,Reload Memory Card;",
 	"D4RC,Save Memory Card;",
 	"OO,Autosave,OFF,ON;",
-	"H1-;",
-	"H1OAB,Region,US,EU,JP,AS;",
-	"H1OF,CD lid,Opened,Closed;",
+	"h0-;",
+	"h0OAB,Region,US,EU,JP,AS;",
+	"h0OF,CD lid,Closed,Opened;",
 	"H2-;",
 	"H2O7,[DIP] Settings,OFF,ON;",
 	"H2O8,[DIP] Freeplay,OFF,ON;",
@@ -405,9 +407,9 @@ reg nRESET;
 always @(posedge CLK_24M) begin
 	nRESET <= &TRASH_ADDR;
 	if (~&TRASH_ADDR) TRASH_ADDR <= TRASH_ADDR + 1'b1;
-	if (ioctl_download | status[0] | status[14] | buttons[1] | bk_loading | RESET) begin
+	if (status[0] | status[14] | buttons[1] | bk_loading | RESET) begin
 		TRASH_ADDR <= 0;
-		SYSTEM_TYPE <= status[2:1];	// Latch the system type on reset
+		SYSTEM_TYPE <= status_system_type;	// Latch the system type on reset
 	end
 end
 
@@ -465,8 +467,12 @@ wire [15:0] ioctl_dout;
 wire        ioctl_download;
 wire  [7:0] ioctl_idx;
 
+wire [1:0] status_system_type = status[2:1];
+wire status_cdx = status_system_type[1];
+
 wire SYSTEM_MVS = (SYSTEM_TYPE == 2'd1);
 wire SYSTEM_CDx = SYSTEM_TYPE[1];
+wire SYSTEM_CDZ = (SYSTEM_TYPE == 2'd3);
 
 wire [15:0] sdram_sz;
 wire [21:0] gamma_bus;
@@ -486,7 +492,7 @@ hps_io #(.CONF_STR(CONF_STR), .WIDE(1), .VDNUM(2)) hps_io
 	.ps2_key(ps2_key),
 
 	.status(status),				// status read (32 bits)
-	.status_menumask({status[22], 9'd0, en216p, bk_autosave | ~bk_pending, ~dbg_menu,~SYSTEM_MVS,~SYSTEM_CDx,SYSTEM_CDx}),
+	.status_menumask({status[22], 9'd0, en216p, bk_autosave | ~bk_pending, ~dbg_menu,~SYSTEM_MVS,1'b0,status_cdx}),
 
 	.RTC(rtc),
 	.sdram_sz(sdram_sz),
@@ -511,7 +517,9 @@ hps_io #(.CONF_STR(CONF_STR), .WIDE(1), .VDNUM(2)) hps_io
 	
 	.img_mounted(img_mounted),
 	.img_readonly(img_readonly),
-	.img_size(img_size)
+	.img_size(img_size),
+
+	.EXT_BUS(EXT_BUS)
 );
 
 reg [7:0] ioctl_index;
@@ -776,6 +784,7 @@ wire [19:1] CD_TR_WR_ADDR;
 wire [1:0] CD_BANK_SPR;
 
 wire CD_TR_WR_SPR, CD_TR_WR_PCM, CD_TR_WR_Z80, CD_TR_WR_FIX;
+wire CD_UPLOAD_EN;
 wire CD_BANK_PCM;
 wire CD_IRQ;
 wire DMA_RUNNING, DMA_WR_OUT, DMA_RD_OUT;
@@ -789,15 +798,71 @@ wire PROM_DATA_READY;
 assign sd_wr[1]       = 0;
 assign sd_buff_din[1] = 0;
 
+//CD communication
+reg [48:0] cd_in;
+wire [48:0] cd_out;
+
+wire [35:0] EXT_BUS;
+hps_ext hps_ext
+(
+	.clk_sys(clk_sys),
+	.EXT_BUS(EXT_BUS),
+	.cd_in(cd_in),
+	.cd_out(cd_out)
+);
+
+reg [39:0] CDD_STATUS;
+wire [39:0] CDD_COMMAND_DATA;
+wire CDD_COMMAND_SEND;
+reg CDD_STATUS_LATCH;
+
+always @(posedge clk_sys) begin
+	reg cd_out48_last = 1;
+	reg cdd_send_old = 0;
+
+	CDD_STATUS_LATCH <= 0;
+	if (cd_out[48] != cd_out48_last)  begin
+		cd_out48_last <= cd_out[48];
+		CDD_STATUS <= cd_out[39:0];
+		CDD_STATUS_LATCH <= 1;
+	end
+
+	cdd_send_old <= CDD_COMMAND_SEND;
+	if (CDD_COMMAND_SEND && !cdd_send_old) begin
+		cd_in[47:0] <= {8'h00,CDD_COMMAND_DATA};
+		cd_in[48] <= ~cd_in[48];
+	end
+end
+
+//extend ioctl_wr for 16 cycles
+reg  ioctl_wr_x;
+always @(posedge clk_sys) begin
+	reg [3:0] cnt = 0;
+
+	if (ioctl_wr) begin
+		cnt <= 4'd15;
+		ioctl_wr_x <= 1;
+	end
+	else if (cnt) begin
+		cnt <= cnt - 1'd1;
+	end
+	else begin
+		ioctl_wr_x <= 0;
+	end
+end
+
+wire CD_DATA_DOWNLOAD = ioctl_download & (ioctl_index[5:0] == 6'h02);
+wire CD_DATA_WR = ioctl_wr_x & CD_DATA_DOWNLOAD;
+
 cd_sys cdsystem(
 	.nRESET(nRESET),
-	.clk_sys(clk_sys), .CLK_68KCLK(CLK_68KCLK),
+	.clk_sys(clk_sys), .CLK_68KCLK_EN(CLK_68KCLK_EN),//.CLK_68KCLK(CLK_68KCLK),
 	.M68K_ADDR(M68K_ADDR), .M68K_DATA(M68K_DATA), .A22Z(A22Z), .A23Z(A23Z),
 	.nLDS(nLDS), .nUDS(nUDS), .M68K_RW(M68K_RW), .nAS(nAS), .nDTACK(nDTACK_ADJ),
 	.nBR(nBR), .nBG(nBG), .nBGACK(nBGACK),
 	.SYSTEM_TYPE(SYSTEM_TYPE),
 	.CD_REGION(CD_REGION),
-	.CD_LID(status[15]),	// CD lid state (DEBUG)
+	.CD_LID(~status[15] ^ SYSTEM_CDZ),	// CD lid state (DEBUG)
 	.CD_VIDEO_EN(CD_VIDEO_EN), .CD_FIX_EN(CD_FIX_EN), .CD_SPR_EN(CD_SPR_EN),
 	.CD_nRESET_Z80(CD_nRESET_Z80),
 	.CD_TR_WR_SPR(CD_TR_WR_SPR), .CD_TR_WR_PCM(CD_TR_WR_PCM),
@@ -805,10 +870,13 @@ cd_sys cdsystem(
 	.CD_TR_AREA(CD_TR_AREA),
 	.CD_BANK_SPR(CD_BANK_SPR), .CD_BANK_PCM(CD_BANK_PCM),
 	.CD_TR_WR_DATA(CD_TR_WR_DATA), .CD_TR_WR_ADDR(CD_TR_WR_ADDR),
+	.CD_UPLOAD_EN(CD_UPLOAD_EN),
 	.CD_IRQ(CD_IRQ), .IACK(IACK),
-	.sd_req_type(sd_req_type),
-	.sd_rd(sd_rd[1]), .sd_ack(sd_ack[1]), .sd_buff_wr(sd_buff_wr),
-	.sd_buff_dout(sd_buff_dout), .sd_lba(sd_lba[1]),
+	.CDD_STATUS_IN(CDD_STATUS), .CDD_STATUS_LATCH(CDD_STATUS_LATCH),
+	.CDD_COMMAND_DATA(CDD_COMMAND_DATA), .CDD_COMMAND_SEND(CDD_COMMAND_SEND),
+	.CD_DATA_DOWNLOAD(CD_DATA_DOWNLOAD), .CD_DATA_WR(CD_DATA_WR),
+	.CD_DATA_DIN(ioctl_dout),
+	.CD_DATA_ADDR(ioctl_addr[11:1]),
 	.DMA_RUNNING(DMA_RUNNING),
 	.DMA_DATA_IN(PROM_DATA), .DMA_DATA_OUT(DMA_DATA_OUT),
 	.DMA_WR_OUT(DMA_WR_OUT), .DMA_RD_OUT(DMA_RD_OUT),
@@ -873,11 +941,17 @@ always_ff @(posedge clk_sys) begin
 	old_rst <= status[0];
 
 	if(status[0]) begin
-		P2ROM_MASK <= P2ROM_MASK | P2ROM_MASK[26:1];
-		CROM_MASK  <= CROM_MASK  | CROM_MASK[26:1];
-		V1ROM_MASK <= V1ROM_MASK | V1ROM_MASK[26:1];
-		V2ROM_MASK <= V2ROM_MASK | V2ROM_MASK[26:1];
-		MROM_MASK  <= MROM_MASK  | MROM_MASK[26:1];
+		if (SYSTEM_CDx) begin
+			CROM_MASK  <= 27'h3FFFFF; // 4MB
+			V1ROM_MASK <= 27'hFFFFF;  // 1MB
+			MROM_MASK  <= 27'hFFFF;   // 64KB
+		end else begin
+			P2ROM_MASK <= P2ROM_MASK | P2ROM_MASK[26:1];
+			CROM_MASK  <= CROM_MASK  | CROM_MASK[26:1];
+			V1ROM_MASK <= V1ROM_MASK | V1ROM_MASK[26:1];
+			V2ROM_MASK <= V2ROM_MASK | V2ROM_MASK[26:1];
+			MROM_MASK  <= MROM_MASK  | MROM_MASK[26:1];
+		end
 	end
 
 	if(ioctl_wr) begin
@@ -1094,6 +1168,12 @@ neo_d0 D0(
 	.n2610CS(n2610CS), .n2610RD(n2610RD), .n2610WR(n2610WR),
 	.BNK(BNK)
 );
+
+reg CLK_68KCLK_PREV;
+wire CLK_68KCLK_EN = ~CLK_68KCLK_PREV & CLK_68KCLK;
+always @(posedge clk_sys) begin
+		CLK_68KCLK_PREV <= CLK_68KCLK;
+end
 
 // Re-priority-encode the interrupt lines with the CD_IRQ one (IPL* are active-low)
 // Also swap IPL0 and IPL1 for CD systems
@@ -1770,8 +1850,10 @@ jt10 YM2610(
  
 // For Neo CD only
 wire VIDEO_EN = SYSTEM_CDx ? CD_VIDEO_EN : 1'b1;
-wire FIX_EN = SYSTEM_CDx ? CD_FIX_EN : 1'b1;
-wire SPR_EN = SYSTEM_CDx ? CD_SPR_EN : 1'b1;
+//wire FIX_EN = SYSTEM_CDx ? CD_FIX_EN : 1'b1;
+//wire SPR_EN = SYSTEM_CDx ? CD_SPR_EN : 1'b1;
+wire FIX_EN = status[43] ? 1'b0 : SYSTEM_CDx ? CD_FIX_EN : 1'b1; // DEBUG
+wire SPR_EN = status[44] ? 1'b0 : SYSTEM_CDx ? CD_SPR_EN : 1'b1;
 wire DOTA_GATED = SPR_EN & DOTA;
 wire DOTB_GATED = SPR_EN & DOTB;
 wire HSync; //,VSync;
@@ -1807,6 +1889,8 @@ lspc2_a2	LSPC(
 );
 
 wire nRESET_WD;
+wire DOGE = SYSTEM_CDx ? ~CD_UPLOAD_EN : 1'b1; // UPLOAD_EN disables Watchdog?
+
 neo_b1 B1(
 	.CLK(CLK_24M),	.CLK_6MB(CLK_6MB), .CLK_1HB(CLK_1HB),
 	.S1H1(S1H1),
@@ -1822,6 +1906,7 @@ neo_b1 B1(
 	.TMS0(CHG), .LD1(LD1), .LD2(LD2), .SS1(SS1), .SS2(SS2),
 	.PA(PAL_RAM_ADDR),
 	.EN_FIX(FIX_EN),
+	.DOGE(DOGE),
 	.nRST(nRESET),
 	.nRESET(nRESET_WD)
 );

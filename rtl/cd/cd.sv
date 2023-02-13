@@ -20,7 +20,8 @@
 
 module cd_sys(
 	input nRESET,
-	input CLK_68KCLK,
+	//input CLK_68KCLK,
+	input CLK_68KCLK_EN,
 	input [23:1] M68K_ADDR,
 	inout [15:0] M68K_DATA,
 	input A22Z, A23Z,
@@ -43,18 +44,22 @@ module cd_sys(
 	output reg CD_BANK_PCM,
 	output reg [15:0] CD_TR_WR_DATA,
 	output reg [19:1] CD_TR_WR_ADDR,
+	output reg CD_UPLOAD_EN,
 	
 	input IACK,
 	output reg CD_IRQ,
 	
 	input clk_sys,
-	output [15:0] sd_req_type,
-	output sd_rd,
-	input sd_ack,
-	input [15:0] sd_buff_dout,	// Data from HPS
-	input sd_buff_wr,
-	output [31:0] sd_lba,
-	
+	input [39:0] CDD_STATUS_IN,
+	input CDD_STATUS_LATCH,
+	output [39:0] CDD_COMMAND_DATA,
+	output CDD_COMMAND_SEND,
+
+	input CD_DATA_DOWNLOAD,
+	input CD_DATA_WR,
+	input [15:0] CD_DATA_DIN,
+	input [11:1] CD_DATA_ADDR, // word address
+
 	input CD_LID,	// DEBUG
 	
 	// For DMA
@@ -74,9 +79,9 @@ module cd_sys(
 );
 
 	reg CD_USE_SPR, CD_USE_PCM, CD_USE_Z80, CD_USE_FIX;
-	reg CD_UPLOAD_EN;
 	reg CD_nRESET_DRIVE;
 	reg [15:0] REG_FF0002;
+	reg [11:0] REG_FF0004;
 	reg [2:0] CD_IRQ_FLAGS;
 	
 	reg [23:0] DMA_ADDR_A;
@@ -96,59 +101,51 @@ module cd_sys(
 	wire [7:0] MSF_F;
 	
 	wire HOCK, CDCK, CDD_nIRQ;
-	wire DRIVE_sd_rd;
-	wire DRIVE_READING;
-	
+
 	cd_drive DRIVE(
 		.clk_sys(clk_sys),
-		.CLK_12M(CLK_68KCLK),
 		.nRESET(nRESET & CD_nRESET_DRIVE),
 		.HOCK(HOCK), .CDCK(CDCK),
 		.CDD_DIN(CDD_DIN), .CDD_DOUT(CDD_DOUT),
 		.CDD_nIRQ(CDD_nIRQ),
-		.sd_req_type(DRIVE_sd_req_type),
-		.sd_rd(DRIVE_sd_rd),
-		.sd_ack(sd_ack),
-		.sd_buff_dout(sd_buff_dout),
-		.sd_buff_wr(sd_buff_wr),
-		.MSF_M(MSF_M),	.MSF_S(MSF_S),	.MSF_F(MSF_F),
-		.MSF_INC(MSF_INC),
-		.READING(DRIVE_READING)
+		.STATUS_IN(CDD_STATUS_IN),
+		.STATUS_LATCH(CDD_STATUS_LATCH),
+		.COMMAND_DATA(CDD_COMMAND_DATA),
+		.COMMAND_SEND(CDD_COMMAND_SEND)
 	);
 	
 	wire [7:0] LC8951_DOUT;
 	wire CDC_nIRQ;
+	wire HEADER_WR = CD_DATA_WR & (CD_DATA_ADDR == 11'd6 || CD_DATA_ADDR == 11'd7); // Bytes 12-15
 	
 	lc8951 LC8951(
-		nRESET,
-		CLK_68KCLK,
-		~LC8951_WR, ~LC8951_RD, M68K_ADDR[1],
-		M68K_DATA[7:0],
-		LC8951_DOUT,
-		
-		MSF_M, MSF_S, MSF_F,
-		~SECTOR_READY,	// Used to latch MSF
-		
-		SECTOR_READY,
-		DMA_RUNNING,
-		CDC_nIRQ
+		.nRESET(nRESET),
+		.clk_sys(clk_sys),
+		//.CLK_12M(CLK_68KCLK),
+		.CLK_68KCLK_EN(CLK_68KCLK_EN),
+		.nWR(~LC8951_WR), .nRD(~LC8951_RD),
+		.RS(M68K_ADDR[1]),
+		.DIN(M68K_DATA[7:0]),
+		.DOUT(LC8951_DOUT),
+
+		.HEADER_WR(HEADER_WR),
+		.HEADER_SEL(CD_DATA_ADDR[1]),
+		.HEADER_DIN(CD_DATA_DIN),
+
+		.SECTOR_READY(SECTOR_READY),
+		.DMA_RUNNING(DMA_RUNNING),
+		.CDC_nIRQ(CDC_nIRQ)
 	);
-	
-	reg SECTOR_REQ;
-	reg MSF_INC;
-	wire [15:0] DRIVE_sd_req_type;
-	
-	assign sd_req_type = DRIVE_READING ? 16'h4801 : DRIVE_sd_req_type;
-	assign sd_rd = DRIVE_READING ? DMA_sd_rd : DRIVE_sd_rd;
-	
+
 	reg SECTOR_READY;
+
 	reg FORCE_WR;
 	reg [1:0] LOADING_STATE;
 	reg [10:0] CACHE_ADDR;	// 0~2047
+	reg CACHE_WR_EN;
 	
-	wire [7:0] CACHE_DIN = CACHE_ADDR[0] ? sd_buff_dout[15:8] : sd_buff_dout[7:0];
-	
-	wire CACHE_WR = DRIVE_READING & (sd_buff_wr | FORCE_WR);
+	wire [7:0] CACHE_DIN = CACHE_ADDR[0] ? CD_DATA_DIN[15:8] : CD_DATA_DIN[7:0];
+	wire CACHE_WR = CACHE_WR_EN & (CD_DATA_WR_START | FORCE_WR);
 	wire [7:0] CACHE_DOUT;
 	
 	cache CACHE(
@@ -162,12 +159,13 @@ module cd_sys(
 	reg DMA_START_PREV, DMA_START;
 	reg [1:0] DMA_MODE;
 	reg [3:0] DMA_STATE;
-	reg DMA_sd_rd;
 	reg [7:0] DMA_TIMER;
 	reg [31:0] DMA_COUNT_RUN;
 	
-	reg [23:0] SECTOR_TIMER;
-	
+	reg CD_DATA_WR_PREV;
+	wire CD_DATA_WR_START =  CD_DATA_WR & ~CD_DATA_WR_PREV;
+	wire CD_DATA_WR_END   = ~CD_DATA_WR &  CD_DATA_WR_PREV;
+
 	always @(posedge clk_sys or negedge nRESET)
 	begin
 		if (!nRESET)
@@ -177,74 +175,56 @@ module cd_sys(
 			LOADING_STATE <= 2'd0;	// Idle, waiting for request
 			
 			DMA_STATE <= 4'd0;
-			DMA_sd_rd <= 0;
 			nBR <= 1;
 			nBGACK <= 1;
 			
 			DMA_RUNNING <= 0;
 			DMA_TIMER <= 8'd0;
 			
-			SECTOR_TIMER <= 24'd0;
+			CACHE_WR_EN <= 0;
+
+			CD_DATA_WR_PREV <= 0;
 		end
 		else
 		begin
+
+			CD_DATA_WR_PREV <= CD_DATA_WR;
 		
-			// Trigger
-			if (MSF_INC)
-				MSF_INC <= 0;
-			
-			if (SECTOR_TIMER)
-				SECTOR_TIMER <= SECTOR_TIMER - 1'b1;
-		
-			if (LOADING_STATE == 2'd0)
-			begin
-				if (DRIVE_READING & !SECTOR_TIMER)
+			if (LOADING_STATE == 2'd0) begin
+				if (CD_DATA_DOWNLOAD & CD_DATA_WR_END & (CD_DATA_ADDR == 11'd7)) // CD Data starts at byte 16
 				begin
-					// Request sector from HPS
-					//SECTOR_TIMER <= 24'd2400000;	// 20ms between sectors (100kB/s)
-					SECTOR_TIMER <= 24'd600000;		// TESTING: 5ms between sectors (400kB/s)
 					SECTOR_READY <= 0;
-					sd_lba <= {8'h00, MSF_M, MSF_S, MSF_F};	// HPS converts this to proper LBA
-					DMA_sd_rd <= 1;
 					CACHE_ADDR <= 11'h000;
+					CACHE_WR_EN <= 1;
 					LOADING_STATE <= 2'd1;
 				end
-			end
-			else if (LOADING_STATE == 2'd1)
-			begin
-				// Wait for sd_ack
-				if (sd_ack)
-				begin
-					DMA_sd_rd <= 0;
-					LOADING_STATE <= 2'd2;
-				end
-			end
-			else if (LOADING_STATE == 2'd2)
-			begin
-				if (sd_buff_wr)
-				begin
-					// First byte of pair was written by sd_buff_wr
+			end else if (LOADING_STATE == 2'd1) begin
+				if (CD_DATA_WR_START) begin
+					// First byte of pair was written by CD_DATA_WR
 					CACHE_ADDR <= CACHE_ADDR + 1'b1;
-					LOADING_STATE <= 2'd3;
+					LOADING_STATE <= 2'd2;
 					FORCE_WR <= 1;
 				end
 			
-				if (~sd_ack)
-				begin
-					// Sector load done
-					SECTOR_READY <= 1;
-					LOADING_STATE <= 2'd0;
-					MSF_INC <= 1;
+				if (~CD_DATA_DOWNLOAD) begin // Incomplete data, should not happen.
+					LOADING_STATE <= 2'd3;
 				end
-			end
-			else if (LOADING_STATE == 2'd3)
-			begin
+			end else if (LOADING_STATE == 2'd2) begin
 				// Second byte of pair was written by FORCE_WR
 				FORCE_WR <= 0;
 				CACHE_ADDR <= CACHE_ADDR + 1'b1;
-				LOADING_STATE <= 2'd2;
+				if (CACHE_ADDR == 11'd2047) begin
+					LOADING_STATE <= 2'd3;
+				end else begin
+					LOADING_STATE <= 2'd1;
+				end
+			end else if (LOADING_STATE == 2'd3) begin
+				// Sector load done
+				CACHE_WR_EN <= 0;
+				SECTOR_READY <= 1;
+				LOADING_STATE <= 2'd0;
 			end
-			
+
 			DMA_START_PREV <= DMA_START;
 			
 			// Rising edge of DMA_START
@@ -392,8 +372,8 @@ module cd_sys(
 					begin
 						// Byte copy read done, do first write
 						DMA_RD_OUT <= 0;
-						//DMA_WR_OUT <= 1;	// DEBUG
-						DMA_DATA_OUT <= DMA_DATA_IN;	// Flip bytes in DMA_DATA_IN ?
+						DMA_WR_OUT <= 1;	// DEBUG
+						DMA_DATA_OUT <= {DMA_DATA_IN[7:0], DMA_DATA_IN[15:8]};	// Flip bytes in DMA_DATA_IN ?
 						DMA_ADDR_IN <= DMA_ADDR_IN + 2'd2;
 						DMA_TIMER <= 8'd30;	// TODO: Tune this
 						DMA_STATE <= 4'd9;
@@ -410,7 +390,7 @@ module cd_sys(
 					else if (DMA_STATE == 4'd10)
 					begin
 						// Byte copy do second write
-						//DMA_WR_OUT <= 1;	// DEBUG
+						DMA_WR_OUT <= 1;	// DEBUG
 						DMA_TIMER <= 8'd30;	// TODO: Tune this
 						DMA_STATE <= 4'd7;
 					end
@@ -437,8 +417,7 @@ module cd_sys(
 	
 	reg [1:0] CDD_nIRQ_SR;
 
-	// TODO: Should this be clocked by clk_sys ?
-	always @(posedge CLK_68KCLK or negedge nRESET)
+	always @(posedge clk_sys or negedge nRESET)
 	begin
 		if (!nRESET)
 		begin
@@ -452,6 +431,7 @@ module cd_sys(
 			CD_UPLOAD_EN <= 0;
 			CD_nRESET_Z80 <= 0;	// ?
 			REG_FF0002 <= 16'h0;	// ?
+			REG_FF0004 <= 0;	// ?
 			nLDS_PREV <= 1;
 			nUDS_PREV <= 1;
 			CD_IRQ <= 1;
@@ -460,8 +440,7 @@ module cd_sys(
 			
 			CDD_nIRQ_SR <= 2'b11;
 		end
-		else
-		begin
+		else if (CLK_68KCLK_EN) begin
 			nLDS_PREV <= nLDS;
 			nUDS_PREV <= nUDS;
 			CDD_nIRQ_SR <= {CDD_nIRQ_SR[0], CDD_nIRQ};
@@ -472,7 +451,7 @@ module cd_sys(
 			if (CDD_nIRQ_SR == 2'b10)
 			begin
 				// Trigger CD comm. interrupt
-				if (REG_FF0002[6] | REG_FF0002[4])
+				if (REG_FF0002[6] & REG_FF0002[4])
 					CD_IRQ_FLAGS[1] <= 0;
 				
 				// REG_FF0002:
@@ -504,6 +483,7 @@ module cd_sys(
 					casez ({M68K_ADDR[8:1], nUDS, nLDS})
 						// FF00xx
 						10'b0_0000001_00: REG_FF0002 <= M68K_DATA;			// FF0002
+						10'b0_0000010_00: REG_FF0004 <= M68K_DATA[11:0];			// FF0004
 						10'b0_0000111_?0: CD_IRQ_FLAGS <= CD_IRQ_FLAGS | M68K_DATA[5:3];	// FF000E
 						
 						10'b0_0110000_10:			// FF0061
@@ -619,6 +599,7 @@ module cd_sys(
 										8'd24;	// Spurious interrupt, should not happen
 	
 	assign M68K_DATA = (~nAS & M68K_RW & IACK & (M68K_ADDR[3:1] == 3'd4)) ? {8'h00, CD_IRQ_VECTOR} :		// Vectored interrupt handler
+							(READING & {M68K_ADDR[11:1], 1'b0} == 12'h004) ? {4'h0, REG_FF0004} :
 							(READING & {M68K_ADDR[11:1], 1'b0} == 12'h11C) ? {3'b110, CD_LID, CD_JUMPERS, 8'h00} :	// Top mech
 							(READING & {M68K_ADDR[11:1], 1'b0} == 12'h160) ? {11'b00000000_000, CDCK, CDD_DOUT} :	// REG_CDDINPUT
 							(READING & {M68K_ADDR[11:1], 1'b0} == 12'h188) ? 16'h0000 :	// CDDA L

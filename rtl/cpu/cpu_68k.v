@@ -70,7 +70,7 @@ fx68k FX68K(
 		
 		.DTACKn(nDTACK),
 		
-		.VPAn(~IPL2 | nAS | ~&M68K_ADDR[23:4]), //VPA must be fired only in IACK cycle! (NeoGeo doesn't use FC)
+		.VPAn(M68K_ADDR[3] | nAS | ~&M68K_ADDR[23:4]), //VPA must be fired only in IACK cycle! (NeoGeo doesn't use FC)
 		.BERRn(1'b1),
 		
 		.IPL0n(IPL0),

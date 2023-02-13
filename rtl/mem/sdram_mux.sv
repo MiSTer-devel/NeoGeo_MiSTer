@@ -86,7 +86,7 @@ module sdram_mux(
 	reg [26:1] dl_addr;
 	reg [15:0] dl_data;
 
-	assign SDRAM_BS = (DL_EN | ~SDRAM_WR_BYTE_MODE) ? 2'b11 : {CD_REMAP_TR_ADDR[0],~CD_REMAP_TR_ADDR[0]};
+	assign SDRAM_BS = (DL_EN | ~SDRAM_WR_BYTE_MODE) ? 2'b11 : {~CD_REMAP_TR_ADDR[0],CD_REMAP_TR_ADDR[0]};
 	assign SDRAM_DIN = DL_EN ? dl_data : wr_data;
 
 	reg M68K_RD_RUN, SROM_RD_RUN, CROM_RD_RUN, CD_WR_RUN;
@@ -138,6 +138,9 @@ module sdram_mux(
 	wire REQ_M68K_RD = (~SDRAM_M68K_SIG_SR & SDRAM_M68K_SIG);
 	wire REQ_CROM_RD = (SDRAM_CROM_SIG_SR & ~PCK1) & SPR_EN;
 	wire REQ_SROM_RD = (SDRAM_SROM_SIG_SR & ~PCK2) & FIX_EN;
+
+	wire CD_FIX_WR = ((CD_TR_AREA == 3'd5) & ~CD_EXT_WR);
+	wire CD_LDS_ONLY_WR = CD_FIX_WR;
 
 	always @(posedge CLK) begin
 		reg M68K_RD_REQ, SROM_RD_REQ, CROM_RD_REQ, CD_WR_REQ;
@@ -191,19 +194,22 @@ module sdram_mux(
 			if (((nDS_PREV & ~(nLDS & nUDS)) | (~DMA_WR_OUT_PREV & DMA_WR_OUT)) & CD_WR_SDRAM_SIG) begin
 				// Convert and latch address
 				casez({CD_EXT_WR, CD_TR_AREA})
-					4'b1_???: CD_REMAP_TR_ADDR <= DMA_RUNNING ? {1'b0, 4'h3 + DMA_ADDR_OUT[20], DMA_ADDR_OUT[19:1], 1'b0} : {1'b0, 4'h3 + M68K_ADDR[20], M68K_ADDR[19:1], ~nLDS};	// EXT zone SDRAM
+					4'b1_???: CD_REMAP_TR_ADDR <= DMA_RUNNING ? {3'b0_00, ~DMA_ADDR_OUT[20], DMA_ADDR_OUT[20:1], 1'b0} : {3'b0_00, ~M68K_ADDR[20], M68K_ADDR[20:1], ~nLDS};	// EXT zone SDRAM
 					4'b0_000: CD_REMAP_TR_ADDR <= DMA_RUNNING ? {3'b0_10, CD_BANK_SPR, DMA_ADDR_OUT[19:7], DMA_ADDR_OUT[5:2], ~DMA_ADDR_OUT[6], ~DMA_ADDR_OUT[1], 1'b0} : {3'b0_10, CD_BANK_SPR, M68K_ADDR[19:7], M68K_ADDR[5:2], ~M68K_ADDR[6], ~M68K_ADDR[1], 1'b0};	// Sprites SDRAM
 					//4'b0_001: CD_REMAP_TR_ADDR <= {4'b0_000, CD_BANK_PCM, CD_TR_WR_ADDR, 1'b0};		// ADPCM DDRAM
-					4'b0_101: CD_REMAP_TR_ADDR <= DMA_RUNNING ? {8'b0_0010_100, DMA_ADDR_OUT[17:6], DMA_ADDR_OUT[3:1], ~DMA_ADDR_OUT[5], ~DMA_ADDR_OUT[4]} : {8'b0_0010_100, M68K_ADDR[17:6], M68K_ADDR[3:1], ~M68K_ADDR[5], ~M68K_ADDR[4]};	// Fix SDRAM
+					4'b0_101: CD_REMAP_TR_ADDR <= DMA_RUNNING ? {8'b0_0000_100, DMA_ADDR_OUT[17:6], DMA_ADDR_OUT[3:1], ~DMA_ADDR_OUT[5], ~DMA_ADDR_OUT[4]} : {8'b0_0000_100, M68K_ADDR[17:6], M68K_ADDR[3:1], ~M68K_ADDR[5], ~M68K_ADDR[4]};	// Fix SDRAM
 					//4'b0_100: CD_REMAP_TR_ADDR <= {8'b0_0000_000, CD_TR_WR_ADDR[16:1], 1'b0};		// Z80 BRAM
 					default: CD_REMAP_TR_ADDR <= 25'h0AAAAAA;		// DEBUG
 				endcase
 
 				// DMA writes are always done in words
-				SDRAM_WR_BYTE_MODE <= (((CD_TR_AREA == 3'd5) & ~CD_EXT_WR) | (CD_EXT_WR & (nLDS ^ nUDS))) & ~DMA_RUNNING;	// Fix or extended RAM data
+				//SDRAM_WR_BYTE_MODE <= (((CD_TR_AREA == 3'd5) & ~CD_EXT_WR) | (CD_EXT_WR & (nLDS ^ nUDS))) & ~DMA_RUNNING;	// Fix or extended RAM data
+				SDRAM_WR_BYTE_MODE <= (CD_LDS_ONLY_WR | (CD_EXT_WR & (nLDS ^ nUDS)));	// Fix or extended RAM data
 
 				// TODO: make sure wr_data gets correct data according to selected byte
-				wr_data <= DMA_RUNNING ? DMA_DATA_OUT : M68K_DATA;
+				wr_data <= DMA_RUNNING ? (CD_LDS_ONLY_WR ? {DMA_DATA_OUT[7:0],DMA_DATA_OUT[7:0]} :  DMA_DATA_OUT)
+									   : (CD_LDS_ONLY_WR ? {M68K_DATA[7:0],M68K_DATA[7:0]} : M68K_DATA);
+
 				// In DMA, start if: nothing is running, no LSPC read (priority case C)
 				// Out of DMA, start if: nothing is running (priority case B)
 				// TO TEST
