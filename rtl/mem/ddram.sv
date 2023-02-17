@@ -37,6 +37,7 @@ module ddram
 
 	input  [27:0] wraddr,
 	input  [15:0] din,
+	input         we_byte,  // 0:word write, 1:byte write
 	input         we_req,
 	output reg    we_ack,
 
@@ -63,7 +64,7 @@ module ddram
 );
 
 assign DDRAM_BURSTCNT = ram_burst;
-assign DDRAM_BE       = (8'd3<<{ram_address[2:1],1'b0}) | {8{ram_read}};
+assign DDRAM_BE       = ram_wr_be | {8{ram_read}};
 assign DDRAM_ADDR     = {4'b0011, ram_address[27:3]}; // RAM at 0x30000000
 assign DDRAM_RD       = ram_read;
 assign DDRAM_DIN      = ram_data;
@@ -75,6 +76,7 @@ reg [63:0] ram_data;
 reg [27:0] ram_address, cache_addr, cache_addr2, cache_addr3;
 reg        ram_read = 0;
 reg        ram_write = 0;
+reg  [7:0] ram_wr_be;
 
 reg [2:0]  state  = 0;
 reg [1:0]  ch = 0; 
@@ -90,10 +92,11 @@ always @(posedge DDRAM_CLK) begin
 
 		case(state)
 			0: if(we_ack != we_req) begin
-					ram_data		<= {4{din}};
+					ram_data	<= we_byte ? {8{din[7:0]}} : {4{din}};
 					ram_address <= wraddr;
 					ram_write 	<= 1;
 					ram_burst   <= 1;
+					ram_wr_be   <= we_byte ? (8'd1<<{wraddr[2:0]}) : (8'd3<<{wraddr[2:1],1'b0});
 					state       <= 1;
 				end
 				else if(rd_req != rd_ack) begin

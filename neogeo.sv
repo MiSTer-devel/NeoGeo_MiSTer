@@ -504,7 +504,7 @@ hps_io #(.CONF_STR(CONF_STR), .WIDE(1), .VDNUM(2)) hps_io
 	.ioctl_dout(ioctl_dout),
 	.ioctl_download(ioctl_download),
 	.ioctl_index(ioctl_idx),
-	.ioctl_wait(ddram_wait | memcp_wait),
+	.ioctl_wait((ddr_loading & ddram_wait) | memcp_wait),
 	
 	.sd_lba(sd_lba),
 	.sd_rd(sd_rd),
@@ -882,7 +882,7 @@ cd_sys cdsystem(
 	.DMA_WR_OUT(DMA_WR_OUT), .DMA_RD_OUT(DMA_RD_OUT),
 	.DMA_ADDR_IN(DMA_ADDR_IN),		// Used for reading
 	.DMA_ADDR_OUT(DMA_ADDR_OUT),	// Used for writing
-	.DMA_SDRAM_BUSY(DMA_SDRAM_BUSY)
+	.DMA_SDRAM_BUSY(DMA_SDRAM_BUSY | ddram_wait)
 );
 
 // The P1 zone is writable on the Neo CD
@@ -1190,7 +1190,9 @@ wire IPL2_OUT = ~(SYSTEM_CDx & CD_IRQ);
 
 // Because of the SDRAM latency, nDTACK is handled differently for ROM zones
 // If the address is in a ROM zone, PROM_DATA_READY is used to extend the normal nDTACK output by NEO-C1
-wire nDTACK_ADJ = ~&{nSROMOE, nROMOE, nPORTOE, ~CD_EXT_RD} ? ~PROM_DATA_READY | nDTACK : nDTACK;
+wire nDTACK_ADJ = ~&{nSROMOE, nROMOE, nPORTOE, ~CD_EXT_RD} ? ~PROM_DATA_READY | nDTACK
+                    : (CD_TR_WR_Z80 | CD_TR_WR_PCM) ? ~ddram_dtack | nDTACK
+                    : nDTACK;
 
 cpu_68k M68KCPU(
 	.CLK_24M(CLK_24M),
@@ -1340,7 +1342,7 @@ wire [15:0] bk_dout = bk_lba[7] ? memcard_buff_dout : sram_buff_dout;
 assign CROM_ADDR = {C_LATCH_EXT, C_LATCH, 3'b000} & CROM_MASK;
 
 zmc ZMC(
-	.nRESET(nRESET),
+	.nRESET(nRESET & ~SYSTEM_CDx), // No bankswitching for Neo CD
 	.nSDRD0(SDRD0),
 	.SDA_L(SDA[1:0]), .SDA_U(SDA[15:8]),
 	.MA(MA)
@@ -1631,11 +1633,12 @@ wire [3:0] ADPCMA_BANK;
 wire [23:0] ADPCMB_ADDR;
 
 reg adpcm_wr, adpcm_rd;
-reg old_download, old_reset;
+reg old_download, old_reset, old_CD_TR_WR_Z80, old_CD_TR_WR_PCM;
 wire adpcm_wrack, adpcm_rdack;
 
 wire ddr_loading = ioctl_download & (((ioctl_index >= INDEX_VROMS) & (ioctl_index < INDEX_CROMS)) | (ioctl_index == INDEX_M1ROM));
 reg ddram_wait = 0;
+reg ddram_dtack;
 
 // Copied from Genesis_MiSTer/Genesis.sv
 always @(posedge clk_sys)
@@ -1643,23 +1646,37 @@ begin
 	
 	old_download <= ddr_loading;
 	old_reset <= nRESET;
+	old_CD_TR_WR_Z80 <= CD_TR_WR_Z80;
+	old_CD_TR_WR_PCM <= CD_TR_WR_PCM;
 
 	if (old_reset & ~nRESET) ddram_wait <= 0;
 	
 	if (old_download & ~ddr_loading)
 		ddram_wait <= 0;	// Needed ?
 
-	if (~old_download & ddr_loading) begin
-		adpcm_wr <= 0;
-	end else if (ddr_loading)
-	begin
-		if (ioctl_wr) begin
-			ddram_wait <= 1;
-			adpcm_wr <= ~adpcm_wr;
-			ddr_waddr <= (ioctl_index == INDEX_M1ROM) ? {1'b1,ioctl_addr[24:0]} : VROM_LOAD_ADDR;
-		end else if (ddram_wait & (adpcm_wr == adpcm_wrack)) begin
-			ddram_wait <= 0;
+	if (ddram_dtack & nAS) begin
+		ddram_dtack <= 0;
+	end
+
+	if (ddr_loading & ioctl_wr) begin
+		ddram_wait <= 1;
+		adpcm_wr <= ~adpcm_wr;
+		ddr_waddr <= (ioctl_index == INDEX_M1ROM) ? {1'b1,ioctl_addr[24:0]} : VROM_LOAD_ADDR;
+		ddr_wr_din <= ioctl_dout;
+		ddr_we_byte <= 0;
+	end else if ((~old_CD_TR_WR_Z80 & CD_TR_WR_Z80) | (~old_CD_TR_WR_PCM & CD_TR_WR_PCM)) begin // CD write to M1 Z80 area or PCM
+		ddram_wait <= 1;
+		adpcm_wr <= ~adpcm_wr;
+		if (CD_TR_WR_Z80) begin
+			ddr_waddr <= {10'b10_0000_0000, DMA_RUNNING ? DMA_ADDR_OUT[16:1] : M68K_ADDR[16:1]};
+		end else begin
+			ddr_waddr <= { 6'b00_0000, CD_BANK_PCM, (DMA_RUNNING ? DMA_ADDR_OUT[19:1] : M68K_ADDR[19:1])};
 		end
+		ddr_wr_din <= DMA_RUNNING ? DMA_DATA_OUT : M68K_DATA;
+		ddr_we_byte <= 1;
+	end else if (ddram_wait & (adpcm_wr == adpcm_wrack)) begin
+		ddram_wait <= 0;
+		ddram_dtack <= 1;
 	end
 end
 
@@ -1693,7 +1710,7 @@ always @(posedge clk_sys) begin
 	
 	// Trigger ADPCM A data read on nSDPOE falling edge
 	ADPCMB_OE_SR <= {ADPCMB_OE_SR[0], nSDPOE};
-	if (ADPCMB_OE_SR == 2'b10) begin
+	if (ADPCMB_OE_SR == 2'b10 & ~SYSTEM_CDx) begin
 		ADPCMB_READ_REQ <= ~ADPCMB_READ_REQ;
 		ADPCMB_ADDR_LATCH <= {~use_pcm, ADPCMB_ADDR & (use_pcm ? V1ROM_MASK[23:0] : V2ROM_MASK[23:0])};
 		// Data is needed on one previous 8MHz clk before next 55KHz clock->(96MHz/55KHz = 1728)-144-4=1580
@@ -1704,13 +1721,16 @@ end
 wire [7:0] ADPCMA_DATA;
 wire [7:0] ADPCMB_DATA;
 reg [27:0] ddr_waddr;
+reg [15:0] ddr_wr_din;
+reg ddr_we_byte;
 ddram DDRAM(
 	.*,
 	
 	.wraddr(ddr_waddr),
-	.din(ioctl_dout),
+	.din(ddr_wr_din),
 	.we_req(adpcm_wr),
 	.we_ack(adpcm_wrack),
+	.we_byte(ddr_we_byte),
 	
 	.rdaddr(ADPCMA_ADDR_LATCH),
 	.dout(ADPCMA_DATA),
