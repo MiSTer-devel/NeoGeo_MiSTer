@@ -39,6 +39,12 @@ module cd_sys(
 	output CD_TR_WR_PCM,
 	output CD_TR_WR_Z80,
 	output CD_TR_WR_FIX,
+
+	output CD_TR_RD_FIX,
+	output CD_TR_RD_SPR,
+
+	output reg CD_USE_FIX,
+	output reg CD_USE_SPR,
 	output reg [2:0] CD_TR_AREA,
 	output reg [1:0] CD_BANK_SPR,
 	output reg CD_BANK_PCM,
@@ -78,7 +84,7 @@ module cd_sys(
 	input DMA_SDRAM_BUSY
 );
 
-	reg CD_USE_SPR, CD_USE_PCM, CD_USE_Z80, CD_USE_FIX;
+	reg CD_USE_PCM, CD_USE_Z80;
 	reg CD_nRESET_DRIVE;
 	reg [15:0] REG_FF0002;
 	reg [11:0] REG_FF0004;
@@ -406,15 +412,25 @@ module cd_sys(
 	wire LC8951_WR = (WRITING & (M68K_ADDR[11:2] == 10'b0001_000000));	// FF0101, FF0103
 	
 	// nAS used ?
-	wire TR_ZONE_WR = DMA_RUNNING ? CD_UPLOAD_EN & (DMA_ADDR_OUT[23:20] == 4'hE) & DMA_WR_OUT :
-												CD_UPLOAD_EN & (M68K_ADDR[23:20] == 4'hE) & ~M68K_RW;
-	
+	wire TR_ZONE = DMA_RUNNING ? (DMA_ADDR_OUT[23:20] == 4'hE) : (M68K_ADDR[23:20] == 4'hE);
+
+	wire TR_ZONE_RD = TR_ZONE & (DMA_RUNNING ? DMA_RD_OUT : M68K_RW & ~(nLDS & nUDS));
+	wire TR_ZONE_WR = TR_ZONE & CD_UPLOAD_EN & (DMA_RUNNING ? DMA_WR_OUT : ~M68K_RW & ~(nLDS & nUDS));
+
+	wire CD_TR_SPR = (CD_TR_AREA == 3'd0) & CD_USE_SPR;
+	wire CD_TR_PCM = (CD_TR_AREA == 3'd1) & CD_USE_PCM;
+	wire CD_TR_Z80 = (CD_TR_AREA == 3'd4) & CD_USE_Z80;
+	wire CD_TR_FIX = (CD_TR_AREA == 3'd5) & CD_USE_FIX;
+
 	// Allow writes only if the "allow write" flag of the corresponding region is set
-	assign CD_TR_WR_SPR = TR_ZONE_WR & (CD_TR_AREA == 3'd0) & CD_USE_SPR;
-	assign CD_TR_WR_PCM = TR_ZONE_WR & (CD_TR_AREA == 3'd1) & CD_USE_PCM;
-	assign CD_TR_WR_Z80 = TR_ZONE_WR & (CD_TR_AREA == 3'd4) & CD_USE_Z80;
-	assign CD_TR_WR_FIX = TR_ZONE_WR & (CD_TR_AREA == 3'd5) & CD_USE_FIX;
-	
+	assign CD_TR_WR_SPR = TR_ZONE_WR & CD_TR_SPR;
+	assign CD_TR_WR_PCM = TR_ZONE_WR & CD_TR_PCM;
+	assign CD_TR_WR_Z80 = TR_ZONE_WR & CD_TR_Z80;
+	assign CD_TR_WR_FIX = TR_ZONE_WR & CD_TR_FIX;
+
+	assign CD_TR_RD_FIX = TR_ZONE_RD & CD_TR_FIX;
+	assign CD_TR_RD_SPR = TR_ZONE_RD & CD_TR_SPR;
+
 	reg [1:0] CDD_nIRQ_SR;
 
 	always @(posedge clk_sys or negedge nRESET)

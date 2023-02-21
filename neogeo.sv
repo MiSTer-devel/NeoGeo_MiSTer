@@ -784,6 +784,8 @@ wire [19:1] CD_TR_WR_ADDR;
 wire [1:0] CD_BANK_SPR;
 
 wire CD_TR_WR_SPR, CD_TR_WR_PCM, CD_TR_WR_Z80, CD_TR_WR_FIX;
+wire CD_TR_RD_SPR, CD_TR_RD_FIX;
+wire CD_USE_SPR, CD_USE_FIX;
 wire CD_UPLOAD_EN;
 wire CD_BANK_PCM;
 wire CD_IRQ;
@@ -867,6 +869,8 @@ cd_sys cdsystem(
 	.CD_nRESET_Z80(CD_nRESET_Z80),
 	.CD_TR_WR_SPR(CD_TR_WR_SPR), .CD_TR_WR_PCM(CD_TR_WR_PCM),
 	.CD_TR_WR_Z80(CD_TR_WR_Z80), .CD_TR_WR_FIX(CD_TR_WR_FIX),
+	.CD_TR_RD_FIX(CD_TR_RD_FIX), .CD_TR_RD_SPR(CD_TR_RD_SPR),
+	.CD_USE_FIX(CD_USE_FIX), .CD_USE_SPR(CD_USE_SPR),
 	.CD_TR_AREA(CD_TR_AREA),
 	.CD_BANK_SPR(CD_BANK_SPR), .CD_BANK_PCM(CD_BANK_PCM),
 	.CD_TR_WR_DATA(CD_TR_WR_DATA), .CD_TR_WR_ADDR(CD_TR_WR_ADDR),
@@ -888,7 +892,7 @@ cd_sys cdsystem(
 // The P1 zone is writable on the Neo CD
 // Is there a write enable register for it ?
 wire CD_EXT_WR = DMA_RUNNING ? (SYSTEM_CDx & (DMA_ADDR_OUT[23:21] == 3'd0) & DMA_WR_OUT) :	// DMA writes to $000000~$1FFFFF
-						(SYSTEM_CDx & ~|{A23Z, A22Z, M68K_ADDR[21]} & ~M68K_RW & ~nAS);				// CPU writes to $000000~$1FFFFF
+						(SYSTEM_CDx & ~|{A23Z, A22Z, M68K_ADDR[21]} & ~M68K_RW & ~(nLDS & nUDS));				// CPU writes to $000000~$1FFFFF
 
 wire CD_WR_SDRAM_SIG = SYSTEM_CDx & |{CD_TR_WR_SPR, CD_TR_WR_FIX, CD_EXT_WR};
 
@@ -896,7 +900,7 @@ wire nROMOE = nROMOEL & nROMOEU;
 wire nPORTOE = nPORTOEL & nPORTOEU;
 
 // CD system work ram is in SDRAM
-wire CD_EXT_RD = DMA_RUNNING ? (SYSTEM_CDx & (DMA_ADDR_IN[23:21] == 3'd0) & DMA_RD_OUT) :		// DMA reads from $000000~$1FFFFF
+wire CD_WRAM_RD = DMA_RUNNING ? (SYSTEM_CDx & (DMA_ADDR_IN[23:20] == 4'd1) & DMA_RD_OUT) :		// DMA reads from $100000~$1FFFFF
 										(SYSTEM_CDx & (~nWRL | ~nWRU));											// CPU reads from $100000~$1FFFFF
 
 wire        sdram_ready;
@@ -1028,10 +1032,15 @@ sdram_mux SDRAM_MUX(
 	.PROM_DATA_READY(PROM_DATA_READY),
 
 	.CD_TR_AREA(CD_TR_AREA),
-	.CD_EXT_RD(CD_EXT_RD),
 	.CD_EXT_WR(CD_EXT_WR),
+	.CD_WRAM_RD(CD_WRAM_RD),
 	.CD_WR_SDRAM_SIG(CD_WR_SDRAM_SIG),
+	.CD_USE_FIX(CD_USE_FIX),
+	.CD_TR_RD_FIX(CD_TR_RD_FIX),
+	.CD_TR_WR_FIX(CD_TR_WR_FIX),
 	.CD_BANK_SPR(CD_BANK_SPR),
+	.CD_USE_SPR(CD_USE_SPR),
+	.CD_TR_RD_SPR(CD_TR_RD_SPR),
 
 	.DMA_ADDR_OUT(DMA_ADDR_OUT), .DMA_ADDR_IN(DMA_ADDR_IN),
 	.DMA_DATA_OUT(DMA_DATA_OUT),
@@ -1048,6 +1057,7 @@ sdram_mux SDRAM_MUX(
 	.S_LATCH(S_LATCH),
 	.FIX_BANK(FIX_BANK),
 	.FIX_EN(FIX_EN),
+
 	.SROM_DATA(SROM_DATA),
 
 	.DL_EN(ioctl_download & ioctl_en),
@@ -1190,7 +1200,7 @@ wire IPL2_OUT = ~(SYSTEM_CDx & CD_IRQ);
 
 // Because of the SDRAM latency, nDTACK is handled differently for ROM zones
 // If the address is in a ROM zone, PROM_DATA_READY is used to extend the normal nDTACK output by NEO-C1
-wire nDTACK_ADJ = ~&{nSROMOE, nROMOE, nPORTOE, ~CD_EXT_RD} ? ~PROM_DATA_READY | nDTACK
+wire nDTACK_ADJ = ~&{nSROMOE, nROMOE, nPORTOE, ~CD_WRAM_RD, ~CD_TR_RD_FIX, ~CD_TR_RD_SPR} ? ~PROM_DATA_READY | nDTACK
                     : (CD_TR_WR_Z80 | CD_TR_WR_PCM) ? ~ddram_dtack | nDTACK
                     : nDTACK;
 
@@ -1217,10 +1227,13 @@ assign M68K_DATA_BYTE_MASK = (~|{nLDS, nUDS}) ? M68K_DATA :
 assign M68K_DATA = M68K_RW ? 16'bzzzzzzzz_zzzzzzzz : FX68K_DATAOUT;
 assign FX68K_DATAIN = M68K_RW ? M68K_DATA_BYTE_MASK : 16'h0000;
 
-assign FIXD = S2H1 ? SROM_DATA[15:8] : SROM_DATA[7:0];
+assign FIXD = CD_USE_FIX ? 8'bzzzz_zzzz : S2H1 ? SROM_DATA[15:8] : SROM_DATA[7:0];
 
 // Disable ROM read in PORT zone if the game uses a special chip
-assign M68K_DATA = (nROMOE & nSROMOE & |{nPORTOE, cart_chip, cart_pchip}) ? 16'bzzzzzzzzzzzzzzzz : PROM_DATA;
+assign M68K_DATA = ((nROMOE & nSROMOE & |{nPORTOE, cart_chip, cart_pchip}) | CD_TR_RD_FIX) ? 16'bzzzzzzzzzzzzzzzz : PROM_DATA;
+
+// Output correct FIX byte
+assign M68K_DATA[7:0] = ~CD_TR_RD_FIX ? 8'bzzzz_zzzz : (M68K_ADDR[4] ? PROM_DATA[15:8] : PROM_DATA[7:0]);
 
 // 68k work RAM
 dpram #(15) WRAML(
@@ -1547,7 +1560,7 @@ end
 
 // CR_DOUBLE: [8px left] [8px right]
 //         BP  A B C D    A B C D
-wire [31:0] CR = CA4_REG ? CR_DOUBLE[63:32] : CR_DOUBLE[31:0];
+wire [31:0] CR = CD_USE_SPR ? {32{1'bz}} : CA4_REG ? CR_DOUBLE[63:32] : CR_DOUBLE[31:0];
 
 neo_zmc2 ZMC2(
 	.CLK_12M(CLK_12M),
