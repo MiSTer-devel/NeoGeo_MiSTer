@@ -66,6 +66,11 @@ module cd_sys(
 	input [15:0] CD_DATA_DIN,
 	input [11:1] CD_DATA_ADDR, // word address
 
+	input CDDA_RD,
+	input CDDA_WR,
+	output [15:0] CD_AUDIO_L,
+	output [15:0] CD_AUDIO_R,
+
 	input CD_LID,	// DEBUG
 	
 	// For DMA
@@ -141,6 +146,16 @@ module cd_sys(
 		.SECTOR_READY(SECTOR_READY),
 		.DMA_RUNNING(DMA_RUNNING),
 		.CDC_nIRQ(CDC_nIRQ)
+	);
+
+	cdda CDDA(
+		.CLK(clk_sys),
+		.nRESET(nRESET),
+		.READ(CDDA_RD),
+		.WRITE(CDDA_WR),
+		.DIN(CD_DATA_DIN),
+		.AUDIO_L(CD_AUDIO_L),
+		.AUDIO_R(CD_AUDIO_R)
 	);
 
 	reg SECTOR_READY;
@@ -613,13 +628,20 @@ module cd_sys(
 										~CD_IRQ_FLAGS[1] ? 8'd22 :
 										~CD_IRQ_FLAGS[2] ? 8'd21 :
 										8'd24;	// Spurious interrupt, should not happen
-	
+
+	function [15:0] bit_reverse;
+		input [15:0] a;
+		begin
+			bit_reverse = { a[0],a[1],a[2],a[3],a[4],a[5],a[6],a[7],a[8],a[9],a[10],a[11],a[12],a[13],a[14],a[15] };
+		end
+	endfunction
+
 	assign M68K_DATA = (~nAS & M68K_RW & IACK & (M68K_ADDR[3:1] == 3'd4)) ? {8'h00, CD_IRQ_VECTOR} :		// Vectored interrupt handler
 							(READING & {M68K_ADDR[11:1], 1'b0} == 12'h004) ? {4'h0, REG_FF0004} :
 							(READING & {M68K_ADDR[11:1], 1'b0} == 12'h11C) ? {3'b110, CD_LID, CD_JUMPERS, 8'h00} :	// Top mech
 							(READING & {M68K_ADDR[11:1], 1'b0} == 12'h160) ? {11'b00000000_000, CDCK, CDD_DOUT} :	// REG_CDDINPUT
-							(READING & {M68K_ADDR[11:1], 1'b0} == 12'h188) ? 16'h0000 :	// CDDA L
-							(READING & {M68K_ADDR[11:1], 1'b0} == 12'h18A) ? 16'h0000 :	// CDDA R
+							(READING & {M68K_ADDR[11:1], 1'b0} == 12'h188) ? bit_reverse(CD_AUDIO_L) :	// CDDA L
+							(READING & {M68K_ADDR[11:1], 1'b0} == 12'h18A) ? bit_reverse(CD_AUDIO_R) :	// CDDA R
 							(LC8951_RD) ? {8'h00, LC8951_DOUT} :
 							16'bzzzzzzzz_zzzzzzzz;
 endmodule

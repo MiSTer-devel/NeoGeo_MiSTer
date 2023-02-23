@@ -198,8 +198,8 @@ assign {SD_SCK, SD_MOSI, SD_CS} = 'Z;
 
 assign AUDIO_S   = 1;		// Signed
 assign AUDIO_MIX = status[5:4];
-assign AUDIO_L = snd_left;
-assign AUDIO_R = snd_right;
+assign AUDIO_L = snd_mix_l[16:1];
+assign AUDIO_R = snd_mix_r[16:1];
 
 assign LED_USER  = status[0] | bk_pending;
 assign LED_DISK  = 0;
@@ -797,6 +797,8 @@ wire [23:0] DMA_ADDR_OUT;
 wire DMA_SDRAM_BUSY;
 wire PROM_DATA_READY;
 
+wire [15:0] CD_AUDIO_L, CD_AUDIO_R;
+
 assign sd_wr[1]       = 0;
 assign sd_buff_din[1] = 0;
 
@@ -816,7 +818,7 @@ hps_ext hps_ext
 reg [39:0] CDD_STATUS;
 wire [39:0] CDD_COMMAND_DATA;
 wire CDD_COMMAND_SEND;
-reg CDD_STATUS_LATCH;
+reg CDD_STATUS_LATCH, CDD_DM;
 
 always @(posedge clk_sys) begin
 	reg cd_out48_last = 1;
@@ -826,6 +828,7 @@ always @(posedge clk_sys) begin
 	if (cd_out[48] != cd_out48_last)  begin
 		cd_out48_last <= cd_out[48];
 		CDD_STATUS <= cd_out[39:0];
+		CDD_DM <= cd_out[40];
 		CDD_STATUS_LATCH <= 1;
 	end
 
@@ -853,9 +856,19 @@ always @(posedge clk_sys) begin
 	end
 end
 
-wire CD_DATA_DOWNLOAD = ioctl_download & (ioctl_index[5:0] == 6'h02);
-wire CD_DATA_WR = ioctl_wr_x & CD_DATA_DOWNLOAD;
+wire CDDA_CLK;
+CEGen CEGEN_CDDA_CLK
+(
+	.CLK(clk_sys),
+	.RST_N(nRESET),
+	.IN_CLK(96671316),
+	.OUT_CLK(44100),
+	.CE(CDDA_CLK)
+);
 
+wire CD_DATA_DOWNLOAD = ioctl_download & (ioctl_index[5:0] == 6'h02);
+wire CD_DATA_WR = ioctl_wr_x & CD_DATA_DOWNLOAD & CDD_DM;
+wire CDDA_WR = ioctl_wr_x & CD_DATA_DOWNLOAD & ~CDD_DM;
 cd_sys cdsystem(
 	.nRESET(nRESET),
 	.clk_sys(clk_sys), .CLK_68KCLK_EN(CLK_68KCLK_EN),//.CLK_68KCLK(CLK_68KCLK),
@@ -881,6 +894,8 @@ cd_sys cdsystem(
 	.CD_DATA_DOWNLOAD(CD_DATA_DOWNLOAD), .CD_DATA_WR(CD_DATA_WR),
 	.CD_DATA_DIN(ioctl_dout),
 	.CD_DATA_ADDR(ioctl_addr[11:1]),
+	.CDDA_RD(CDDA_CLK), .CDDA_WR(CDDA_WR),
+	.CD_AUDIO_L(CD_AUDIO_L), .CD_AUDIO_R(CD_AUDIO_R),
 	.DMA_RUNNING(DMA_RUNNING),
 	.DMA_DATA_IN(PROM_DATA), .DMA_DATA_OUT(DMA_DATA_OUT),
 	.DMA_WR_OUT(DMA_WR_OUT), .DMA_RD_OUT(DMA_RD_OUT),
@@ -1879,6 +1894,9 @@ jt10 YM2610(
 	.adpcmb_addr(ADPCMB_ADDR), .adpcmb_roe_n(nSDPOE), .adpcmb_data(SYSTEM_CDx ? 8'h08 : ADPCMB_DATA),	// CD has no ADPCM-B
 	.snd_right(snd_right), .snd_left(snd_left), .snd_enable(~{4{dbg_menu}} | ~status[28:25]), .ch_enable(~status[62:57])
 );
+
+wire [16:0] snd_mix_l = $signed(snd_left) + $signed(CD_AUDIO_L);
+wire [16:0] snd_mix_r = $signed(snd_right) + $signed(CD_AUDIO_R);
 
  
 // For Neo CD only
