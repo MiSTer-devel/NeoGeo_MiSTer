@@ -596,11 +596,11 @@ wire nCRDO, nCRDW, nCRDC;
 wire nCARDWEN, CARDWENB;
 
 // Z80 stuff
-wire [7:0] SDD_IN;
-wire [7:0] SDD_OUT;
+wire [7:0] SDD_IN, SDD_OUT, Z80_SDD_OUT;
 wire [7:0] SDD_RD_C1;
-wire [15:0] SDA;
-wire nSDRD, nSDWR, nMREQ, nIORQ;
+wire [15:0] SDA, Z80_SDA;
+wire nSDRD, nSDWR, nMREQ, nIORQ, nBUSAK;
+wire nZ80_SDRD, nZ80_SDWR, nZ80_MREQ;
 wire nZ80INT, nZ80NMI, nSDW, nSDZ80R, nSDZ80W, nSDZ80CLR;
 wire nSDROM, nSDMRD, nSDMWR, SDRD0, SDRD1, nZRAMCS;
 wire n2610CS, n2610RD, n2610WR;
@@ -784,8 +784,8 @@ wire [19:1] CD_TR_WR_ADDR;
 wire [1:0] CD_BANK_SPR;
 
 wire CD_TR_WR_SPR, CD_TR_WR_PCM, CD_TR_WR_Z80, CD_TR_WR_FIX;
-wire CD_TR_RD_SPR, CD_TR_RD_FIX;
-wire CD_USE_SPR, CD_USE_FIX;
+wire CD_TR_RD_SPR, CD_TR_RD_FIX, CD_TR_RD_Z80;
+wire CD_USE_SPR, CD_USE_FIX, CD_USE_Z80;
 wire CD_UPLOAD_EN;
 wire CD_BANK_PCM;
 wire CD_IRQ;
@@ -818,7 +818,7 @@ hps_ext hps_ext
 reg [39:0] CDD_STATUS;
 wire [39:0] CDD_COMMAND_DATA;
 wire CDD_COMMAND_SEND;
-reg CDD_STATUS_LATCH, CDD_DM;
+reg CDD_STATUS_LATCH;
 
 always @(posedge clk_sys) begin
 	reg cd_out48_last = 1;
@@ -828,7 +828,6 @@ always @(posedge clk_sys) begin
 	if (cd_out[48] != cd_out48_last)  begin
 		cd_out48_last <= cd_out[48];
 		CDD_STATUS <= cd_out[39:0];
-		CDD_DM <= cd_out[40];
 		CDD_STATUS_LATCH <= 1;
 	end
 
@@ -867,8 +866,11 @@ CEGen CEGEN_CDDA_CLK
 );
 
 wire CD_DATA_DOWNLOAD = ioctl_download & (ioctl_index[5:0] == 6'h02);
-wire CD_DATA_WR = ioctl_wr_x & CD_DATA_DOWNLOAD & CDD_DM;
-wire CDDA_WR = ioctl_wr_x & CD_DATA_DOWNLOAD & ~CDD_DM;
+wire CD_DATA_WR = ioctl_wr_x & CD_DATA_DOWNLOAD;
+
+wire CDDA_DOWNLOAD = ioctl_download & (ioctl_index[5:0] == 6'h04);
+wire CDDA_WR = ioctl_wr_x & CDDA_DOWNLOAD;
+
 cd_sys cdsystem(
 	.nRESET(nRESET),
 	.clk_sys(clk_sys), .CLK_68KCLK_EN(CLK_68KCLK_EN),//.CLK_68KCLK(CLK_68KCLK),
@@ -883,7 +885,9 @@ cd_sys cdsystem(
 	.CD_TR_WR_SPR(CD_TR_WR_SPR), .CD_TR_WR_PCM(CD_TR_WR_PCM),
 	.CD_TR_WR_Z80(CD_TR_WR_Z80), .CD_TR_WR_FIX(CD_TR_WR_FIX),
 	.CD_TR_RD_FIX(CD_TR_RD_FIX), .CD_TR_RD_SPR(CD_TR_RD_SPR),
+	.CD_TR_RD_Z80(CD_TR_RD_Z80),
 	.CD_USE_FIX(CD_USE_FIX), .CD_USE_SPR(CD_USE_SPR),
+	.CD_USE_Z80(CD_USE_Z80),
 	.CD_TR_AREA(CD_TR_AREA),
 	.CD_BANK_SPR(CD_BANK_SPR), .CD_BANK_PCM(CD_BANK_PCM),
 	.CD_TR_WR_DATA(CD_TR_WR_DATA), .CD_TR_WR_ADDR(CD_TR_WR_ADDR),
@@ -1620,7 +1624,7 @@ spram #(15,16) USV(
 wire [18:11] MA;
 wire [7:0] Z80_RAM_DATA;
 
-spram #(11) Z80RAM(.clock(CLK_4M), .address(SDA[10:0]), .data(SDD_OUT), .wren(~(nZRAMCS | nSDMWR)), .q(Z80_RAM_DATA));	// Fast enough ?
+spram #(11) Z80RAM(.clock(CLK_12M), .address(SDA[10:0]), .data(SDD_OUT), .wren(~(nZRAMCS | nSDMWR)), .q(Z80_RAM_DATA));
 
 assign SDD_IN = (~nSDZ80R) ? SDD_RD_C1 :
 					(~nSDMRD & ~nSDROM) ? M1_ROM_DATA :
@@ -1629,6 +1633,7 @@ assign SDD_IN = (~nSDZ80R) ? SDD_RD_C1 :
 					8'b00000000;
 
 wire Z80_nRESET = SYSTEM_CDx ? nRESET & CD_nRESET_Z80 : nRESET;
+wire CD_HAS_Z80_BUS = (CD_USE_Z80 & ~(nBUSAK & Z80_nRESET));
 
 wire [7:0] M1_ROM_DATA;
 reg nZ80WAIT;
@@ -1651,10 +1656,17 @@ end
 cpu_z80 Z80CPU(
 	.CLK_4M(CLK_4M),
 	.nRESET(Z80_nRESET),
-	.SDA(SDA), .SDD_IN(SDD_IN), .SDD_OUT(SDD_OUT),
-	.nIORQ(nIORQ),	.nMREQ(nMREQ),	.nRD(nSDRD), .nWR(nSDWR),
+	.SDA(Z80_SDA), .SDD_IN(SDD_IN), .SDD_OUT(Z80_SDD_OUT),
+	.nIORQ(nIORQ),	.nMREQ(nZ80_MREQ),	.nRD(nZ80_SDRD), .nWR(nZ80_SDWR),
+	.nBUSRQ(~CD_USE_Z80), .nBUSAK(nBUSAK),
 	.nINT(nZ80INT), .nNMI(nZ80NMI), .nWAIT(nZ80WAIT)
 );
+
+assign { SDA, SDD_OUT } = ~CD_HAS_Z80_BUS ? { Z80_SDA, Z80_SDD_OUT } : { M68K_ADDR[16:1], M68K_DATA[7:0] };
+assign { nSDRD, nSDWR } = ~CD_HAS_Z80_BUS ? { nZ80_SDRD, nZ80_SDWR } : { ~CD_TR_RD_Z80, ~CD_TR_WR_Z80 };
+assign { nMREQ } = ~CD_HAS_Z80_BUS ? nZ80_MREQ : ~(CD_TR_RD_Z80 | CD_TR_WR_Z80);
+
+assign M68K_DATA[7:0] = ~(CD_HAS_Z80_BUS & CD_TR_RD_Z80) ? 8'bzzzz_zzzz : (SDD_IN);
 
 wire [19:0] ADPCMA_ADDR;
 wire [3:0] ADPCMA_BANK;

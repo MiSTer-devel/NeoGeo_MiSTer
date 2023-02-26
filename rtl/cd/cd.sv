@@ -42,15 +42,17 @@ module cd_sys(
 
 	output CD_TR_RD_FIX,
 	output CD_TR_RD_SPR,
+	output CD_TR_RD_Z80,
 
 	output reg CD_USE_FIX,
 	output reg CD_USE_SPR,
+	output reg CD_USE_Z80,
 	output reg [2:0] CD_TR_AREA,
 	output reg [1:0] CD_BANK_SPR,
 	output reg CD_BANK_PCM,
 	output reg [15:0] CD_TR_WR_DATA,
 	output reg [19:1] CD_TR_WR_ADDR,
-	output reg CD_UPLOAD_EN,
+	output reg CD_UPLOAD_EN, // The bios writes to Z80 RAM without CD_UPLOAD_EN enabled. Maybe this is only watchdog disable?
 	
 	input IACK,
 	output reg CD_IRQ,
@@ -89,7 +91,7 @@ module cd_sys(
 	input DMA_SDRAM_BUSY
 );
 
-	reg CD_USE_PCM, CD_USE_Z80;
+	reg CD_USE_PCM;
 	reg CD_nRESET_DRIVE;
 	reg [15:0] REG_FF0002;
 	reg [11:0] REG_FF0004;
@@ -430,7 +432,7 @@ module cd_sys(
 	wire TR_ZONE = DMA_RUNNING ? (DMA_ADDR_OUT[23:20] == 4'hE) : (M68K_ADDR[23:20] == 4'hE);
 
 	wire TR_ZONE_RD = TR_ZONE & (DMA_RUNNING ? DMA_RD_OUT : M68K_RW & ~(nLDS & nUDS));
-	wire TR_ZONE_WR = TR_ZONE & CD_UPLOAD_EN & (DMA_RUNNING ? DMA_WR_OUT : ~M68K_RW & ~(nLDS & nUDS));
+	wire TR_ZONE_WR = TR_ZONE & (DMA_RUNNING ? DMA_WR_OUT : ~M68K_RW & ~(nLDS & nUDS));
 
 	wire CD_TR_SPR = (CD_TR_AREA == 3'd0) & CD_USE_SPR;
 	wire CD_TR_PCM = (CD_TR_AREA == 3'd1) & CD_USE_PCM;
@@ -445,6 +447,7 @@ module cd_sys(
 
 	assign CD_TR_RD_FIX = TR_ZONE_RD & CD_TR_FIX;
 	assign CD_TR_RD_SPR = TR_ZONE_RD & CD_TR_SPR;
+	assign CD_TR_RD_Z80 = TR_ZONE_RD & CD_TR_Z80;
 
 	reg [1:0] CDD_nIRQ_SR;
 
