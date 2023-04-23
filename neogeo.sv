@@ -877,7 +877,7 @@ cd_sys cdsystem(
 	.M68K_ADDR(M68K_ADDR), .M68K_DATA(M68K_DATA), .A22Z(A22Z), .A23Z(A23Z),
 	.nLDS(nLDS), .nUDS(nUDS), .M68K_RW(M68K_RW), .nAS(nAS), .nDTACK(nDTACK_ADJ),
 	.nBR(nBR), .nBG(nBG), .nBGACK(nBGACK),
-	.SYSTEM_TYPE(SYSTEM_TYPE),
+	.SYSTEM_CDx(SYSTEM_CDx),
 	.CD_REGION(CD_REGION),
 	.CD_LID(~status[15] ^ SYSTEM_CDZ),	// CD lid state (DEBUG)
 	.CD_VIDEO_EN(CD_VIDEO_EN), .CD_FIX_EN(CD_FIX_EN), .CD_SPR_EN(CD_SPR_EN),
@@ -919,7 +919,7 @@ wire nROMOE = nROMOEL & nROMOEU;
 wire nPORTOE = nPORTOEL & nPORTOEU;
 
 // CD system work ram is in SDRAM
-wire CD_WRAM_RD = DMA_RUNNING ? (SYSTEM_CDx & (DMA_ADDR_IN[23:20] == 4'd1) & DMA_RD_OUT) :		// DMA reads from $100000~$1FFFFF
+wire CD_EXT_RD = DMA_RUNNING ? (SYSTEM_CDx & (DMA_ADDR_IN[23:21] == 3'd0) & DMA_RD_OUT) :		// DMA reads from $000000~$1FFFFF
 										(SYSTEM_CDx & (~nWRL | ~nWRU));											// CPU reads from $100000~$1FFFFF
 
 wire        sdram_ready;
@@ -1052,7 +1052,7 @@ sdram_mux SDRAM_MUX(
 
 	.CD_TR_AREA(CD_TR_AREA),
 	.CD_EXT_WR(CD_EXT_WR),
-	.CD_WRAM_RD(CD_WRAM_RD),
+	.CD_EXT_RD(CD_EXT_RD),
 	.CD_WR_SDRAM_SIG(CD_WR_SDRAM_SIG),
 	.CD_USE_FIX(CD_USE_FIX),
 	.CD_TR_RD_FIX(CD_TR_RD_FIX),
@@ -1205,21 +1205,23 @@ always @(posedge clk_sys) begin
 end
 
 // Re-priority-encode the interrupt lines with the CD_IRQ one (IPL* are active-low)
-// Also swap IPL0 and IPL1 for CD systems
-//                      Cartridge     		CD
-// CD_IRQ IPL1 IPL0		IPL2 IPL1 IPL0		IPL2 IPL1 IPL0
-//    0     1    1		  1    1    1  	  1    1    1	No IRQ
-//    0     1    0        1    1    0		  1    0    1	Vblank
-//    0     0    1        1    0    1		  1    1    0  Timer
-//    0     0    0        1    0    0		  1    0    0	Cold boot
-//    1     x    x        1    1    1  	  0    1    1	CD vectored IRQ
-wire IPL0_OUT = SYSTEM_CDx ? CD_IRQ | IPL1 : IPL0;
-wire IPL1_OUT = SYSTEM_CDx ? CD_IRQ | IPL0 : IPL1;
-wire IPL2_OUT = ~(SYSTEM_CDx & CD_IRQ);
+//
+//  IPL2 IPL1 IPL0    Cartridge        CD
+//    1    1    1     No IRQ           No IRQ
+//    1    1    0     Vblank    (64)   Vblank (68)
+//    1    0    1     Timer     (68)   CD IRQ (54/58)
+//    1    0    0     Cold boot (6C)   Timer  (64)
+//
+wire [1:0] CD_IPL = {IPL1,IPL0} == 2'b01 ? 2'b00     // Level 3 Timer
+                    : CD_IRQ ? 2'b01                 // Level 2 CD IRQ
+                    : {IPL1,IPL0} == 2'b10 ? 2'b10   // Level 1 VBlank
+                    : 2'b11;
+
+wire [1:0] IPL_OUT = ~SYSTEM_CDx ? { IPL1,IPL0 } : CD_IPL;
 
 // Because of the SDRAM latency, nDTACK is handled differently for ROM zones
 // If the address is in a ROM zone, PROM_DATA_READY is used to extend the normal nDTACK output by NEO-C1
-wire nDTACK_ADJ = ~&{nSROMOE, nROMOE, nPORTOE, ~CD_WRAM_RD, ~CD_TR_RD_FIX, ~CD_TR_RD_SPR} ? ~PROM_DATA_READY | nDTACK
+wire nDTACK_ADJ = ~&{nSROMOE, nROMOE, nPORTOE, ~CD_EXT_RD, ~CD_TR_RD_FIX, ~CD_TR_RD_SPR} ? ~PROM_DATA_READY | nDTACK
                     : (CD_TR_WR_Z80 | CD_TR_WR_PCM) ? ~ddram_dtack | nDTACK
                     : nDTACK;
 
@@ -1230,9 +1232,10 @@ cpu_68k M68KCPU(
 	.FX68K_DATAIN(FX68K_DATAIN), .FX68K_DATAOUT(FX68K_DATAOUT),
 	.nLDS(nLDS), .nUDS(nUDS), .nAS(nAS), .M68K_RW(M68K_RW),
 	.nDTACK(nDTACK_ADJ),	// nDTACK
-	.IPL2(IPL2_OUT), .IPL1(IPL1_OUT), .IPL0(IPL0_OUT),
+	.IPL2(1'd1), .IPL1(IPL_OUT[1]), .IPL0(IPL_OUT[0]),
 	.FC2(FC2), .FC1(FC1), .FC0(FC0),
-	.nBG(nBG), .nBR(nBR), .nBGACK(nBGACK)
+	.nBG(nBG), .nBR(nBR), .nBGACK(nBGACK),
+	.SYSTEM_CDx(SYSTEM_CDx)
 );
 
 wire IACK = &{FC2, FC1, FC0};
@@ -1896,7 +1899,7 @@ end
 wire [7:0] YM2610_DOUT;
 
 jt10 YM2610(
-	.rst(~nRESET),
+	.rst(~Z80_nRESET),
 	.clk(CLK_8M), .cen(ADPCMA_DATA_READY & ADPCMB_DATA_READY),
 	.addr(SDA[1:0]),
 	.din(SDD_OUT), .dout(YM2610_DOUT),

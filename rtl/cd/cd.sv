@@ -27,7 +27,7 @@ module cd_sys(
 	input A22Z, A23Z,
 	input nLDS, nUDS,
 	input M68K_RW, nAS, nDTACK,
-	input [1:0] SYSTEM_TYPE,
+	input SYSTEM_CDx,
 	input [1:0] CD_REGION,
 	output reg CD_VIDEO_EN,
 	output reg CD_FIX_EN,
@@ -53,7 +53,7 @@ module cd_sys(
 	output reg [15:0] CD_TR_WR_DATA,
 	output reg [19:1] CD_TR_WR_ADDR,
 	output reg CD_UPLOAD_EN, // The bios writes to Z80 RAM without CD_UPLOAD_EN enabled. Maybe this is only watchdog disable?
-	
+
 	input IACK,
 	output reg CD_IRQ,
 	
@@ -422,8 +422,8 @@ module cd_sys(
 		end
 	end
 	
-	wire READING = ~nAS & M68K_RW & (M68K_ADDR[23:12] == 12'hFF0) & SYSTEM_TYPE[1];
-	wire WRITING = ~nAS & ~M68K_RW & (M68K_ADDR[23:12] == 12'hFF0) & SYSTEM_TYPE[1];
+	wire READING = ~nAS & M68K_RW & (M68K_ADDR[23:12] == 12'hFF0) & SYSTEM_CDx;
+	wire WRITING = ~nAS & ~M68K_RW & (M68K_ADDR[23:12] == 12'hFF0) & SYSTEM_CDx;
 	
 	wire LC8951_RD = (READING & (M68K_ADDR[11:2] == 10'b0001_000000));	// FF0101, FF0103
 	wire LC8951_WR = (WRITING & (M68K_ADDR[11:2] == 10'b0001_000000));	// FF0101, FF0103
@@ -509,7 +509,7 @@ module cd_sys(
 			if (DMA_START)
 				DMA_START <= 0;
 			
-			if (SYSTEM_TYPE[1] & ((nLDS_PREV & ~nLDS) | (nUDS_PREV & ~nUDS)))	// & PREV_nAS & ~nAS
+			if (SYSTEM_CDx & ((nLDS_PREV & ~nLDS) | (nUDS_PREV & ~nUDS)))	// & PREV_nAS & ~nAS
 			begin
 				// Writes
 				if ((M68K_ADDR[23:9] == 15'b11111111_0000000) & ~M68K_RW)
@@ -627,9 +627,11 @@ module cd_sys(
 	// 1111:JP, 1110:US, 1101: EU
 	wire [3:0] CD_JUMPERS = {2'b11, CD_REGION};
 	
-	wire [7:0] CD_IRQ_VECTOR = ~CD_IRQ_FLAGS[0] ? 8'd23 :
-										~CD_IRQ_FLAGS[1] ? 8'd22 :
-										~CD_IRQ_FLAGS[2] ? 8'd21 :
+	wire [7:0] CD_IRQ_VECTOR = (M68K_ADDR[2:1] == 2'd3) ? 8'd25 : // Timer $64
+									(M68K_ADDR[2:1] == 2'd2) & ~CD_IRQ_FLAGS[0] ? 8'd23 :
+									(M68K_ADDR[2:1] == 2'd2) & ~CD_IRQ_FLAGS[1] ? 8'd22 : // CD comm.   $58
+									(M68K_ADDR[2:1] == 2'd2) & ~CD_IRQ_FLAGS[2] ? 8'd21 : // CD decoder $54
+									(M68K_ADDR[2:1] == 2'd1) ? 8'd26 : // VBlank $68
 										8'd24;	// Spurious interrupt, should not happen
 
 	function [15:0] bit_reverse;
@@ -639,7 +641,7 @@ module cd_sys(
 		end
 	endfunction
 
-	assign M68K_DATA = (~nAS & M68K_RW & IACK & (M68K_ADDR[3:1] == 3'd4)) ? {8'h00, CD_IRQ_VECTOR} :		// Vectored interrupt handler
+	assign M68K_DATA = (SYSTEM_CDx & ~nAS & M68K_RW & IACK) ? {8'h00, CD_IRQ_VECTOR} :		// Vectored interrupt handler
 							(READING & {M68K_ADDR[11:1], 1'b0} == 12'h004) ? {4'h0, REG_FF0004} :
 							(READING & {M68K_ADDR[11:1], 1'b0} == 12'h11C) ? {3'b110, CD_LID, CD_JUMPERS, 8'h00} :	// Top mech
 							(READING & {M68K_ADDR[11:1], 1'b0} == 12'h160) ? {11'b00000000_000, CDCK, CDD_DOUT} :	// REG_CDDINPUT

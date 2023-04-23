@@ -73,7 +73,7 @@ module sdram_mux(
 	output reg        DMA_SDRAM_BUSY,
 	input       [2:0] CD_TR_AREA,
 	input             CD_EXT_WR,
-	input             CD_WRAM_RD,
+	input             CD_EXT_RD,
 	input       [1:0] CD_BANK_SPR,
 	input             CD_USE_SPR,
 	input             CD_TR_RD_SPR,
@@ -138,7 +138,7 @@ module sdram_mux(
 	wire REQ_CROM_RD = (SDRAM_CROM_SIG_SR & ~PCK1) & SPR_EN & ~CD_USE_SPR;
 	wire REQ_SROM_RD = (SDRAM_SROM_SIG_SR & ~PCK2) & FIX_EN & ~CD_USE_FIX;
 
-	wire CD_RD_SDRAM_SIG = CD_WRAM_RD | CD_TR_RD_FIX | CD_TR_RD_SPR;
+	wire CD_RD_SDRAM_SIG = CD_EXT_RD | CD_TR_RD_FIX | CD_TR_RD_SPR;
 	wire CD_LDS_ONLY_WR = CD_TR_WR_FIX;
 
 	always @(posedge CLK) begin
@@ -193,11 +193,11 @@ module sdram_mux(
 			// Detect 68k or DMA requests for CD specific reads/writes
 			if ((~CD_RD_SDRAM_SIG_PREV & CD_RD_SDRAM_SIG) | (~CD_WR_SDRAM_SIG_PREV & CD_WR_SDRAM_SIG)) begin
 				// Convert and latch address
-				casez({CD_WRAM_RD, CD_EXT_WR, CD_TR_AREA})
-					// Extended RAM (CD) read $0100000~$01FFFFF
-					5'b1_?_???: CD_REMAP_TR_ADDR <= DMA_RUNNING ? {5'b0_0001, DMA_ADDR_IN[19:1], 1'b0} : {5'b0_0001, M68K_ADDR[19:1], ~nLDS}   ;	// EXT zone SDRAM
+				casez({CD_EXT_RD, CD_EXT_WR, CD_TR_AREA})
+					// Read P1 (CD DMA) or Extended RAM (CD DMA+68K) $0100000~$01FFFFF
+					5'b1_?_???: CD_REMAP_TR_ADDR <= DMA_RUNNING ? {3'b0_00, ~DMA_ADDR_IN[20], DMA_ADDR_IN[20:1], 1'b0}   : {3'b0_00, ~M68K_ADDR[20], M68K_ADDR[20:1], ~nLDS};
 
-					// P1 (write) or Extended RAM
+					// Write P1 or Extended RAM
 					5'b0_1_???: CD_REMAP_TR_ADDR <= DMA_RUNNING ? {3'b0_00, ~DMA_ADDR_OUT[20], DMA_ADDR_OUT[20:1], 1'b0} : {3'b0_00, ~M68K_ADDR[20], M68K_ADDR[20:1], ~nLDS};
 
 					// Sprites SDRAM
