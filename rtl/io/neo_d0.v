@@ -18,6 +18,7 @@
 
 module neo_d0(
 	input CLK_24M,
+	input CLK_CPU,
 	input nRESET, nRESETP,
 	output CLK_12M,
 	output CLK_68KCLK,
@@ -45,7 +46,7 @@ module neo_d0(
 	reg [5:0] REG_OUT;
 	
 	// Clock divider part
-	clocks CLK(CLK_24M, nRESETP, CLK_12M, CLK_68KCLK, CLK_68KCLKB, CLK_6MB, CLK_1HB);
+	clocks CLK(CLK_24M,CLK_CPU, nRESETP, CLK_12M, CLK_68KCLK, CLK_68KCLKB, CLK_6MB, CLK_1HB);
 	
 	// Z80 controller part
 	z80ctrl Z80CTRL(SDA_L, SDA_H, nSDRD, nSDWR, nMREQ, nIORQ, nSDW, nRESET, nZ80NMI, nSDZ80R, nSDZ80W,

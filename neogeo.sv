@@ -211,6 +211,7 @@ assign HDMI_FREEZE = 0;
 
 wire [1:0] ar       = status[33:32];
 wire       vcrop_en = status[34];
+wire		  turbo = status[43];
 wire [3:0] vcopt    = status[38:35];
 reg        en216p;
 reg  [4:0] voff;
@@ -261,7 +262,7 @@ video_freak video_freak
 // 0         1         2         3          4         5         6   
 // 01234567890123456789012345678901 23456789012345678901234567890123
 // 0123456789ABCDEFGHIJKLMNOPQRSTUV 0123456789ABCDEFGHIJKLMNOPQRSTUV
-// XXXXXXXXXXXXX XXX XXXXX XXXXX    XXXXXXXXXXX              XXXXXX 
+// XXXXXXXXXXXXX XXX XXXXX XXXXX    XXXXXXXXXXXX             XXXXXX 
 
 `include "build_id.v"
 localparam CONF_STR = {
@@ -284,6 +285,7 @@ localparam CONF_STR = {
 	"O12,System Type,Console(AES),Arcade(MVS);", //,CD,CDZ;",
 	"OM,BIOS,UniBIOS,Original;",
 	"O3,Video Mode,NTSC,PAL;",
+	"oB,Turbo,OFF,ON;",
 	"-;",
 	"o9A,Input,Joystick or Spinner,Joystick,Spinner,Mouse(Irr.Maze);",
 	"-;",
@@ -325,6 +327,7 @@ localparam CONF_STR = {
 wire locked;
 wire clk_sys;
 wire CLK_24M = counter_p[1];
+wire CLK_48M = counter_p[0];
 
 // 50MHz in, 4*24=96MHz out
 // CAS latency = 2 (20.8ns)
@@ -1080,6 +1083,7 @@ assign sdram_ready = sdram2_ready & sdram1_ready;
 
 neo_d0 D0(
 	.CLK_24M(CLK_24M),
+	.CLK_CPU(turbo ? CLK_48M : CLK_24M),
 	.nRESET(nRESET), .nRESETP(nRESETP),
 	.CLK_12M(CLK_12M), .CLK_68KCLK(CLK_68KCLK), .CLK_68KCLKB(CLK_68KCLKB), .CLK_6MB(CLK_6MB), .CLK_1HB(CLK_1HB),
 	.M68K_ADDR_A4(M68K_ADDR[4]),
@@ -1113,7 +1117,7 @@ wire IPL2_OUT = ~(SYSTEM_CDx & CD_IRQ);
 wire nDTACK_ADJ = ~&{nSROMOE, nROMOE, nPORTOE, ~CD_EXT_RD} ? ~PROM_DATA_READY | nDTACK : nDTACK;
 
 cpu_68k M68KCPU(
-	.CLK_24M(CLK_24M),
+	.CLK_CPU(turbo ? CLK_48M : CLK_24M),
 	.nRESET(nRESET_WD),
 	.M68K_ADDR(M68K_ADDR),
 	.FX68K_DATAIN(FX68K_DATAIN), .FX68K_DATAOUT(FX68K_DATAOUT),

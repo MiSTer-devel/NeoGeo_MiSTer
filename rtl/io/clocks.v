@@ -20,6 +20,7 @@
 
 module clocks(
 	input CLK_24M,
+	input CLK_CPU,
 	input nRESETP,
 	output CLK_12M,
 	output reg CLK_68KCLK,
@@ -33,7 +34,7 @@ module clocks(
 	
 	assign CLK_68KCLKB = ~CLK_68KCLK;
 	
-	always @(posedge CLK_24M or negedge nRESETP)
+	always @(posedge CLK_CPU or negedge nRESETP)
 	begin
 		if (!nRESETP)
 			CLK_68KCLK <= 1'b0;	// Thanks ElectronAsh ! Real hw doesn't clearly init DFF

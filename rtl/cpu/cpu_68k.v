@@ -19,7 +19,7 @@
 //============================================================================
 
 module cpu_68k(
-	input CLK_24M,	//CLK_68KCLK,
+	input CLK_CPU,	//CLK_68KCLK,
 	input nRESET,
 	input IPL2, IPL1, IPL0,
 	input nDTACK,
@@ -39,7 +39,7 @@ wire EN_PHI1 = M68K_CLKEN;
 wire EN_PHI2 = ~M68K_CLKEN;
 
 // Divide-by-2
-always @(negedge CLK_24M or negedge nRESET)
+always @(negedge CLK_CPU or negedge nRESET)
 begin
 	if (!nRESET)
 		M68K_CLKEN <= 1'b0;
@@ -48,11 +48,11 @@ begin
 end
 	
 reg reset;
-always @(posedge CLK_24M)
+always @(posedge CLK_CPU)
 	if (EN_PHI2) reset <= ~nRESET;
 
 fx68k FX68K(
-		.clk(CLK_24M),
+		.clk(CLK_CPU),
 		.extReset(reset),
 		.pwrUp(reset),
 		
