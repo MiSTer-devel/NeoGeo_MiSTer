@@ -1252,7 +1252,7 @@ assign FX68K_DATAIN = M68K_RW ? M68K_DATA_BYTE_MASK : 16'h0000;
 assign FIXD = CD_USE_FIX ? 8'bzzzz_zzzz : S2H1 ? SROM_DATA[15:8] : SROM_DATA[7:0];
 
 // Disable ROM read in PORT zone if the game uses a special chip
-assign M68K_DATA = ((nROMOE & nSROMOE & |{nPORTOE, cart_chip, cart_pchip}) | CD_TR_RD_FIX) ? 16'bzzzzzzzzzzzzzzzz : PROM_DATA;
+assign M68K_DATA = (nROMOE & nSROMOE & ~CD_TR_RD_SPR & |{nPORTOE, cart_chip, cart_pchip, CD_TR_RD_FIX}) ? 16'bzzzzzzzzzzzzzzzz : PROM_DATA;
 
 // Output correct FIX byte
 assign M68K_DATA[7:0] = ~CD_TR_RD_FIX ? 8'bzzzz_zzzz : (M68K_ADDR[4] ? PROM_DATA[15:8] : PROM_DATA[7:0]);

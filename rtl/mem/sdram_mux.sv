@@ -201,7 +201,7 @@ module sdram_mux(
 					5'b0_1_???: CD_REMAP_TR_ADDR <= DMA_RUNNING ? {3'b0_00, ~DMA_ADDR_OUT[20], DMA_ADDR_OUT[20:1], 1'b0} : {3'b0_00, ~M68K_ADDR[20], M68K_ADDR[20:1], ~nLDS};
 
 					// Sprites SDRAM
-					5'b0_0_000: CD_REMAP_TR_ADDR <= DMA_RUNNING ? {3'b0_10, CD_BANK_SPR, DMA_ADDR_OUT[19:7], DMA_ADDR_OUT[5:2], ~DMA_ADDR_OUT[6], ~DMA_ADDR_OUT[1], 1'b0} : {3'b0_10, CD_BANK_SPR, M68K_ADDR[19:7], M68K_ADDR[5:2], ~M68K_ADDR[6], ~M68K_ADDR[1], 1'b0};
+					5'b0_0_000: CD_REMAP_TR_ADDR <= DMA_RUNNING ? {3'b0_10, CD_BANK_SPR, DMA_ADDR_OUT[19:7], DMA_ADDR_OUT[5:2], ~DMA_ADDR_OUT[6], ~DMA_ADDR_OUT[1], 1'b0} : {3'b0_10, CD_BANK_SPR, M68K_ADDR[19:7], M68K_ADDR[5:2], ~M68K_ADDR[6], ~M68K_ADDR[1], ~nLDS};
 
 					// FIX SDRAM
 					5'b0_0_101: CD_REMAP_TR_ADDR <= DMA_RUNNING ? {8'b0_0000_100, DMA_ADDR_OUT[17:6], DMA_ADDR_OUT[3:1], ~DMA_ADDR_OUT[5], ~DMA_ADDR_OUT[4]} : {8'b0_0000_100, M68K_ADDR[17:6], M68K_ADDR[3:1], ~M68K_ADDR[5], ~M68K_ADDR[4]};
@@ -213,7 +213,7 @@ module sdram_mux(
 					M68K_RD_REQ <= 1;
 				end else begin
 					// DMA writes are always done in words. FIX layer is on a 8bit bus so should only write the low byte.
-					SDRAM_WR_BYTE_MODE <= (CD_LDS_ONLY_WR | ((CD_EXT_WR) & (nLDS ^ nUDS)));	// Fix or extended RAM data
+					SDRAM_WR_BYTE_MODE <= (CD_LDS_ONLY_WR | ((CD_EXT_WR | (CD_TR_AREA == 3'd0)) & (nLDS ^ nUDS)));	// Fix or extended RAM data
 
 					wr_data <= DMA_RUNNING ? (CD_LDS_ONLY_WR ? {DMA_DATA_OUT[7:0],DMA_DATA_OUT[7:0]} :  DMA_DATA_OUT)
 										   : (CD_LDS_ONLY_WR ? {M68K_DATA[7:0],M68K_DATA[7:0]} : M68K_DATA);
