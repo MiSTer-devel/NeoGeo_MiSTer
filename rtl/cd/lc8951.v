@@ -64,6 +64,11 @@ module lc8951(
 	reg nWR_PREV, nRD_PREV;
 	reg SECTOR_READY_PREV, DMA_RUNNING_PREV, HEADER_WR_PREV;
 
+	reg [15:0] INT_CYCLE_CNT;
+
+	// 12 x 1800. LC8950 manual says that LC8951 /INT goes low for 1.8ms
+	localparam INT_CYCLES = 16'd21600;
+
 	always @(posedge clk_sys or negedge nRESET)
 	begin
 		if (!nRESET)
@@ -102,6 +107,8 @@ module lc8951(
 			SECTOR_READY_PREV <= 0;
 			DMA_RUNNING_PREV <= 0;
 			HEADER_WR_PREV <= 0;
+
+			INT_CYCLE_CNT <= 0;
 		end
 		else
 		if (CLK_68KCLK_EN) begin
@@ -110,19 +117,30 @@ module lc8951(
 			DMA_RUNNING_PREV <= DMA_RUNNING;
 
 			// Rising edge of SECTOR_READY: Set decoder IRQ flag
-			if (~SECTOR_READY_PREV & SECTOR_READY & DECEN)
-			begin
-				DECI_FLAG <= 1;
-				nVALST <= 0;
-				HEAD[0] <= HEADER_DIN[ 7: 0];
-				HEAD[1] <= HEADER_DIN[15: 8];
-				HEAD[2] <= HEADER_DIN[23:16];
-				HEAD[3] <= HEADER_DIN[31:24];
+			if (~SECTOR_READY_PREV & SECTOR_READY) begin
+				if (DECEN) begin
+					DECI_FLAG <= 1;
+					nVALST <= 0;
+					INT_CYCLE_CNT <= 0;
+					HEAD[0] <= HEADER_DIN[ 7: 0];
+					HEAD[1] <= HEADER_DIN[15: 8];
+					HEAD[2] <= HEADER_DIN[23:16];
+					HEAD[3] <= HEADER_DIN[31:24];
+				end
+			end else if (~nVALST) begin // Use nVALST because DECI can be reset by reading STAT3.
+				if (INT_CYCLE_CNT < INT_CYCLES) begin
+					INT_CYCLE_CNT <= INT_CYCLE_CNT + 1'b1;
+				end else begin // Decoder INT timeout
+					DECI_FLAG <= 0;
+					nVALST <= 1;
+				end
 			end
 
 			// Falling edge of DMA_RUNNING: Set transfer end IRQ flag
-			if (DMA_RUNNING_PREV & ~DMA_RUNNING)
-				DTEI_FLAG <= 1;
+			if (DMA_RUNNING_PREV & ~DMA_RUNNING) begin
+				//DTEI_FLAG <= 1;
+				nDTBSY <= 1;
+			end
 
 			CDC_nIRQ <= ~|{(CMDI_FLAG & CMDIEN), (DTEI_FLAG & DTEIEN), (DECI_FLAG & DECIEN)};
 
@@ -145,7 +163,12 @@ module lc8951(
 						
 						4'd4: DAC[7:0] <= DIN;		// DACL
 						4'd5: DAC[15:8] <= DIN;		// DACH
-						4'd6: DTTRG <= 1;
+						4'd6: begin
+								DTTRG <= 1;
+								if (DOUTEN) begin
+									nDTBSY <= 0;
+								end
+						end
 						4'd7: DTEI_FLAG <= 0;		// DTACK - Clears the transfer end IRQ flag
 						
 						4'd8: WA[7:0] <= DIN;		// WAL
