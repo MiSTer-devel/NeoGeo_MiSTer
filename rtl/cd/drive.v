@@ -80,6 +80,7 @@ module cd_drive(
 	
 	reg HOCK_PREV;
 	reg [1:0] COMM_STATE;	// 0~2
+	reg COMM_RUN;
 
 	always @(posedge clk_sys or negedge nRESET)
 	begin
@@ -87,11 +88,12 @@ module cd_drive(
 		begin
 			CLK_DIV <= 9'd0;
 			IRQ_TIMER <= 12'd0;
-			DOUT_COUNTER <= 4'd10;
-			DIN_COUNTER <= 4'd11;
+			DOUT_COUNTER <= 4'd0;
+			DIN_COUNTER <= 4'd0;
 			HOCK_PREV <= 0;
 			CDCK <= 1;
 			COMM_STATE <= 2'd0;
+			COMM_RUN <= 0;
 			CDD_nIRQ <= 1;
 			STATUS_DATA[0] <= STAT_STOPPED;
 			STATUS_DATA[1] <= 4'd0;
@@ -133,8 +135,7 @@ module cd_drive(
 					IRQ_TIMER <= 12'd0;
 					CDD_nIRQ <= 0;
 					COMM_STATE <= 2'd0;
-					DOUT_COUNTER <= 4'd0;
-					DIN_COUNTER <= 4'd0;
+					COMM_RUN <= 0;
 				end
 				else
 				begin
@@ -159,10 +160,14 @@ module cd_drive(
 					STATUS_DATA[9] <= STATUS_IN[39:36];
 				end
 
-				if (~HOCK & ~CDD_nIRQ)
+				if (~HOCK & ~CDD_nIRQ) begin
 					CDD_nIRQ <= 1;		// Comm. started ok, ack
-				
-				if (CDD_nIRQ)
+					COMM_RUN <= 1;
+					DOUT_COUNTER <= 4'd0;
+					DIN_COUNTER <= 4'd0;
+				end
+
+				if (COMM_RUN)
 				begin
 					if (DOUT_COUNTER != 4'd10)
 					begin
@@ -242,8 +247,8 @@ module cd_drive(
 					else if (DIN_COUNTER == 4'd10)
 					begin
 						// Comm frame just ended, do this just once
-						DIN_COUNTER <= 4'd11;
 						COMMAND_SEND <= 1;
+						COMM_RUN <= 0;
 					end
 					
 				end
