@@ -5,12 +5,14 @@ module cdda
 	input      READ,
 	input      WRITE,
 	input      [15:0] DIN,
+	output     WRITE_READY,
 	output reg [15:0] AUDIO_L,
 	output reg [15:0] AUDIO_R
 
 );
 
-localparam BUFFER_AMOUNT = 2 * (2352*8/32); // 2 sectors
+localparam SECTOR_SIZE = 2352*8/32;
+localparam BUFFER_AMOUNT = 2 * SECTOR_SIZE;
 
 reg OLD_WRITE, OLD_READ, LRCK, WR_REQ;
 
@@ -24,6 +26,8 @@ wire FULL = (FILLED_COUNT == BUFFER_AMOUNT);
 wire WRITE_CE = ~OLD_WRITE & WRITE;
 wire READ_CE = ~OLD_READ & READ;
 wire READ_REQ = READ_CE & ~EMPTY;
+
+assign WRITE_READY = (FILLED_COUNT <= (BUFFER_AMOUNT - SECTOR_SIZE)); // Ready to receive sector
 
 always @(posedge CLK or negedge nRESET) begin
 	if (~nRESET) begin

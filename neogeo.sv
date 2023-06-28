@@ -261,14 +261,14 @@ video_freak video_freak
 // 0         1         2         3          4         5         6   
 // 01234567890123456789012345678901 23456789012345678901234567890123
 // 0123456789ABCDEFGHIJKLMNOPQRSTUV 0123456789ABCDEFGHIJKLMNOPQRSTUV
-// XXXXXXXXXXXXX XXX XXXXX XXXXX    XXXXXXXXXXX              XXXXXX 
+// XXXXXXXXXXXXX XXX XXXXX XXXXXXX  XXXXXXXXXXX              XXXXXX 
 
 `include "build_id.v"
 localparam CONF_STR = {
 	"NEOGEO;;",
 	"-;",
-	"H0FS1,*,Load ROM set;",
-	"h0S1,CUECHD,Load CD Image;",
+	"FS1,*,Load ROM set;",
+	"S1,CUECHD,Load CD Image;",
 	"-;",
 	"H3OP,FM,ON,OFF;",
 	"H3OQ,ADPCMA,ON,OFF;",
@@ -281,11 +281,10 @@ localparam CONF_STR = {
 	"H3oT,ADPCMA CH 5,ON,OFF;",
 	"H3oU,ADPCMA CH 6,ON,OFF;",
 	"H3-;",
-	"O12,System Type,Console(AES),Arcade(MVS),CD,CDZ;",
+	"O1,System Type,Console(AES),Arcade(MVS);",
+	"O2,CD Type,CD,CDZ;",
 	"OM,BIOS,UniBIOS,Original;",
 	"O3,Video Mode,NTSC,PAL;",
-	"O[43],FIX layer,On,Off;",
-	"O[44],SPR_layer,On,Off;",
 	"-;",
 	"o9A,Input,Joystick or Spinner,Joystick,Spinner,Mouse(Irr.Maze);",
 	"-;",
@@ -293,9 +292,10 @@ localparam CONF_STR = {
 	"RL,Reload Memory Card;",
 	"D4RC,Save Memory Card;",
 	"OO,Autosave,OFF,ON;",
-	"h0-;",
-	"h0OAB,Region,US,EU,JP,AS;",
-	"h0OF,CD lid,Closed,Opened;",
+	"-;",
+	"OTU,CD Speed,1x,2x,3x,4x;",
+	"OAB,CD Region,US,EU,JP,AS;",
+	"OF,CD lid,Closed,Opened;",
 	"H2-;",
 	"H2O7,[DIP] Settings,OFF,ON;",
 	"H2O8,[DIP] Freeplay,OFF,ON;",
@@ -401,7 +401,7 @@ end
 // MiSTer OSD jumps around. Provide an indication for devs that a watchdog reset happened ?
 
 reg [14:0] TRASH_ADDR;
-reg  [1:0] SYSTEM_TYPE;
+reg SYSTEM_TYPE, SYSTEM_CD_TYPE;
 
 reg nRESET;
 always @(posedge CLK_24M) begin
@@ -409,7 +409,8 @@ always @(posedge CLK_24M) begin
 	if (~&TRASH_ADDR) TRASH_ADDR <= TRASH_ADDR + 1'b1;
 	if (status[0] | status[14] | buttons[1] | bk_loading | RESET) begin
 		TRASH_ADDR <= 0;
-		SYSTEM_TYPE <= status_system_type;	// Latch the system type on reset
+		SYSTEM_TYPE <= status[1];	// Latch the system type on reset
+		SYSTEM_CD_TYPE <= status[2];
 	end
 end
 
@@ -436,8 +437,6 @@ end
 //////////////////   HPS I/O   ///////////////////
 
 // VD 0: Save file
-// VD 1: CD bin file
-// VD 2: CD cue file, let MiSTer binary take care of it, do not touch !
 wire  [1:0] img_mounted;
 wire        sd_buff_wr, img_readonly;
 wire  [7:0] sd_buff_addr;	// Address inside 256-word sector
@@ -467,12 +466,9 @@ wire [15:0] ioctl_dout;
 wire        ioctl_download;
 wire  [7:0] ioctl_idx;
 
-wire [1:0] status_system_type = status[2:1];
-wire status_cdx = status_system_type[1];
-
-wire SYSTEM_MVS = (SYSTEM_TYPE == 2'd1);
-wire SYSTEM_CDx = SYSTEM_TYPE[1];
-wire SYSTEM_CDZ = (SYSTEM_TYPE == 2'd3);
+wire SYSTEM_MVS = SYSTEM_TYPE & ~cd_en;
+wire SYSTEM_CDx = cd_en;
+wire SYSTEM_CDZ = SYSTEM_CDx & SYSTEM_CD_TYPE;
 
 wire [15:0] sdram_sz;
 wire [21:0] gamma_bus;
@@ -492,7 +488,7 @@ hps_io #(.CONF_STR(CONF_STR), .WIDE(1), .VDNUM(2)) hps_io
 	.ps2_key(ps2_key),
 
 	.status(status),				// status read (32 bits)
-	.status_menumask({status[22], 9'd0, en216p, bk_autosave | ~bk_pending, ~dbg_menu,~SYSTEM_MVS,1'b0,status_cdx}),
+	.status_menumask({status[22], 9'd0, en216p, bk_autosave | ~bk_pending, ~dbg_menu,~SYSTEM_MVS,1'b0,SYSTEM_CDx}),
 
 	.RTC(rtc),
 	.sdram_sz(sdram_sz),
@@ -671,6 +667,7 @@ wire [1:0] cart_chip  = cfg[25:24]; // legacy option: 0 - none, 1 - PRO-CT0, 2 -
 wire [1:0] cmc_chip   = cfg[27:26]; // type 1/2
 wire       rom_wait   = cfg[28];    // ROMWAIT from cart. 0 - Full speed, 1 - 1 wait cycle
 wire [1:0] p_wait     = cfg[30:29]; // PWAIT from cart. 0 - Full speed, 1 - 1 wait cycle, 2 - 2 cycles
+wire       cd_en      = cfg[31];    // Neo CD
 
 // Memory card and backup ram image save/load
 assign sd_rd[0]       = bk_rd;
@@ -678,6 +675,11 @@ assign sd_wr[0]       = bk_wr;
 assign sd_lba[0]      = bk_lba;
 assign sd_buff_din[0] = bk_dout;
 wire   bk_ack         = sd_ack[0];
+
+assign sd_rd[1]       = 0;
+assign sd_wr[1]       = 0;
+assign sd_buff_din[1] = 0;
+assign sd_lba[1]      = 0;
 
 wire downloading = status[0];
 reg bk_rd, bk_wr;
@@ -799,18 +801,22 @@ wire PROM_DATA_READY;
 
 wire [15:0] CD_AUDIO_L, CD_AUDIO_R;
 
-assign sd_wr[1]       = 0;
-assign sd_buff_din[1] = 0;
-
 //CD communication
 reg [48:0] cd_in;
 wire [48:0] cd_out;
 
 wire [35:0] EXT_BUS;
+
+wire CD_DATA_WR_READY, CDDA_WR_READY;
+
 hps_ext hps_ext
 (
 	.clk_sys(clk_sys),
 	.EXT_BUS(EXT_BUS),
+
+	.cd_data_ready(CD_DATA_WR_READY),
+	.cdda_ready(CDDA_WR_READY),
+
 	.cd_in(cd_in),
 	.cd_out(cd_out)
 );
@@ -819,6 +825,7 @@ reg [39:0] CDD_STATUS;
 wire [39:0] CDD_COMMAND_DATA;
 wire CDD_COMMAND_SEND;
 reg CDD_STATUS_LATCH;
+wire [1:0] cd_speed = status[30:29];
 
 always @(posedge clk_sys) begin
 	reg cd_out48_last = 1;
@@ -833,7 +840,7 @@ always @(posedge clk_sys) begin
 
 	cdd_send_old <= CDD_COMMAND_SEND;
 	if (CDD_COMMAND_SEND && !cdd_send_old) begin
-		cd_in[47:0] <= {8'h00,CDD_COMMAND_DATA};
+		cd_in[47:0] <= {6'd0,cd_speed,CDD_COMMAND_DATA};
 		cd_in[48] <= ~cd_in[48];
 	end
 end
@@ -879,6 +886,7 @@ cd_sys cdsystem(
 	.nBR(nBR), .nBG(nBG), .nBGACK(nBGACK),
 	.SYSTEM_CDx(SYSTEM_CDx),
 	.CD_REGION(CD_REGION),
+	.CD_SPEED(cd_speed),
 	.CD_LID(~status[15] ^ SYSTEM_CDZ),	// CD lid state (DEBUG)
 	.CD_VIDEO_EN(CD_VIDEO_EN), .CD_FIX_EN(CD_FIX_EN), .CD_SPR_EN(CD_SPR_EN),
 	.CD_nRESET_Z80(CD_nRESET_Z80),
@@ -898,8 +906,10 @@ cd_sys cdsystem(
 	.CD_DATA_DOWNLOAD(CD_DATA_DOWNLOAD), .CD_DATA_WR(CD_DATA_WR),
 	.CD_DATA_DIN(ioctl_dout),
 	.CD_DATA_ADDR(ioctl_addr[11:1]),
+	.CD_DATA_WR_READY(CD_DATA_WR_READY),
 	.CDDA_RD(CDDA_CLK), .CDDA_WR(CDDA_WR),
 	.CD_AUDIO_L(CD_AUDIO_L), .CD_AUDIO_R(CD_AUDIO_R),
+	.CDDA_WR_READY(CDDA_WR_READY),
 	.DMA_RUNNING(DMA_RUNNING),
 	.DMA_DATA_IN(PROM_DATA), .DMA_DATA_OUT(DMA_DATA_OUT),
 	.DMA_WR_OUT(DMA_WR_OUT), .DMA_RD_OUT(DMA_RD_OUT),
@@ -1524,7 +1534,8 @@ neo_c1 C1(
 	.nBITW0(nBITW0), .nBITW1(nBITW1),
 	.nDIPRD0(nDIPRD0), .nDIPRD1(nDIPRD1),
 	.nPAL_ZONE(nPAL),
-	.SYSTEM_TYPE(SYSTEM_TYPE)
+	.SYSTEM_MVS(SYSTEM_MVS),
+	.SYSTEM_CDx(SYSTEM_CDx)
 );
 
 reg       use_sp;
@@ -1916,10 +1927,8 @@ wire [16:0] snd_mix_r = $signed(snd_right) + $signed(CD_AUDIO_R);
  
 // For Neo CD only
 wire VIDEO_EN = SYSTEM_CDx ? CD_VIDEO_EN : 1'b1;
-//wire FIX_EN = SYSTEM_CDx ? CD_FIX_EN : 1'b1;
-//wire SPR_EN = SYSTEM_CDx ? CD_SPR_EN : 1'b1;
-wire FIX_EN = status[43] ? 1'b0 : SYSTEM_CDx ? CD_FIX_EN : 1'b1; // DEBUG
-wire SPR_EN = status[44] ? 1'b0 : SYSTEM_CDx ? CD_SPR_EN : 1'b1;
+wire FIX_EN = SYSTEM_CDx ? CD_FIX_EN : 1'b1;
+wire SPR_EN = SYSTEM_CDx ? CD_SPR_EN : 1'b1;
 wire DOTA_GATED = SPR_EN & DOTA;
 wire DOTB_GATED = SPR_EN & DOTB;
 wire HSync; //,VSync;

@@ -25,7 +25,10 @@ module hps_ext
 
 	// CD interface
 	input      [48:0] cd_in,
-	output reg [48:0] cd_out
+	output reg [48:0] cd_out,
+
+	input             cdda_ready,
+	input             cd_data_ready
 );
 
 assign EXT_BUS[15:0] = io_dout;
@@ -47,7 +50,9 @@ reg  [9:0] byte_cnt;
 always@(posedge clk_sys) begin
 	reg [15:0] cmd;
 	reg  [7:0] cd_req = 0;
-	reg        old_cd = 0; 
+	reg        old_cd = 0;
+	reg  [1:0] get_cmd;
+	reg        send_data_type;
 
 	old_cd <= cd_in[48];
 	if(old_cd ^ cd_in[48]) cd_req <= cd_req + 1'd1; 
@@ -71,11 +76,22 @@ always@(posedge clk_sys) begin
 			case(cmd)
 				CD_GET:
 					if(!byte_cnt[9:3]) begin
-						case(byte_cnt[2:0])
-							1: io_dout <= cd_in[15:0];
-							2: io_dout <= cd_in[31:16];
-							3: io_dout <= cd_in[47:32];
-						endcase
+						if (byte_cnt[2:0] == 1) begin
+							get_cmd <= io_din[1:0];
+							send_data_type <= io_din[2];
+						end else begin
+							if (get_cmd == 0) begin // Request Command data
+								case(byte_cnt[2:0])
+									2: io_dout <= cd_in[15:0];
+									3: io_dout <= cd_in[31:16];
+									4: io_dout <= cd_in[47:32];
+								endcase
+							end else if (get_cmd == 1) begin // Request ready for data
+								if (byte_cnt[2:0] == 2) begin
+									io_dout <= {15'd0, send_data_type ? cd_data_ready : cdda_ready};
+								end
+							end
+						end
 					end
 
 				CD_SET:

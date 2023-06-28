@@ -34,12 +34,11 @@ module lc8951(
 	input [7:0] DIN,
 	output reg [7:0] DOUT,
 
-	input HEADER_WR,
-	input HEADER_SEL,
-	input [15:0] HEADER_DIN,
+	input [31:0] HEADER_DIN,
 
 	input SECTOR_READY,
 	input DMA_RUNNING,
+
 	output reg CDC_nIRQ	// Triggers when SECTOR_READY or DMA_RUNNING rises and IRQ enabled
 );
 
@@ -53,7 +52,6 @@ module lc8951(
 	reg [15:0] WA;		// Unused on Neo CD ?
 	reg nDTBSY, nSTBSY, nDTEN, nSTEN, nVALST;
 	reg [7:0] HEAD [4];
-	reg [7:0] HEAD_TEMP [4];
 	
 	// Bunch of decoder and error detection/correction flags which could be hardcoded
 	// Can't have CD errors if there's no CD !
@@ -65,7 +63,7 @@ module lc8951(
 	
 	reg nWR_PREV, nRD_PREV;
 	reg SECTOR_READY_PREV, DMA_RUNNING_PREV, HEADER_WR_PREV;
-	
+
 	always @(posedge clk_sys or negedge nRESET)
 	begin
 		if (!nRESET)
@@ -110,34 +108,21 @@ module lc8951(
 
 			SECTOR_READY_PREV <= SECTOR_READY;
 			DMA_RUNNING_PREV <= DMA_RUNNING;
-			HEADER_WR_PREV <= HEADER_WR;
 
 			// Rising edge of SECTOR_READY: Set decoder IRQ flag
 			if (~SECTOR_READY_PREV & SECTOR_READY & DECEN)
 			begin
 				DECI_FLAG <= 1;
 				nVALST <= 0;
-				HEAD[0] <= HEAD_TEMP[0];
-				HEAD[1] <= HEAD_TEMP[1];
-				HEAD[2] <= HEAD_TEMP[2];
-				HEAD[3] <= HEAD_TEMP[3];
+				HEAD[0] <= HEADER_DIN[ 7: 0];
+				HEAD[1] <= HEADER_DIN[15: 8];
+				HEAD[2] <= HEADER_DIN[23:16];
+				HEAD[3] <= HEADER_DIN[31:24];
 			end
-			
+
 			// Falling edge of DMA_RUNNING: Set transfer end IRQ flag
 			if (DMA_RUNNING_PREV & ~DMA_RUNNING)
 				DTEI_FLAG <= 1;
-			
-			// Rising edge of HEADER_WR.
-			if (~HEADER_WR_PREV & HEADER_WR)
-			begin
-				if (~HEADER_SEL) begin
-					HEAD_TEMP[0] <= HEADER_DIN[7:0];
-					HEAD_TEMP[1] <= HEADER_DIN[15:8];
-				end else begin
-					HEAD_TEMP[2] <= HEADER_DIN[7:0];
-					HEAD_TEMP[3] <= HEADER_DIN[15:8];
-				end
-			end
 
 			CDC_nIRQ <= ~|{(CMDI_FLAG & CMDIEN), (DTEI_FLAG & DTEIEN), (DECI_FLAG & DECIEN)};
 
