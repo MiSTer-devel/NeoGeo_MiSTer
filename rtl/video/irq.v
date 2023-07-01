@@ -20,6 +20,7 @@ module irq(
 	input RESET_IRQ,
 	input TIMER_IRQ,
 	input VBL_IRQ,
+	input CD_VBL_EN,
 	input CLK,
 	output IPL0, IPL1
 );
@@ -36,7 +37,7 @@ module irq(
 	wire B56_Q, B56_nQ, B52_Q, B52_nQ, C52_Q;
 	FD3 B56(RESET_IRQ, 1'b0, ACK[0], B56_Q, B56_nQ);
 	FD3 B52(TIMER_IRQ, 1'b0, ACK[1], B52_Q, B52_nQ);
-	FD3 C52(VBL_IRQ, 1'b0, ACK[2], C52_Q);
+	FD3 C52(VBL_IRQ, ~CD_VBL_EN, ACK[2], C52_Q);
 	
 	// B49
 	wire B49_OUT = B52_Q | B56_nQ;

@@ -27,19 +27,18 @@
 
 module lc8951(
 	input nRESET,
-	input CLK_12M,
+	input clk_sys,
+	input CLK_68KCLK_EN,
 	input nWR, nRD,
 	input RS,	// Register select, 0=Access address register, 1=Access pointed register
 	input [7:0] DIN,
 	output reg [7:0] DOUT,
-	
-	input [7:0] MSF_M,	// To give back the system ROM what it expects to see
-	input [7:0] MSF_S,	// Normally these come from the MSF data from the sector's header
-	input [7:0] MSF_F,	// Maybe use the real header which would be given by the HPS instead ?
-	input MSF_LATCH,
-	
+
+	input [31:0] HEADER_DIN,
+
 	input SECTOR_READY,
 	input DMA_RUNNING,
+
 	output reg CDC_nIRQ	// Triggers when SECTOR_READY or DMA_RUNNING rises and IRQ enabled
 );
 
@@ -63,10 +62,14 @@ module lc8951(
 	reg SYIEN, SYDEN, DSCREN, COWREN, MODRQ, FORMRQ, SHDREN;
 	
 	reg nWR_PREV, nRD_PREV;
-	reg SECTOR_READY_PREV, DMA_RUNNING_PREV, MSF_LATCH_PREV;
-	
-	// TODO: Should this be clocked with clk_sys ?
-	always @(negedge CLK_12M or negedge nRESET)
+	reg SECTOR_READY_PREV, DMA_RUNNING_PREV, HEADER_WR_PREV;
+
+	reg [15:0] INT_CYCLE_CNT;
+
+	// 12 x 1800. LC8950 manual says that LC8951 /INT goes low for 1.8ms
+	localparam INT_CYCLES = 16'd21600;
+
+	always @(posedge clk_sys or negedge nRESET)
 	begin
 		if (!nRESET)
 		begin
@@ -103,38 +106,47 @@ module lc8951(
 			
 			SECTOR_READY_PREV <= 0;
 			DMA_RUNNING_PREV <= 0;
+			HEADER_WR_PREV <= 0;
+
+			INT_CYCLE_CNT <= 0;
 		end
 		else
-		begin
+		if (CLK_68KCLK_EN) begin
+
 			SECTOR_READY_PREV <= SECTOR_READY;
 			DMA_RUNNING_PREV <= DMA_RUNNING;
-			MSF_LATCH_PREV <= MSF_LATCH;
-			
+
 			// Rising edge of SECTOR_READY: Set decoder IRQ flag
-			if (~SECTOR_READY_PREV & SECTOR_READY)
-			begin
-				DECI_FLAG <= 1;
-				nVALST <= 0;
+			if (~SECTOR_READY_PREV & SECTOR_READY) begin
+				if (DECEN) begin
+					DECI_FLAG <= 1;
+					nVALST <= 0;
+					INT_CYCLE_CNT <= 0;
+					HEAD[0] <= HEADER_DIN[ 7: 0];
+					HEAD[1] <= HEADER_DIN[15: 8];
+					HEAD[2] <= HEADER_DIN[23:16];
+					HEAD[3] <= HEADER_DIN[31:24];
+				end
+			end else if (~nVALST) begin // Use nVALST because DECI can be reset by reading STAT3.
+				if (INT_CYCLE_CNT < INT_CYCLES) begin
+					INT_CYCLE_CNT <= INT_CYCLE_CNT + 1'b1;
+				end else begin // Decoder INT timeout
+					DECI_FLAG <= 0;
+					nVALST <= 1;
+				end
 			end
-			
+
 			// Falling edge of DMA_RUNNING: Set transfer end IRQ flag
-			if (DMA_RUNNING_PREV & ~DMA_RUNNING)
-				DTEI_FLAG <= 1;
-			
-			// Rising edge of MSF_LATCH
-			if (~MSF_LATCH_PREV & MSF_LATCH)
-			begin
-				HEAD[0] <= MSF_M;
-				HEAD[1] <= MSF_S;
-				HEAD[2] <= MSF_F;
-				//HEAD[3] <= 8'h01;
+			if (DMA_RUNNING_PREV & ~DMA_RUNNING) begin
+				//DTEI_FLAG <= 1;
+				nDTBSY <= 1;
 			end
-			
+
 			CDC_nIRQ <= ~|{(CMDI_FLAG & CMDIEN), (DTEI_FLAG & DTEIEN), (DECI_FLAG & DECIEN)};
-		
+
 			nWR_PREV <= nWR;
 			nRD_PREV <= nRD;
-			
+
 			if (nWR_PREV & ~nWR)
 			begin
 				// Write
@@ -151,7 +163,12 @@ module lc8951(
 						
 						4'd4: DAC[7:0] <= DIN;		// DACL
 						4'd5: DAC[15:8] <= DIN;		// DACH
-						4'd6: DTTRG <= 1;
+						4'd6: begin
+								DTTRG <= 1;
+								if (DOUTEN) begin
+									nDTBSY <= 0;
+								end
+						end
 						4'd7: DTEI_FLAG <= 0;		// DTACK - Clears the transfer end IRQ flag
 						
 						4'd8: WA[7:0] <= DIN;		// WAL
@@ -188,7 +205,7 @@ module lc8951(
 						4'd4: DOUT <= HEAD[0];
 						4'd5: DOUT <= HEAD[1];
 						4'd6: DOUT <= HEAD[2];
-						4'd7: DOUT <= 8'h01;		//HEAD[3]; CD-ROM mode, always 1
+						4'd7: DOUT <= HEAD[3]; // CD-ROM mode, always 1
 						
 						4'd8: DOUT <= 8'h04;	//PT[7:0];		// PTL
 						4'd9: DOUT <= 8'h00;	//PT[15:8];		// PTH
