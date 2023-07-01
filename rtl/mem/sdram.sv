@@ -199,10 +199,17 @@ always @(posedge clk) begin
 			STATE_IDLE_4: state <= STATE_IDLE_3;
 			STATE_IDLE_3: state <= STATE_IDLE_2;
 			STATE_IDLE_2: state <= STATE_IDLE_1;
-			STATE_IDLE_1: begin
-				state      <= STATE_IDLE;
-				// mask possible refresh to reduce colliding.
+			STATE_IDLE_1: state <= STATE_IDLE;
+
+			STATE_RFSH: begin
+				state    <= STATE_IDLE_5;
+				command  <= CMD_AUTO_REFRESH;
+				chip     <= 1;
+			end
+
+			STATE_IDLE: begin
 				if (refresh_count > cycles_per_refresh) begin
+					// Priority is to issue a refresh if one is outstanding
 					//------------------------------------------------------------------------
 					//-- Start the refresh cycle. 
 					//-- This tasks tRFC (66ns), so 7 idle cycles are needed @ 120MHz
@@ -211,18 +218,6 @@ always @(posedge clk) begin
 					command  <= CMD_AUTO_REFRESH;
 					refresh_count <= refresh_count - cycles_per_refresh + 1'd1;
 					chip     <= 0;
-				end
-			end
-			STATE_RFSH: begin
-				state    <= STATE_IDLE_5;
-				command  <= CMD_AUTO_REFRESH;
-				chip     <= 1;
-			end
-
-			STATE_IDLE: begin
-				if (refresh_count > (cycles_per_refresh << 1)) begin
-					// Priority is to issue a refresh if one is outstanding
-					state <= STATE_IDLE_1;
 				end else if (rd | wr) begin
 					if(sel) begin
 						{cas_addr[12:9],SDRAM_BA,SDRAM_A,cas_addr[8:0]} <= {~wr ? 2'b00 : ~bs, 1'b1, addr[25:1]};
@@ -257,7 +252,8 @@ always @(posedge clk) begin
 
 			STATE_WAIT: state <= STATE_RW;
 			STATE_RW: begin
-				state   <= saved_burst ? STATE_IDLE_5 : STATE_IDLE_2;
+				// Wait at least 4 cycles @96MHz (2 CAS_LATENCY + 2 PRECHARGE (tRP 21ns))
+				state   <= saved_burst ? STATE_IDLE_5 : STATE_IDLE_4;
 				SDRAM_A <= cas_addr;
 				if(saved_wr) begin
 					command  <= CMD_WRITE;
@@ -281,7 +277,7 @@ always @(posedge clk) begin
 				command       <= CMD_WRITE;
 				SDRAM_DQ      <= cpdin;
 				if(!cpcnt) begin
-					state      <= STATE_IDLE_2;
+					state      <= STATE_IDLE_4;
 					cprd       <= 0;
 				end
 			end

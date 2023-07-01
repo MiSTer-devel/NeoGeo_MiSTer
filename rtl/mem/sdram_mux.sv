@@ -75,6 +75,11 @@ module sdram_mux(
 	input             CD_EXT_WR,
 	input             CD_EXT_RD,
 	input       [1:0] CD_BANK_SPR,
+	input             CD_USE_SPR,
+	input             CD_TR_RD_SPR,
+	input             CD_USE_FIX,
+	input             CD_TR_RD_FIX,
+	input             CD_TR_WR_FIX,
 	input             CD_WR_SDRAM_SIG
 );
 
@@ -86,41 +91,36 @@ module sdram_mux(
 	reg [26:1] dl_addr;
 	reg [15:0] dl_data;
 
-	assign SDRAM_BS = (DL_EN | ~SDRAM_WR_BYTE_MODE) ? 2'b11 : {CD_REMAP_TR_ADDR[0],~CD_REMAP_TR_ADDR[0]};
+	assign SDRAM_BS = (DL_EN | ~SDRAM_WR_BYTE_MODE) ? 2'b11 : {~CD_REMAP_TR_ADDR[0],CD_REMAP_TR_ADDR[0]};
 	assign SDRAM_DIN = DL_EN ? dl_data : wr_data;
 
-	reg M68K_RD_RUN, SROM_RD_RUN, CROM_RD_RUN, CD_WR_RUN;
+	reg M68K_RD_RUN, SFIX_RD_RUN, CROM_RD_RUN, CD_TR_RUN;
 
 	// SDRAM address mux
 	always_comb begin 
-		casez ({DL_EN, CD_WR_RUN, SROM_RD_RUN, M68K_RD_RUN, CD_EXT_RD, ~nROMOE, ~nPORTOE})
+		casez ({DL_EN, CD_TR_RUN, SFIX_RD_RUN, M68K_RD_RUN, ~nROMOE, ~nPORTOE})
 			// HPS loading pass-through
-			7'b1zzzzzz: SDRAM_ADDR = dl_addr;
+			6'b1zzzzz: SDRAM_ADDR = dl_addr;
 
 			// CD transfer
-			7'b01zzzzz: SDRAM_ADDR = CD_REMAP_TR_ADDR[24:1];
+			6'b01zzzz: SDRAM_ADDR = CD_REMAP_TR_ADDR[24:1];
 
 			// SFIX ROM (CD)		$0080000~$009FFFF
 			// S1 ROM (cart)		$0080000~$00FFFFF
 			// SFIX ROM (cart)	$0020000~$003FFFF
-			7'b001zzzz: SDRAM_ADDR = SYSTEM_CDx  ? {8'b0_0000_100,         S_LATCH[15:4], S_LATCH[2:0], ~S_LATCH[3]}:
+			6'b001zzz: SDRAM_ADDR = SYSTEM_CDx ? {8'b0_0000_100,         S_LATCH[15:4], S_LATCH[2:0], ~S_LATCH[3]}:
 												nSYSTEM_G ? {6'b0_0000_1, FIX_BANK, S_LATCH[15:4], S_LATCH[2:0], ~S_LATCH[3]}:
 												            {8'b0_0000_001,         S_LATCH[15:4], S_LATCH[2:0], ~S_LATCH[3]};
 
-			// Work RAM (cart) $0100000~$010FFFF, or Extended RAM (CD) $0100000~$01FFFFF
-			7'b00011zz: SDRAM_ADDR = ~SYSTEM_CDx ? {9'b0_0001_0000, M68K_ADDR[15:1]}   :
-		                            DMA_RUNNING ? {5'b0_0001,      DMA_ADDR_IN[19:1]} :
-											               {5'b0_0001,      M68K_ADDR[19:1]}   ;
-
 			// P1 ROM $0200000~$02FFFFF
-			7'b000101z: SDRAM_ADDR =               {5'b0_0010,      M68K_ADDR[19:1]};
+			6'b00011z: SDRAM_ADDR =                {5'b0_0010,      M68K_ADDR[19:1]};
 
 			// P2 ROM (cart) $0300000~... bankswitched
-			7'b0001001: SDRAM_ADDR =               P2ROM_OFFSET[26:1] + P2ROM_ADDR[26:1];
+			6'b000101: SDRAM_ADDR =               P2ROM_OFFSET[26:1] + P2ROM_ADDR[26:1];
 
 			// System ROM (CD)	$0000000~$007FFFF
 			// System ROM (cart)	$0000000~$001FFFF
-			7'b0001000: SDRAM_ADDR = SYSTEM_CDx  ? {6'b0_0000_0,    M68K_ADDR[18:1]} :
+			6'b000100: SDRAM_ADDR = SYSTEM_CDx  ? {6'b0_0000_0,    M68K_ADDR[18:1]} :
 															   {8'b0_0000_000,  M68K_ADDR[16:1]} ;
 
 			// C ROMs Bytes $0800000~$7FFFFFF
@@ -132,16 +132,19 @@ module sdram_mux(
 	reg SDRAM_CROM_SIG_SR;
 	reg SDRAM_SROM_SIG_SR;
 
-	// Only allow DMA to read from $000000~$1FFFFF
-	wire SDRAM_M68K_SIG = CD_EXT_RD | (~DMA_RUNNING & ~&{nSROMOE, nROMOE, nPORTOE});
+	wire SDRAM_M68K_SIG = ~&{nSROMOE, nROMOE, nPORTOE};
 
 	wire REQ_M68K_RD = (~SDRAM_M68K_SIG_SR & SDRAM_M68K_SIG);
-	wire REQ_CROM_RD = (SDRAM_CROM_SIG_SR & ~PCK1) & SPR_EN;
-	wire REQ_SROM_RD = (SDRAM_SROM_SIG_SR & ~PCK2) & FIX_EN;
+	wire REQ_CROM_RD = (SDRAM_CROM_SIG_SR & ~PCK1) & SPR_EN & ~CD_USE_SPR;
+	wire REQ_SROM_RD = (SDRAM_SROM_SIG_SR & ~PCK2) & FIX_EN & ~CD_USE_FIX;
+
+	wire CD_RD_SDRAM_SIG = CD_EXT_RD | CD_TR_RD_FIX | CD_TR_RD_SPR;
+	wire CD_LDS_ONLY_WR = CD_TR_WR_FIX;
 
 	always @(posedge CLK) begin
 		reg M68K_RD_REQ, SROM_RD_REQ, CROM_RD_REQ, CD_WR_REQ;
-		reg nDS_PREV, nAS_PREV, DMA_WR_OUT_PREV;
+		reg nAS_PREV;
+		reg CD_WR_SDRAM_SIG_PREV, CD_RD_SDRAM_SIG_PREV;
 		reg old_ready;
 
 		if(DL_WR & DL_EN) begin
@@ -157,8 +160,9 @@ module sdram_mux(
 		end
 
 		nAS_PREV <= nAS;
-		nDS_PREV <= nLDS & nUDS;
-		DMA_WR_OUT_PREV <= DMA_WR_OUT;
+
+		CD_RD_SDRAM_SIG_PREV <= CD_RD_SDRAM_SIG;
+		CD_WR_SDRAM_SIG_PREV <= CD_WR_SDRAM_SIG;
 
 		SDRAM_M68K_SIG_SR <= SDRAM_M68K_SIG;
 		SDRAM_CROM_SIG_SR <= PCK1;
@@ -171,9 +175,9 @@ module sdram_mux(
 			CD_WR_REQ   <= 0;
 
 			CROM_RD_RUN <= 0;
-			SROM_RD_RUN <= 0;
+			SFIX_RD_RUN <= 0;
 			M68K_RD_RUN <= 0;
-			CD_WR_RUN   <= 0;
+			CD_TR_RUN   <= 0;
 
 			DMA_SDRAM_BUSY <= 0;
 			
@@ -186,28 +190,39 @@ module sdram_mux(
 			if (~nAS_PREV & nAS) PROM_DATA_READY <= 0;
 			if (~DMA_RUNNING) DMA_SDRAM_BUSY <= 0;
 
-			// Detect 68k or DMA write requests
-			// Detect falling edge of nLDS or nUDS, or rising edge of DMA_WR_OUT while CD_WR_SDRAM_SIG is high
-			if (((nDS_PREV & ~(nLDS & nUDS)) | (~DMA_WR_OUT_PREV & DMA_WR_OUT)) & CD_WR_SDRAM_SIG) begin
+			// Detect 68k or DMA requests for CD specific reads/writes
+			if ((~CD_RD_SDRAM_SIG_PREV & CD_RD_SDRAM_SIG) | (~CD_WR_SDRAM_SIG_PREV & CD_WR_SDRAM_SIG)) begin
 				// Convert and latch address
-				casez({CD_EXT_WR, CD_TR_AREA})
-					4'b1_???: CD_REMAP_TR_ADDR <= DMA_RUNNING ? {1'b0, 4'h3 + DMA_ADDR_OUT[20], DMA_ADDR_OUT[19:1], 1'b0} : {1'b0, 4'h3 + M68K_ADDR[20], M68K_ADDR[19:1], ~nLDS};	// EXT zone SDRAM
-					4'b0_000: CD_REMAP_TR_ADDR <= DMA_RUNNING ? {3'b0_10, CD_BANK_SPR, DMA_ADDR_OUT[19:7], DMA_ADDR_OUT[5:2], ~DMA_ADDR_OUT[6], ~DMA_ADDR_OUT[1], 1'b0} : {3'b0_10, CD_BANK_SPR, M68K_ADDR[19:7], M68K_ADDR[5:2], ~M68K_ADDR[6], ~M68K_ADDR[1], 1'b0};	// Sprites SDRAM
-					//4'b0_001: CD_REMAP_TR_ADDR <= {4'b0_000, CD_BANK_PCM, CD_TR_WR_ADDR, 1'b0};		// ADPCM DDRAM
-					4'b0_101: CD_REMAP_TR_ADDR <= DMA_RUNNING ? {8'b0_0010_100, DMA_ADDR_OUT[17:6], DMA_ADDR_OUT[3:1], ~DMA_ADDR_OUT[5], ~DMA_ADDR_OUT[4]} : {8'b0_0010_100, M68K_ADDR[17:6], M68K_ADDR[3:1], ~M68K_ADDR[5], ~M68K_ADDR[4]};	// Fix SDRAM
-					//4'b0_100: CD_REMAP_TR_ADDR <= {8'b0_0000_000, CD_TR_WR_ADDR[16:1], 1'b0};		// Z80 BRAM
-					default: CD_REMAP_TR_ADDR <= 25'h0AAAAAA;		// DEBUG
+				casez({CD_EXT_RD, CD_EXT_WR, CD_TR_AREA})
+					// Read P1 (CD DMA) or Extended RAM (CD DMA+68K) $0100000~$01FFFFF
+					5'b1_?_???: CD_REMAP_TR_ADDR <= DMA_RUNNING ? {3'b0_00, ~DMA_ADDR_IN[20], DMA_ADDR_IN[20:1], 1'b0}   : {3'b0_00, ~M68K_ADDR[20], M68K_ADDR[20:1], ~nLDS};
+
+					// Write P1 or Extended RAM
+					5'b0_1_???: CD_REMAP_TR_ADDR <= DMA_RUNNING ? {3'b0_00, ~DMA_ADDR_OUT[20], DMA_ADDR_OUT[20:1], 1'b0} : {3'b0_00, ~M68K_ADDR[20], M68K_ADDR[20:1], ~nLDS};
+
+					// Sprites SDRAM
+					5'b0_0_000: CD_REMAP_TR_ADDR <= DMA_RUNNING ? {3'b0_10, CD_BANK_SPR, DMA_ADDR_OUT[19:7], DMA_ADDR_OUT[5:2], ~DMA_ADDR_OUT[6], ~DMA_ADDR_OUT[1], 1'b0} : {3'b0_10, CD_BANK_SPR, M68K_ADDR[19:7], M68K_ADDR[5:2], ~M68K_ADDR[6], ~M68K_ADDR[1], ~nLDS};
+
+					// FIX SDRAM
+					5'b0_0_101: CD_REMAP_TR_ADDR <= DMA_RUNNING ? {8'b0_0000_100, DMA_ADDR_OUT[17:6], DMA_ADDR_OUT[3:1], ~DMA_ADDR_OUT[5], ~DMA_ADDR_OUT[4]} : {8'b0_0000_100, M68K_ADDR[17:6], M68K_ADDR[3:1], ~M68K_ADDR[5], ~M68K_ADDR[4]};
+
+					default:  CD_REMAP_TR_ADDR <= 25'h0AAAAAA;		// DEBUG
 				endcase
 
-				// DMA writes are always done in words
-				SDRAM_WR_BYTE_MODE <= (((CD_TR_AREA == 3'd5) & ~CD_EXT_WR) | (CD_EXT_WR & (nLDS ^ nUDS))) & ~DMA_RUNNING;	// Fix or extended RAM data
+				if (CD_RD_SDRAM_SIG) begin // read
+					M68K_RD_REQ <= 1;
+				end else begin
+					// DMA writes are always done in words. FIX layer is on a 8bit bus so should only write the low byte.
+					SDRAM_WR_BYTE_MODE <= (CD_LDS_ONLY_WR | ((CD_EXT_WR | (CD_TR_AREA == 3'd0)) & (nLDS ^ nUDS)));	// Fix or extended RAM data
 
-				// TODO: make sure wr_data gets correct data according to selected byte
-				wr_data <= DMA_RUNNING ? DMA_DATA_OUT : M68K_DATA;
-				// In DMA, start if: nothing is running, no LSPC read (priority case C)
-				// Out of DMA, start if: nothing is running (priority case B)
-				// TO TEST
-				CD_WR_REQ <= 1;
+					wr_data <= DMA_RUNNING ? (CD_LDS_ONLY_WR ? {DMA_DATA_OUT[7:0],DMA_DATA_OUT[7:0]} :  DMA_DATA_OUT)
+										   : (CD_LDS_ONLY_WR ? {M68K_DATA[7:0],M68K_DATA[7:0]} : M68K_DATA);
+
+					// In DMA, start if: nothing is running, no LSPC read (priority case C)
+					// Out of DMA, start if: nothing is running (priority case B)
+					// TO TEST
+					CD_WR_REQ <= 1;
+				end
 			end
 
 			// Detect 68k read requests
@@ -230,13 +245,13 @@ module sdram_mux(
 				// Having two non-nested IF statements with the & in the condition
 				// prevents synthesis from chaining too many muxes and causing
 				// timing analysis to fail
-				if (CD_WR_RUN)	begin
-					CD_WR_RUN      <= 0;
+				if (CD_TR_RUN)	begin
+					CD_TR_RUN      <= 0;
 					DMA_SDRAM_BUSY <= 0;
 				end
-				if (SROM_RD_RUN) begin
+				if (SFIX_RD_RUN) begin
 					SROM_DATA      <= SDRAM_DOUT[15:0];
-					SROM_RD_RUN    <= 0;
+					SFIX_RD_RUN    <= 0;
 				end
 				if (M68K_RD_RUN) begin
 					PROM_DATA      <= SDRAM_DOUT[15:0];
@@ -253,6 +268,7 @@ module sdram_mux(
 				if (M68K_RD_REQ | REQ_M68K_RD) begin
 					M68K_RD_REQ    <= 0;
 					M68K_RD_RUN    <= 1;
+					CD_TR_RUN      <= CD_RD_SDRAM_SIG;
 					SDRAM_RD       <= 1;
 					SDRAM_BURST    <= 0;
 					DMA_SDRAM_BUSY <= DMA_RUNNING;
@@ -265,13 +281,13 @@ module sdram_mux(
 				end
 				else if (SROM_RD_REQ | REQ_SROM_RD) begin
 					SROM_RD_REQ    <= 0;
-					SROM_RD_RUN    <= 1;
+					SFIX_RD_RUN    <= 1;
 					SDRAM_RD       <= 1;
 					SDRAM_BURST    <= 0;
 				end
 				else if (CD_WR_REQ) begin
 					CD_WR_REQ      <= 0;
-					CD_WR_RUN      <= 1;
+					CD_TR_RUN      <= 1;
 					SDRAM_WR       <= 1;
 					DMA_SDRAM_BUSY <= DMA_RUNNING;
 				end

@@ -65,7 +65,9 @@ module lspc2_a2(
 	output nPBUS_OUT_EN,
 	
 	input VMODE,
-	
+
+	input CD_VBLANK_IRQ_EN,
+
 	output [14:0] FIXMAP_ADDR		// Extracted for NEO-CMC
 );
 
@@ -589,7 +591,7 @@ module lspc2_a2(
 	resetp RSTP(CLK_24MB, RESET, nRESETP);
 	
 	wire BNK;
-	irq IRQ(WR_IRQ_ACK, M68K_DATA[2:0], RESET, D46A_OUT, BNK, LSPC_6M, IPL0, IPL1);
+	irq IRQ(WR_IRQ_ACK, M68K_DATA[2:0], RESET, D46A_OUT, BNK, CD_VBLANK_IRQ_EN, LSPC_6M, IPL0, IPL1);
 	
 	wire Q53_CO, FLIP, P50_CO;
 	videosync VS(CLK_24MB, LSPC_3M, LSPC_1_5M, Q53_CO, nRESETP, VMODE, PIXELC, RASTERC, HSYNC, VSYNC, BNK,
