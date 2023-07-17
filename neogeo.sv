@@ -582,6 +582,11 @@ wire nSDROE, nSDPOE;
 wire [7:0] WRAML_OUT;
 wire [7:0] WRAMU_OUT;
 wire [15:0] SRAM_OUT;
+wire [7:0] CD_Z80_RAM_OUT;
+
+wire [14:0] WRAM_ADDR;
+wire [7:0] WRAML_DATA, WRAMU_DATA;
+wire WRAML_WREN, WRAMU_WREN;
 
 // Memory card stuff
 wire [23:0] CDA;
@@ -843,6 +848,11 @@ always @(posedge clk_sys) begin
 	if (CDD_COMMAND_SEND && !cdd_send_old) begin
 		cd_in[47:0] <= {6'd0,cd_speed,CDD_COMMAND_DATA};
 		cd_in[48] <= ~cd_in[48];
+	end else begin
+		if (old_reset & ~nRESET) begin
+			cd_in[47:0] <= 8'hFF;
+			cd_in[48] <= ~cd_in[48];
+		end
 	end
 end
 
@@ -1234,7 +1244,7 @@ wire [1:0] IPL_OUT = ~SYSTEM_CDx ? { IPL1,IPL0 } : CD_IPL;
 // Because of the SDRAM latency, nDTACK is handled differently for ROM zones
 // If the address is in a ROM zone, PROM_DATA_READY is used to extend the normal nDTACK output by NEO-C1
 wire nDTACK_ADJ = ~&{nSROMOE, nROMOE, nPORTOE, ~CD_EXT_RD, ~CD_TR_RD_FIX, ~CD_TR_RD_SPR} ? ~PROM_DATA_READY | nDTACK
-                    : (CD_TR_WR_Z80 | CD_TR_WR_PCM) ? ~ddram_dtack | nDTACK
+                    : (CD_TR_WR_PCM) ? ~ddram_dtack | nDTACK
                     : nDTACK;
 
 cpu_68k M68KCPU(
@@ -1269,12 +1279,18 @@ assign M68K_DATA = (nROMOE & nSROMOE & ~CD_TR_RD_SPR & |{nPORTOE, cart_chip, car
 // Output correct FIX byte
 assign M68K_DATA[7:0] = ~CD_TR_RD_FIX ? 8'bzzzz_zzzz : (M68K_ADDR[4] ? PROM_DATA[15:8] : PROM_DATA[7:0]);
 
-// 68k work RAM
+// Neo CD 68k work RAM is in SDRAM so we can use this for Z80 RAM instead.
+assign WRAM_ADDR = SYSTEM_CDx ? SDA[15:1] : M68K_ADDR[15:1];
+assign { WRAMU_DATA, WRAML_DATA } = SYSTEM_CDx ? { SDD_OUT, SDD_OUT } : { M68K_DATA[15:0] };
+assign WRAMU_WREN = SYSTEM_CDx ? (~nSDMWR & SDA[0])  : ~nWWU;
+assign WRAML_WREN = SYSTEM_CDx ? (~nSDMWR & ~SDA[0]) : ~nWWL;
+
+// 68k/Z80 work RAM
 dpram #(15) WRAML(
 	.clock_a(CLK_24M),
-	.address_a(M68K_ADDR[15:1]),
-	.data_a(M68K_DATA[7:0]),
-	.wren_a(~nWWL),
+	.address_a(WRAM_ADDR),
+	.data_a(WRAML_DATA),
+	.wren_a(WRAML_WREN),
 	.q_a(WRAML_OUT),
 
 	.clock_b(CLK_24M),
@@ -1285,9 +1301,9 @@ dpram #(15) WRAML(
 
 dpram #(15) WRAMU(
 	.clock_a(CLK_24M),
-	.address_a(M68K_ADDR[15:1]),
-	.data_a(M68K_DATA[15:8]),
-	.wren_a(~nWWU),
+	.address_a(WRAM_ADDR),
+	.data_a(WRAMU_DATA),
+	.wren_a(WRAMU_WREN),
 	.q_a(WRAMU_OUT),
 
 	.clock_b(CLK_24M),
@@ -1389,7 +1405,7 @@ wire [15:0] bk_dout = bk_lba[7] ? memcard_buff_dout : sram_buff_dout;
 assign CROM_ADDR = {C_LATCH_EXT, C_LATCH, 3'b000} & CROM_MASK;
 
 zmc ZMC(
-	.nRESET(nRESET & ~SYSTEM_CDx), // No bankswitching for Neo CD
+	.nRESET(nRESET),
 	.nSDRD0(SDRD0),
 	.SDA_L(SDA[1:0]), .SDA_U(SDA[15:8]),
 	.MA(MA)
@@ -1640,9 +1656,14 @@ spram #(15,16) USV(
 wire [18:11] MA;
 wire [7:0] Z80_RAM_DATA;
 
+// 2KB Z80 work RAM (Cart)
 spram #(11) Z80RAM(.clock(CLK_12M), .address(SDA[10:0]), .data(SDD_OUT), .wren(~(nZRAMCS | nSDMWR)), .q(Z80_RAM_DATA));
 
+// 64KB Z80 work RAM (CD)
+assign CD_Z80_RAM_OUT = SDA[0] ? WRAMU_OUT : WRAML_OUT;
+
 assign SDD_IN = (~nSDZ80R) ? SDD_RD_C1 :
+					(~nSDMRD & SYSTEM_CDx) ? CD_Z80_RAM_OUT :
 					(~nSDMRD & ~nSDROM) ? M1_ROM_DATA :
 					(~nSDMRD & ~nZRAMCS) ? Z80_RAM_DATA :
 					(~n2610CS & ~n2610RD) ? YM2610_DOUT :
@@ -1663,10 +1684,10 @@ always @(posedge clk_sys) begin
 	old_rd <= z80_rom_rd;
 	if(old_rd == z80_rom_rd) old_rd1 <= old_rd;
 	
-	if(~old_rd1 & old_rd) z80rd_req <= ~z80rd_req;
+	if(~old_rd1 & old_rd & ~SYSTEM_CDx) z80rd_req <= ~z80rd_req;
 	
 	old_clk <= CLK_4M;
-	if(old_clk & ~CLK_4M) nZ80WAIT <= ~(z80rd_req ^ z80rd_ack);
+	if(old_clk & ~CLK_4M) nZ80WAIT <= ~(z80rd_req ^ z80rd_ack) | SYSTEM_CDx;
 end
 
 cpu_z80 Z80CPU(
@@ -1678,7 +1699,7 @@ cpu_z80 Z80CPU(
 	.nINT(nZ80INT), .nNMI(nZ80NMI), .nWAIT(nZ80WAIT)
 );
 
-assign { SDA, SDD_OUT } = ~CD_HAS_Z80_BUS ? { Z80_SDA, Z80_SDD_OUT } : { M68K_ADDR[16:1], M68K_DATA[7:0] };
+assign { SDA, SDD_OUT } = ~CD_HAS_Z80_BUS ? { Z80_SDA, Z80_SDD_OUT } : DMA_RUNNING ? { DMA_ADDR_OUT[16:1], DMA_DATA_OUT[7:0] } : { M68K_ADDR[16:1], M68K_DATA[7:0] };
 assign { nSDRD, nSDWR } = ~CD_HAS_Z80_BUS ? { nZ80_SDRD, nZ80_SDWR } : { ~CD_TR_RD_Z80, ~CD_TR_WR_Z80 };
 assign { nMREQ } = ~CD_HAS_Z80_BUS ? nZ80_MREQ : ~(CD_TR_RD_Z80 | CD_TR_WR_Z80);
 
@@ -1689,7 +1710,7 @@ wire [3:0] ADPCMA_BANK;
 wire [23:0] ADPCMB_ADDR;
 
 reg adpcm_wr, adpcm_rd;
-reg old_download, old_reset, old_CD_TR_WR_Z80, old_CD_TR_WR_PCM;
+reg old_download, old_reset, old_CD_TR_WR_PCM;
 wire adpcm_wrack, adpcm_rdack;
 
 wire ddr_loading = ioctl_download & (((ioctl_index >= INDEX_VROMS) & (ioctl_index < INDEX_CROMS)) | (ioctl_index == INDEX_M1ROM));
@@ -1702,7 +1723,6 @@ begin
 	
 	old_download <= ddr_loading;
 	old_reset <= nRESET;
-	old_CD_TR_WR_Z80 <= CD_TR_WR_Z80;
 	old_CD_TR_WR_PCM <= CD_TR_WR_PCM;
 
 	if (old_reset & ~nRESET) ddram_wait <= 0;
@@ -1720,14 +1740,10 @@ begin
 		ddr_waddr <= (ioctl_index == INDEX_M1ROM) ? {1'b1,ioctl_addr[24:0]} : VROM_LOAD_ADDR;
 		ddr_wr_din <= ioctl_dout;
 		ddr_we_byte <= 0;
-	end else if ((~old_CD_TR_WR_Z80 & CD_TR_WR_Z80) | (~old_CD_TR_WR_PCM & CD_TR_WR_PCM)) begin // CD write to M1 Z80 area or PCM
+	end else if (~old_CD_TR_WR_PCM & CD_TR_WR_PCM) begin // CD write to PCM
 		ddram_wait <= 1;
 		adpcm_wr <= ~adpcm_wr;
-		if (CD_TR_WR_Z80) begin
-			ddr_waddr <= {10'b10_0000_0000, DMA_RUNNING ? DMA_ADDR_OUT[16:1] : M68K_ADDR[16:1]};
-		end else begin
-			ddr_waddr <= { 6'b00_0000, CD_BANK_PCM, (DMA_RUNNING ? DMA_ADDR_OUT[19:1] : M68K_ADDR[19:1])};
-		end
+		ddr_waddr <= { 6'b00_0000, CD_BANK_PCM, (DMA_RUNNING ? DMA_ADDR_OUT[19:1] : M68K_ADDR[19:1])};
 		ddr_wr_din <= DMA_RUNNING ? DMA_DATA_OUT : M68K_DATA;
 		ddr_we_byte <= 1;
 	end else if (ddram_wait & (adpcm_wr == adpcm_wrack)) begin
