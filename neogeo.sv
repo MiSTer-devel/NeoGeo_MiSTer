@@ -197,7 +197,7 @@ assign {UART_RTS, UART_TXD, UART_DTR} = 0;
 assign {SD_SCK, SD_MOSI, SD_CS} = 'Z;
 
 assign AUDIO_S   = 1;		// Signed
-assign AUDIO_MIX = status[5:4];
+assign AUDIO_MIX = status[6:5];
 assign AUDIO_L = snd_mix_l[16:1];
 assign AUDIO_R = snd_mix_r[16:1];
 
