@@ -44,10 +44,12 @@ module cd_sys(
 	output CD_TR_RD_FIX,
 	output CD_TR_RD_SPR,
 	output CD_TR_RD_Z80,
+	output CD_TR_RD_PCM,
 
 	output reg CD_USE_FIX,
 	output reg CD_USE_SPR,
 	output reg CD_USE_Z80,
+	output reg CD_USE_PCM,
 	output reg [2:0] CD_TR_AREA,
 	output reg [1:0] CD_BANK_SPR,
 	output reg CD_BANK_PCM,
@@ -96,7 +98,6 @@ module cd_sys(
 	input DMA_SDRAM_BUSY
 );
 
-	reg CD_USE_PCM;
 	reg CD_nRESET_DRIVE;
 	reg [15:0] REG_FF0002;
 	reg [11:0] REG_FF0004;
@@ -585,6 +586,7 @@ module cd_sys(
 	assign CD_TR_RD_FIX = TR_ZONE_RD & CD_TR_FIX;
 	assign CD_TR_RD_SPR = TR_ZONE_RD & CD_TR_SPR;
 	assign CD_TR_RD_Z80 = TR_ZONE_RD & CD_TR_Z80;
+	assign CD_TR_RD_PCM = TR_ZONE_RD & CD_TR_PCM;
 
 	reg [1:0] CDD_nIRQ_SR;
 

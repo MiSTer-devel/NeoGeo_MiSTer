@@ -197,7 +197,7 @@ assign {UART_RTS, UART_TXD, UART_DTR} = 0;
 assign {SD_SCK, SD_MOSI, SD_CS} = 'Z;
 
 assign AUDIO_S   = 1;		// Signed
-assign AUDIO_MIX = status[5:4];
+assign AUDIO_MIX = status[6:5];
 assign AUDIO_L = snd_mix_l[16:1];
 assign AUDIO_R = snd_mix_r[16:1];
 
@@ -791,8 +791,8 @@ wire [19:1] CD_TR_WR_ADDR;
 wire [1:0] CD_BANK_SPR;
 
 wire CD_TR_WR_SPR, CD_TR_WR_PCM, CD_TR_WR_Z80, CD_TR_WR_FIX;
-wire CD_TR_RD_SPR, CD_TR_RD_FIX, CD_TR_RD_Z80;
-wire CD_USE_SPR, CD_USE_FIX, CD_USE_Z80;
+wire CD_TR_RD_SPR, CD_TR_RD_FIX, CD_TR_RD_Z80, CD_TR_RD_PCM;
+wire CD_USE_SPR, CD_USE_FIX, CD_USE_Z80, CD_USE_PCM;
 wire CD_UPLOAD_EN;
 wire CD_BANK_PCM;
 wire CD_IRQ;
@@ -801,6 +801,8 @@ wire DMA_RUNNING, DMA_WR_OUT, DMA_RD_OUT;
 wire [15:0] DMA_DATA_OUT;
 wire [23:0] DMA_ADDR_IN;
 wire [23:0] DMA_ADDR_OUT;
+
+wire [15:0] DMA_DATA_IN = CD_TR_RD_PCM ? { 8'h00, ADPCMA_DOUT } : PROM_DATA;
 
 wire DMA_SDRAM_BUSY;
 wire PROM_DATA_READY;
@@ -904,9 +906,9 @@ cd_sys cdsystem(
 	.CD_TR_WR_SPR(CD_TR_WR_SPR), .CD_TR_WR_PCM(CD_TR_WR_PCM),
 	.CD_TR_WR_Z80(CD_TR_WR_Z80), .CD_TR_WR_FIX(CD_TR_WR_FIX),
 	.CD_TR_RD_FIX(CD_TR_RD_FIX), .CD_TR_RD_SPR(CD_TR_RD_SPR),
-	.CD_TR_RD_Z80(CD_TR_RD_Z80),
+	.CD_TR_RD_Z80(CD_TR_RD_Z80), .CD_TR_RD_PCM(CD_TR_RD_PCM),
 	.CD_USE_FIX(CD_USE_FIX), .CD_USE_SPR(CD_USE_SPR),
-	.CD_USE_Z80(CD_USE_Z80),
+	.CD_USE_Z80(CD_USE_Z80), .CD_USE_PCM(CD_USE_PCM),
 	.CD_TR_AREA(CD_TR_AREA),
 	.CD_BANK_SPR(CD_BANK_SPR), .CD_BANK_PCM(CD_BANK_PCM),
 	.CD_TR_WR_DATA(CD_TR_WR_DATA), .CD_TR_WR_ADDR(CD_TR_WR_ADDR),
@@ -923,11 +925,11 @@ cd_sys cdsystem(
 	.CD_AUDIO_L(CD_AUDIO_L), .CD_AUDIO_R(CD_AUDIO_R),
 	.CDDA_WR_READY(CDDA_WR_READY),
 	.DMA_RUNNING(DMA_RUNNING),
-	.DMA_DATA_IN(PROM_DATA), .DMA_DATA_OUT(DMA_DATA_OUT),
+	.DMA_DATA_IN(DMA_DATA_IN), .DMA_DATA_OUT(DMA_DATA_OUT),
 	.DMA_WR_OUT(DMA_WR_OUT), .DMA_RD_OUT(DMA_RD_OUT),
 	.DMA_ADDR_IN(DMA_ADDR_IN),		// Used for reading
 	.DMA_ADDR_OUT(DMA_ADDR_OUT),	// Used for writing
-	.DMA_SDRAM_BUSY(DMA_SDRAM_BUSY | ddram_wait)
+	.DMA_SDRAM_BUSY(DMA_SDRAM_BUSY | ddram_wait | ADPCMA_RD_WAIT)
 );
 
 // The P1 zone is writable on the Neo CD
@@ -1245,6 +1247,7 @@ wire [1:0] IPL_OUT = ~SYSTEM_CDx ? { IPL1,IPL0 } : CD_IPL;
 // If the address is in a ROM zone, PROM_DATA_READY is used to extend the normal nDTACK output by NEO-C1
 wire nDTACK_ADJ = ~&{nSROMOE, nROMOE, nPORTOE, ~CD_EXT_RD, ~CD_TR_RD_FIX, ~CD_TR_RD_SPR} ? ~PROM_DATA_READY | nDTACK
                     : (CD_TR_WR_PCM) ? ~ddram_dtack | nDTACK
+                    : (CD_TR_RD_PCM) ? ~ADPCMA_RD_DTACK | nDTACK
                     : nDTACK;
 
 cpu_68k M68KCPU(
@@ -1759,13 +1762,15 @@ assign DDRAM_CLK = clk_sys;
 
 reg ADPCMA_READ_REQ, ADPCMB_READ_REQ;
 reg ADPCMA_READ_ACK, ADPCMB_READ_ACK;
-reg [24:0] ADPCMA_ADDR_LATCH;	// 32MB
+reg [23:0] ADPCMA_ADDR_LATCH;	// 16MB
 reg [24:0] ADPCMB_ADDR_LATCH;	// 32MB
 reg [7:0] ADPCMA_ACK_COUNTER;
 reg [10:0] ADPCMB_ACK_COUNTER;
 wire ADPCMA_DATA_READY = ~((ADPCMA_READ_REQ ^ ADPCMA_READ_ACK) & (ADPCMA_ACK_COUNTER == 8'd0));
 wire ADPCMB_DATA_READY = ~((ADPCMB_READ_REQ ^ ADPCMB_READ_ACK) & (ADPCMB_ACK_COUNTER == 11'd0));
 
+reg OLD_CD_TR_RD_PCM;
+reg ADPCMA_RD_DTACK, ADPCMA_RD_WAIT;
 always @(posedge clk_sys) begin
 	reg [1:0] ADPCMA_OE_SR;
 	reg [1:0] ADPCMB_OE_SR;
@@ -1773,14 +1778,14 @@ always @(posedge clk_sys) begin
 	ADPCMA_ACK_COUNTER <= ADPCMA_ACK_COUNTER == 8'd0 ? 8'd0 : ADPCMA_ACK_COUNTER - 8'd1;
 	ADPCMB_ACK_COUNTER <= ADPCMB_ACK_COUNTER == 11'd0 ? 11'd0 : ADPCMB_ACK_COUNTER - 11'd1;
 	// Trigger ADPCM A data read on nSDROE falling edge
-	if (ADPCMA_OE_SR == 2'b10) begin
+	if (ADPCMA_OE_SR == 2'b10 & ~CD_USE_PCM) begin
 		ADPCMA_READ_REQ <= ~ADPCMA_READ_REQ;
 		ADPCMA_ADDR_LATCH <= {ADPCMA_BANK, ADPCMA_ADDR} & V1ROM_MASK[23:0];
 		// Data is needed on one previous 8MHz clk before next 666KHz clock->(96MHz/666KHz = 144)-12-4=128
 		ADPCMA_ACK_COUNTER <= 8'd128;
 	end
 	
-	// Trigger ADPCM A data read on nSDPOE falling edge
+	// Trigger ADPCM B data read on nSDPOE falling edge
 	ADPCMB_OE_SR <= {ADPCMB_OE_SR[0], nSDPOE};
 	if (ADPCMB_OE_SR == 2'b10 & ~SYSTEM_CDx) begin
 		ADPCMB_READ_REQ <= ~ADPCMB_READ_REQ;
@@ -1788,13 +1793,33 @@ always @(posedge clk_sys) begin
 		// Data is needed on one previous 8MHz clk before next 55KHz clock->(96MHz/55KHz = 1728)-144-4=1580
 		ADPCMB_ACK_COUNTER <= 11'd1580;
 	end
+
+	// ADPCM A read by 68K
+	OLD_CD_TR_RD_PCM <= CD_TR_RD_PCM;
+	if (~OLD_CD_TR_RD_PCM & CD_TR_RD_PCM) begin
+		ADPCMA_ADDR_LATCH <= { 4'b0000, CD_BANK_PCM, (DMA_RUNNING ? DMA_ADDR_IN[19:1] : M68K_ADDR[19:1]) };
+		ADPCMA_READ_REQ <= ~ADPCMA_READ_REQ;
+		ADPCMA_RD_WAIT <= 1;
+	end else if (ADPCMA_RD_WAIT & (ADPCMA_READ_REQ == ADPCMA_READ_ACK)) begin
+		ADPCMA_RD_WAIT <= 0;
+		ADPCMA_RD_DTACK <= 1;
+	end
+
+	if (ADPCMA_RD_DTACK & nAS) begin
+		ADPCMA_RD_DTACK <= 0;
+	end
 end
 
-wire [7:0] ADPCMA_DATA;
+assign M68K_DATA[7:0] = ~CD_TR_RD_PCM ? 8'bzzzz_zzzz : ADPCMA_DOUT;
+
+wire [7:0] ADPCMA_DOUT;
+wire [7:0] ADPCMA_DATA = CD_USE_PCM ? 8'bzzzzzzzz : ADPCMA_DOUT;
 wire [7:0] ADPCMB_DATA;
+
 reg [27:0] ddr_waddr;
 reg [15:0] ddr_wr_din;
 reg ddr_we_byte;
+
 ddram DDRAM(
 	.*,
 	
@@ -1805,7 +1830,7 @@ ddram DDRAM(
 	.we_byte(ddr_we_byte),
 	
 	.rdaddr(ADPCMA_ADDR_LATCH),
-	.dout(ADPCMA_DATA),
+	.dout(ADPCMA_DOUT),
 	.rd_req(ADPCMA_READ_REQ),
 	.rd_ack(ADPCMA_READ_ACK),
 
