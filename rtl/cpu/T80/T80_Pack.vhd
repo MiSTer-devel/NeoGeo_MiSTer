@@ -11,7 +11,7 @@
 --
 -- Z80 compatible microprocessor core
 --
--- Version : 0242
+-- Version : 0250
 --
 -- Copyright (c) 2001-2002 Daniel Wallner (jesus@opencores.org)
 --
@@ -105,6 +105,7 @@ package T80_Pack is
 		IntCycle_n      : out std_logic;
 		IntE            : out std_logic;
 		Stop            : out std_logic;
+		R800_mode       : in  std_logic := '0';
 		out0            : in  std_logic := '0';  -- 0 => OUT(C),0, 1 => OUT(C),255
 		REG             : out std_logic_vector(211 downto 0); -- IFF2, IFF1, IM, IY, HL', DE', BC', IX, HL, DE, BC, PC, SP, R, I, F', A', F, A
 		DIRSet          : in  std_logic := '0';
@@ -168,6 +169,7 @@ package T80_Pack is
 		ALU_Op                  : out std_logic_vector(3 downto 0);
 			-- ADD, ADC, SUB, SBC, AND, XOR, OR, CP, ROT, BIT, SET, RES, DAA, RLD, RRD, None
 		Save_ALU                : out std_logic;
+		Rot_Akku                : out std_logic;
 		PreserveC               : out std_logic;
 		Arith16                 : out std_logic;
 		Set_Addr_To             : out std_logic_vector(2 downto 0); -- aNone,aXY,aIOA,aSP,aBC,aDE,aZI
@@ -180,11 +182,14 @@ package T80_Pack is
 		LDZ                     : out std_logic;
 		LDW                     : out std_logic;
 		LDSPHL                  : out std_logic;
+		LDHLSP                  : out std_logic;
+		ADDSPdd                 : out std_logic;
 		Special_LD              : out std_logic_vector(2 downto 0); -- A,I;A,R;I,A;R,A;None
 		ExchangeDH              : out std_logic;
 		ExchangeRp              : out std_logic;
 		ExchangeAF              : out std_logic;
 		ExchangeRS              : out std_logic;
+		ExchangeWH              : out std_logic;
 		I_DJNZ                  : out std_logic;
 		I_CPL                   : out std_logic;
 		I_CCF                   : out std_logic;
@@ -196,6 +201,8 @@ package T80_Pack is
 		I_RLD                   : out std_logic;
 		I_RRD                   : out std_logic;
 		I_INRC                  : out std_logic;
+		I_MULUB                 : out std_logic;
+		I_MULU                  : out std_logic;
 		SetWZ                   : out std_logic_vector(1 downto 0);
 		SetDI                   : out std_logic;
 		SetEI                   : out std_logic;
@@ -203,6 +210,8 @@ package T80_Pack is
 		Halt                    : out std_logic;
 		NoRead                  : out std_logic;
 		Write                   : out std_logic;
+		R800_mode               : in  std_logic;
+		No_PC                   : out std_logic;
 		XYbit_undoc             : out std_logic
 	);
 	end component;
@@ -225,6 +234,7 @@ package T80_Pack is
 		WZ              : in  std_logic_vector(15 downto 0);
 		XY_State        : in  std_logic_vector(1 downto 0);
 		ALU_Op          : in  std_logic_vector(3 downto 0);
+		Rot_Akku        : in  std_logic;
 		IR              : in  std_logic_vector(5 downto 0);
 		ISet            : in  std_logic_vector(1 downto 0);
 		BusA            : in  std_logic_vector(7 downto 0);

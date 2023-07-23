@@ -23,7 +23,7 @@ module LT4(
 );
 
 	always @(*)
-		P <= (!nG) ? D : P;		// Latch
+		P = (!nG) ? D : P;		// Latch
 	
 	assign N = ~P;
 

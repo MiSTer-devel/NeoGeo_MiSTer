@@ -19,6 +19,7 @@
 //============================================================================
 
 module neo_f0(
+	input CLK,
 	input nRESET,
 	input nDIPRD0,
 	input nDIPRD1,					// Also called "IN3"
@@ -71,15 +72,19 @@ module neo_f0(
 	// In console mode, reading REG_STATUS_A returns 00. This is used by the Unibios to detect the system type.
 	assign M68K_DATA = nDIPRD1 ? 8'bzzzzzzzz :
 								SYSTEM_TYPE ? {RTC_DOUT, RTC_TP, 4'b1111, COIN2, COIN1} : 8'h00;
-	
-	always @(negedge nRESET or negedge nBITW0)
+
+	reg nBITW0_d;
+	always @(posedge CLK)
+		nBITW0_d <= nBITW0;
+
+	always @(negedge nRESET or posedge CLK)
 	begin
 		if (!nRESET)
 		begin
 			SLOTS <= 3'b000;
 			REG_RTCCTRL <= 3'b000;
 		end
-		else if (!nBITW0)
+		else if (!nBITW0 & nBITW0_d)
 		begin
 			case (M68K_ADDR[6:4])
 				3'b010:

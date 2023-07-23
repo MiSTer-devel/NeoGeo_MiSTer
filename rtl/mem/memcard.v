@@ -19,7 +19,7 @@
 //============================================================================
 
 module memcard(
-	input CLK_24M,
+	input CLK,
 	input SYSTEM_CDx,
 	input [12:0] CDA,
 	input CARD_WE,
@@ -28,8 +28,8 @@ module memcard(
 	input clk_sys,
 	input [11:0] memcard_addr,
 	input memcard_wr,
-	input [15:0] sd_buff_dout,
-	output [15:0] sd_buff_din_memcard
+	input [15:0] memcard_din,
+	output [15:0] memcard_dout
 );
 
 	wire [7:0] CDD_L;
@@ -43,7 +43,7 @@ module memcard(
 	// In cart mode, there's one 2kB memory card for each game.
 	// In CD mode, there's one 8kB memory card for all games.
 	dpram #(.ADDRWIDTH(12)) MEMCARDL(
-		.clock_a(CLK_24M),
+		.clock_a(CLK),
 		.address_a(CDA_MASKED),
 		.wren_a(CARD_WE & CDA[0]),
 		.data_a(M68K_DATA),
@@ -52,12 +52,12 @@ module memcard(
 		.clock_b(clk_sys),
 		.address_b(memcard_addr),
 		.wren_b(memcard_wr),
-		.data_b(sd_buff_dout[7:0]),
-		.q_b(sd_buff_din_memcard[7:0])
+		.data_b(memcard_din[7:0]),
+		.q_b(memcard_dout[7:0])
 	);
 	
 	dpram #(.ADDRWIDTH(12)) MEMCARDU(
-		.clock_a(CLK_24M),
+		.clock_a(CLK),
 		.address_a(CDA_MASKED),
 		.wren_a(CARD_WE & ~CDA[0]),
 		.data_a(M68K_DATA),
@@ -66,8 +66,8 @@ module memcard(
 		.clock_b(clk_sys),
 		.address_b(memcard_addr),
 		.wren_b(memcard_wr),
-		.data_b(sd_buff_dout[15:8]),
-		.q_b(sd_buff_din_memcard[15:8])
+		.data_b(memcard_din[15:8]),
+		.q_b(memcard_dout[15:8])
 	);
 	
 	assign CDD = CDA[0] ? CDD_L : CDD_U;

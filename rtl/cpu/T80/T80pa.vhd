@@ -52,6 +52,8 @@
 --
 -- v2.3: Output last used Address during non-bus MCycle seems more correct.
 --
+-- v2.4: Use the fixed WAIT_n in T80.vhd
+--
 
 library IEEE;
 use IEEE.std_logic_1164.all;
@@ -83,6 +85,7 @@ entity T80pa is
         A           : out std_logic_vector(15 downto 0);
         DI          : in  std_logic_vector(7 downto 0);
         DO          : out std_logic_vector(7 downto 0);
+        R800_mode   : in  std_logic := '0';
         REG         : out std_logic_vector(211 downto 0); -- IFF2, IFF1, IM, IY, HL', DE', BC', IX, HL, DE, BC, PC, SP, R, I, F', A', F, A
         DIRSet      : in  std_logic := '0';
         DIR         : in  std_logic_vector(211 downto 0) := (others => '0') -- IFF2, IFF1, IM, IY, HL', DE', BC', IX, HL, DE, BC, PC, SP, R, I, F', A', F, A
@@ -102,6 +105,7 @@ architecture rtl of T80pa is
     signal TState           : std_logic_vector(2 downto 0);
     signal CEN_pol          : std_logic;
     signal CEN              : std_logic;
+    signal Wait_s           : std_logic;
 begin
 
     CEN <= CEN_p and not CEN_pol;
@@ -120,7 +124,7 @@ begin
             Write   => Write,
             RFSH_n  => RFSH_n,
             HALT_n  => HALT_n,
-            WAIT_n  => '1',
+            WAIT_n  => Wait_s,
             INT_n   => INT_n,
             NMI_n   => NMI_n,
             RESET_n => RESET_n,
@@ -135,6 +139,7 @@ begin
             MC      => MCycle,
             TS      => TState,
             OUT0    => OUT0,
+            R800_mode => R800_mode,
             IntCycle_n => IntCycle_n,
             DIRSet  => DIRSet,
             DIR     => DIR
@@ -152,25 +157,24 @@ begin
                 CEN_pol <= '0';
             elsif CEN_p = '1' and CEN_pol = '0' then
                 CEN_pol <= '1';
-                if MCycle = "001" then
-                    if TState = "010" then
-                        IORQ_n <= '1';
-                        MREQ_n <= '1';
-                        RD_n   <= '1';
-                    end if;
-                else
-                    if TState = "001" and IORQ = '1' then
-                        WR_n   <= not Write;
-                        RD_n   <= Write;
-                        IORQ_n <= '0';
+                if WAIT_s = '1' or TState /= "010" then
+                    if MCycle = "001" then
+                        if TState = "010" then
+                            IORQ_n <= '1';
+                            MREQ_n <= '1';
+                            RD_n   <= '1';
+                        end if;
+                    else
+                        if TState = "001" and IORQ = '1' then
+                            WR_n   <= not Write;
+                            RD_n   <= Write;
+                            IORQ_n <= '0';
+                        end if;
                     end if;
                 end if;
             elsif CEN_n = '1' and CEN_pol = '1' then
-                if TState = "010" then
-                    CEN_pol <= not WAIT_n;
-                else
-                    CEN_pol <= '0';
-                end if;
+                Wait_s <= Wait_n;
+                CEN_pol <= '0';
                 if TState = "011" and BUSAK = '1' then
                     DI_Reg <= DI;
                 end if;

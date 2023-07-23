@@ -18,7 +18,8 @@
 
 module uPD4990(
 	input nRESET,
-	input CLK,			// 12MHz please
+	input CLK,		
+	input CLK_EN_12M, 	// 12MHz please
 	input [64:0] rtc,
 	input CS, OE,		// Both always low
 	input DATA_CLK,
@@ -94,7 +95,7 @@ module uPD4990(
 			STROBE_G_SR <= 0;
 		end
 		else
-		begin
+		if (CLK_EN_12M) begin
 			if (DIV9 == 9'd366-1)	// 12000000/32768
 			begin
 				// 32768Hz from 12MHz

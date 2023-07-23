@@ -18,8 +18,9 @@
 //  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 //============================================================================
 
-module resetp(
-	input CLK_24MB,
+module resetp_sync(
+	input CLK,
+	input CLK_EN_24_N,
 	input nRESET,
 	output reg nRESETP
 );
@@ -30,10 +31,12 @@ module resetp(
 	// nRESET  ____________""""""""
 	// nRESETP """"""""""""""____""
 
-	always @(posedge CLK_24MB)
+	always @(posedge CLK)
 	begin
-		O49_nQ <= ~nRESET;
-		nRESETP <= ~&{O49_nQ, nRESET};
+		if (CLK_EN_24_N) begin
+			O49_nQ <= ~nRESET;
+			nRESETP <= ~&{O49_nQ, nRESET};
+		end
 	end
 	
 endmodule

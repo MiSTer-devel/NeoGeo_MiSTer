@@ -2,6 +2,7 @@
 //  SNK NeoGeo for MiSTer
 //
 //  Copyright (C) 2018 Sean 'Furrtek' Gonsalves
+//  Rewrite to fully synchronous logic by (C) 2023 Gyorgy Szombathelyi
 //
 //  This program is free software; you can redistribute it and/or modify it
 //  under the terms of the GNU General Public License as published by the Free
@@ -18,73 +19,74 @@
 //  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 //============================================================================
 
-module lspc2_clk(
-	input CLK_24M,
+module lspc2_clk_sync(
+	input CLK,
+	input CLK_EN_24M_P,
+	input CLK_EN_24M_N,
 	input nRESETP,
-	
+
 	output CLK_24MB,
 	output LSPC_12M,
-	output LSPC_8M,
+	output reg LSPC_8M,
 	output LSPC_6M,
-	output LSPC_4M,
+	output reg LSPC_4M,
 	output LSPC_3M,
 	output LSPC_1_5M,
-	
-	output reg Q53_CO
+	output Q53_CO,
+
+	output reg LSPC_EN_12M_P,
+	output reg LSPC_EN_12M_N,
+	output reg LSPC_EN_6M_P,
+	output reg LSPC_EN_6M_N,
+	output reg LSPC_EN_3M,
+	output reg LSPC_EN_1_5M_P,
+	output reg LSPC_EN_1_5M_N, // Q53_CO
+	output LSPC_EN_4M_P,
+	output LSPC_EN_4M_N
 );
-	reg [3:0] Q53_Q;
-	reg S276_Q;
-	reg R262_Q, R268_Q;
-	
-	assign CLK_24MB = ~CLK_24M;
-	assign LSPC_1_5M = Q53_Q[3];
-	assign LSPC_3M = Q53_Q[2];
-	assign LSPC_6M = Q53_Q[1];
-	assign LSPC_12M = Q53_Q[0];
-	
-	always @(posedge CLK_24MB)
-	begin
-		// C43 Q53(CLK_24MB, 4'b0010, RESETP, 1'b1, 1'b1, 1'b1, {LSPC_1_5M, LSPC_3M, LSPC_6M, LSPC_12M}, Q53_CO);
-		if (!nRESETP)
-		begin
-			Q53_Q <= 4'b0010;
-			Q53_CO <= 1'b0;
-		end
-		else
-		begin
-			Q53_Q <= Q53_Q + 1'd1;
-			Q53_CO <= (Q53_Q == 4'd14);
-			
-			// FDM S276(CLK_24MB, R262_Q, S276_Q);
-			S276_Q <= R262_Q;
+reg       CLK_24M;
+/* verilator lint_off UNOPTFLAT */
+reg [3:0] DIV_CNT;
+/* verilator lint_on UNOPTFLAT */
+reg [1:0] DIV_CNT3;
+
+always @(posedge CLK) begin
+	if (CLK_EN_24M_N) begin
+		CLK_24M <= 0;
+		if (!nRESETP) begin
+			DIV_CNT <= 4'b0010;
+		end else begin
+			DIV_CNT <= DIV_CNT + 1'd1;
+			DIV_CNT3 <= DIV_CNT3 + 1'd1;
+			if (DIV_CNT3 == 2) DIV_CNT3 <= 0;
 		end
 	end
-	
-	always @(posedge CLK_24M)
-	begin
-		// FJD R262(CLK_24M, R268_Q, 1'b1, 1'b1, R262_Q, R262_nQ);
-		/*case({R268_Q, 1'b1})
-			2'b00 : R262_Q <= #2 Q;
-			2'b01 : R262_Q <= #2 1'b0;
-			2'b10 : R262_Q <= #2 1'b1;
-			2'b11 : R262_Q <= #2 ~Q;
-		endcase*/
-		R262_Q <= R268_Q ? ~R262_Q : 1'b0;
-		
-		// FJD R268(CLK_24M, R262_nQ, 1'b1, 1'b1, R268_Q);
-		/*case({~R262_Q, 1'b1})
-			2'b00 : R268_Q <= #2 Q;
-			2'b01 : R268_Q <= #2 1'b0;
-			2'b10 : R268_Q <= #2 1'b1;
-			2'b11 : R268_Q <= #2 ~Q;
-		endcase*/
-		R268_Q <= (~R262_Q) ? ~R268_Q : 1'b0;
-	end
-	
-	// S274A
-	assign LSPC_8M = ~|{S276_Q, R262_Q};
-	
-	wire S219A_nQ;
-	FD4 S219A(LSPC_8M, S219A_nQ, 1'b1, 1'b1, LSPC_4M, S219A_nQ);
-	
+	if (CLK_EN_24M_P)
+		CLK_24M <= 1;
+
+	LSPC_EN_12M_P <= CLK_EN_24M_P && ~DIV_CNT[0];
+	LSPC_EN_12M_N <= CLK_EN_24M_P &&  DIV_CNT[0];
+	LSPC_EN_6M_P <= CLK_EN_24M_P && (DIV_CNT[1:0] == 1);
+	LSPC_EN_6M_N <= CLK_EN_24M_P && (DIV_CNT[1:0] == 3);
+	LSPC_EN_3M <= CLK_EN_24M_P && (DIV_CNT[2:0] == 3);
+	LSPC_EN_1_5M_P <= CLK_EN_24M_P && (DIV_CNT == 7);
+	LSPC_EN_1_5M_N <= CLK_EN_24M_P && (DIV_CNT == 15);
+
+end
+assign Q53_CO = (DIV_CNT == 15); // Q53_CO
+
+wire      CLK8_FALL = CLK_EN_24M_P & DIV_CNT3 == 2;
+wire      CLK8_RISE = CLK_EN_24M_N & DIV_CNT3 == 0;
+always @(posedge CLK) if (CLK8_FALL) LSPC_8M <= 0; else if (CLK8_RISE) LSPC_8M <= 1;
+
+always @(posedge CLK) if (CLK8_FALL) LSPC_4M <= ~LSPC_4M;
+assign    LSPC_EN_4M_P = ~LSPC_4M & CLK8_FALL;
+assign    LSPC_EN_4M_N =  LSPC_4M & CLK8_FALL;
+
+assign CLK_24MB = ~CLK_24M;
+assign LSPC_1_5M = DIV_CNT[3];
+assign LSPC_3M = DIV_CNT[2];
+assign LSPC_6M = DIV_CNT[1];
+assign LSPC_12M = DIV_CNT[0];
+
 endmodule

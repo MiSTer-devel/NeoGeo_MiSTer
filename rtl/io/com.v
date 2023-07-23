@@ -22,7 +22,7 @@
 
 module com(
 	input nRESET,
-	input CLK_24M,
+	input CLK_48M,
 	input nPORTOEL,
 	input nPORTOEU,
 	input nPORTWEL,
@@ -34,7 +34,7 @@ reg nPORTWEL_PREV, TOGGLE_BIT;
 assign M68K_DIN[15:8] = nPORTOEU ? 8'bzzzzzzzz : {4'b0000, TOGGLE_BIT ,3'b000};
 assign M68K_DIN[7:0] = nPORTOEL ? 8'bzzzzzzzz : 8'h00;
 
-always @(posedge CLK_24M)
+always @(posedge CLK_48M)
 begin
 	if (!nRESET)
 	begin

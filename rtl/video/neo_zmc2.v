@@ -17,7 +17,8 @@
 // Graphics mux part (CT0) was written by Kyuusaku
 
 module neo_zmc2(
-	input CLK_12M,
+	input CLK,
+	input CLK_EN_12M,
 	input EVEN,
 	input LOAD,
 	input H,
@@ -34,7 +35,7 @@ module neo_zmc2(
 
 	// Not used here
 	//zmc2_zmc ZMC2ZMC(SDRD0, SDA_L, SDA_U, MA);
-	zmc2_dot ZMC2DOT(CLK_12M, EVEN, LOAD, H, CR, GAD, GBD, DOTA, DOTB);
+	zmc2_dot ZMC2DOT(CLK, CLK_EN_12M, EVEN, LOAD, H, CR, GAD, GBD, DOTA, DOTB);
 
 endmodule
 

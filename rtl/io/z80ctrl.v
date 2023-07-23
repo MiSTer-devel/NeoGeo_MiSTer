@@ -17,6 +17,7 @@
 // Everything here was verified on a MV4 board
 
 module z80ctrl(
+	input CLK,
 	input [4:2] SDA_L,
 	input [15:11] SDA_U,
 	input nSDRD, nSDWR,
@@ -73,20 +74,27 @@ module z80ctrl(
 	assign nNMI_RESET = nSDZ80R & nRESET;
 	
 	// NMI enable DFF
-	always @(posedge nNMI_SET or negedge nRESET)
+	reg nNMI_SET_d;
+	reg nSDW_d;
+	always @(posedge CLK) begin
+		nNMI_SET_d <= nNMI_SET;
+		nSDW_d <= nSDW;
+	end
+
+	always @(posedge CLK or negedge nRESET)
 	begin
 		if (!nRESET)
 			nNMI_EN <= 1'b1;
-		else
+		else if (nNMI_SET & !nNMI_SET_d)
 			nNMI_EN <= SDA_L[4];
 	end
 	
 	// NMI trig DFF
-	always @(posedge nSDW or negedge nNMI_RESET)
+	always @(posedge CLK)
 	begin
 		if (!nNMI_RESET)
 			nZ80NMI <= 1'b1;
-		else
+		else if (nSDW & !nSDW_d)
 			nZ80NMI <= nNMI_EN;
 	end
 

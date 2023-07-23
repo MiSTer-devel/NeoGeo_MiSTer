@@ -120,9 +120,9 @@ module cd_drive(
 			COMMAND_SEND <= 0;
 
 			// This simulates the Sony CDD MCU, so it must be quite slow
-			// Here it "runs" at clk_sys/384=96M/384=250kHz
+			// Here it "runs" at clk_sys/192=48M/192=250kHz
 			
-			if (CLK_DIV == 9'd384-1)
+			if (CLK_DIV == 9'd192-1)
 			begin
 				CLK_DIV <= 9'd0;
 				

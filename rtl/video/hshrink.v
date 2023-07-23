@@ -1,5 +1,6 @@
 // NeoGeo logic definition
 // Copyright (C) 2018 Sean Gonsalves
+// Rewrite to fully synchronous logic by (C) 2023 Gyorgy Szombathelyi
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,18 +15,19 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-module hshrink(
+module hshrink_sync(
+	input CLK,
 	input [3:0] SHRINK,	// Shrink value
-	input CK, L,
+	input CK_EN, L,
 	output OUTA, OUTB
 );
 
 	wire [3:0] nSHRINK;
 
-	wire [3:0] U193_REG;
-	wire [3:0] T196_REG;
-	wire [3:0] U243_REG;
-	wire [3:0] U226_REG;
+	reg  [3:0] U193_REG;
+	reg  [3:0] T196_REG;
+	reg  [3:0] U243_REG;
+	reg  [3:0] U226_REG;
 	
 	wire [3:0] U193_P;
 	wire [3:0] T196_P;
@@ -57,14 +59,29 @@ module hshrink(
 
 	// Shift registers
 	wire T193A_OUT, U258A_OUT;
-	FS2 U193(CK, U193_P, 1'b1, ~L, U193_REG);
+	//FS2 U193(CK, U193_P, 1'b1, ~L, U193_REG);
 	BD3 T193A(U193_REG[3], T193A_OUT);
-	FS2 T196(CK, T196_P, T193A_OUT, ~L, T196_REG);
+	//FS2 T196(CK, T196_P, T193A_OUT, ~L, T196_REG);
 	
-	FS2 U243(CK, U243_P, 1'b1, ~L, U243_REG);
+	//FS2 U243(CK, U243_P, 1'b1, ~L, U243_REG);
 	BD3 U258A(U243_REG[3], U258A_OUT);
-	FS2 U226(CK, U226_P, U258A_OUT, ~L, U226_REG);
-	
+	//FS2 U226(CK, U226_P, U258A_OUT, ~L, U226_REG);
+
+	always @(posedge CLK)
+	if (CK_EN) begin
+		if (~L) begin
+			U193_REG <= U193_P;
+			T196_REG <= T196_P;
+			U243_REG <= U243_P;
+			U226_REG <= U226_P;
+		end else begin
+			U193_REG <= {U193_REG[2:0], 1'b1};
+			T196_REG <= {T196_REG[2:0], T193A_OUT};
+			U243_REG <= {U243_REG[2:0], 1'b1};
+			U226_REG <= {U226_REG[2:0], U258A_OUT};
+		end
+	end
+
 	assign OUTA = T196_REG[3];
 	assign OUTB = U226_REG[3];
 

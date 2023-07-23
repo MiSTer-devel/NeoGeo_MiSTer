@@ -1,5 +1,6 @@
 // NeoGeo logic definition
 // Copyright (C) 2018 Sean Gonsalves
+// Rewrite to fully synchronous logic by (C) 2023 Gyorgy Szombathelyi
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,11 +15,16 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-module videosync(
-	input CLK_24MB,
+/* verilator lint_off PINMISSING */
+
+module videosync_sync(
+	input CLK,
+	input CLK_EN_24M_P,
+	input CLK_EN_24M_N,
 	input LSPC_3M,
 	input LSPC_1_5M,
-	input Q53_CO,
+	input LSPCE_EN_1_5M_P,
+	input LSPCE_EN_1_5M_N, // Q53_CO
 	input nRESETP,
 	input VMODE,
 	output [8:0] PIXELC,
@@ -41,14 +47,15 @@ module videosync(
 	assign R15_QD = R15_REG[3];
 	assign nFLIP = ~FLIP;
 	
+	wire RASTER_CHG = ({P15_Q[2:0], P50_Q} == 7'b0111111) & LSPCE_EN_1_5M_N;
 	
-	always @(posedge CLK_24MB or negedge nRESETP)
+	always @(posedge CLK or negedge nRESETP)
 	begin
 		if (!nRESETP)
 			FLIP <= 0;
 		else
 		begin
-			if (({P15_Q[2:0], P50_Q} == 7'b0111111) & Q53_CO)
+			if (RASTER_CHG)
 				FLIP <= ~FLIP;
 		end
 	end
@@ -64,7 +71,7 @@ module videosync(
 	
 	assign PIXELC = {P15_Q[2:0], P50_Q, LSPC_1_5M, LSPC_3M};
 	
-	always @(posedge CLK_24MB)
+	always @(posedge CLK)
 	begin
 		//C43 P50(CLK_24MB, 4'b1110, nRESETP, Q53_CO, 1'b1, 1'b1, {P50_QD, P50_QC, P50_QB, P50_QA}, P50_CO);
 		if (!nRESETP)
@@ -74,7 +81,7 @@ module videosync(
 		end
 		else
 		begin
-			if (Q53_CO)
+			if (LSPCE_EN_1_5M_N)
 			begin
 				P50_Q <= P50_Q + 1'd1;
 				P50_CO <= (P50_Q == 4'd14);
@@ -84,11 +91,11 @@ module videosync(
 		//C43 P15(CLK_24MB, {3'b101, ~nRESETP}, P13B_OUT, Q53_CO, P40A_OUT, 1'b1, {P15_QD, P15_QC, P15_QB, P15_QA}, P15_CO);
 		//assign P13B_OUT = ~|{P39B_OUT, ~nRESETP};
 		//assign P39B_OUT = P15_CO & Q53_CO;
-		if (~nRESETP | ((P15_Q == 4'd15) & (P50_Q == 4'd15) & Q53_CO))
+		if (~nRESETP | ((P15_Q == 4'd15) & (P50_Q == 4'd15) & LSPCE_EN_1_5M_N))
 			P15_Q <= {3'b101, ~nRESETP};
 		else
 		begin
-			if (Q53_CO & P50_CO)
+			if (LSPCE_EN_1_5M_N & P50_CO)
 				P15_Q <= P15_Q + 1'd1;
 		end
 	end
@@ -111,7 +118,9 @@ module videosync(
 	assign RASTERC = {J268_J269_Q, FLIP};
 	
 	reg [7:0] J268_J269_Q;
-	always @(posedge CLK_24MB or negedge nRESETP)
+
+
+	always @(posedge CLK or negedge nRESETP)
 	begin
 		if (!nRESETP)
 		begin
@@ -119,7 +128,7 @@ module videosync(
 		end
 		else
 		begin
-			if (({P15_Q[2:0], P50_Q} == 7'b0111111) & Q53_CO & FLIP)
+			if (RASTER_CHG & FLIP)
 			begin
 				// 011001000 0C8 1FF-C8=311d (PAL)
 				// 011111000 0F8 1FF-F8=263d (NTSC)
@@ -142,18 +151,31 @@ module videosync(
 	// H277B H269B H275A
 	wire MATCH_PAL = ~&{RASTERC[4:3]} | RASTERC[5] | RASTERC[8];
 	
-	wire H272_Q, BLANK_PAL;
-	FDM H272(RASTERC[2], MATCH_PAL, H272_Q);
-	FDM I238(FLIP, H272_Q, BLANK_PAL);
+	reg BLANK_PAL;
+	//FDM H272(RASTERC[2], MATCH_PAL, H272_Q);
+	//FDM I238(FLIP, H272_Q, BLANK_PAL);
+	always @(posedge CLK) begin
+		reg MATCH_PAL_D;
+		if (RASTER_CHG) begin
+			if (RASTERC[2:0] == 3'b011) MATCH_PAL_D <= MATCH_PAL; // H272
+			if (!FLIP) BLANK_PAL <= MATCH_PAL_D;
+		end
+	end
 	
 	// J259A
 	wire MATCH_NTSC = ~&{RASTERC[7:5]};
 	
 	// J251
-	FD4 J251(~RASTERC[4], MATCH_NTSC, 1'b1, nRESETP, BLANK_NTSC);
+	//FD4 J251(~RASTERC[4], MATCH_NTSC, 1'b1, nRESETP, BLANK_NTSC);
+	reg BLANK_NTSC;
+	always @(posedge CLK, negedge nRESETP) begin
+		if (!nRESETP)
+			BLANK_NTSC <= 0;
+		else if (RASTERC[4:0] == 5'b01111 && RASTER_CHG) // rising edge of RASTERC[4]
+			BLANK_NTSC <= MATCH_NTSC;
+	end
 	
 	// J240A: T2E
-	wire BLANK_NTSC;
 	assign VSYNC = VMODE ? BLANK_PAL : RASTERC[8];
 	assign BNK = ~(VMODE ? RASTERC[8] : BLANK_NTSC);
 	
@@ -170,8 +192,8 @@ module videosync(
 	reg [3:0] T116_REG;
 	reg [3:0] S122_REG;
 	reg S116_Q;
-	always @(posedge LSPC_1_5M)
-	begin
+	always @(posedge CLK)
+	if (LSPCE_EN_1_5M_P) begin
 		// FS1 R15(S136A_OUT, P13A_OUT, R15_REG);
 		R15_REG <= {R15_REG[2:0], ~P13A_OUT};
 		// FS1 T116(S136A_OUT, ~S51_OUT, T116_REG);

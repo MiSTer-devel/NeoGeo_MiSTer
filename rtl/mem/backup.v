@@ -19,7 +19,7 @@
 //============================================================================
 
 module backup(
-	input CLK_24M,
+	input CLK,
 	input [15:1] M68K_ADDR,
 	input nBWL, nBWU,
 	input [15:0] M68K_DATA,
@@ -31,32 +31,34 @@ module backup(
 	output [15:0] sd_buff_din_sram
 );
 
-	dpram #(.ADDRWIDTH(15)) SRAML(
-		.clock_a(CLK_24M),
-		.address_a(M68K_ADDR[15:1]),
-		.wren_a(~nBWL),
-		.data_a(M68K_DATA[7:0]),
-		.q_a(SRAM_OUT[7:0]),
-		
-		.clock_b(clk_sys),
-		.address_b(sram_addr),
-		.wren_b(sram_wr),
-		.data_b(sd_buff_dout[7:0]),
-		.q_b(sd_buff_din_sram[7:0])
-	);
-	
-	dpram #(.ADDRWIDTH(15)) SRAMU(
-		.clock_a(CLK_24M),
-		.address_a(M68K_ADDR[15:1]),
-		.wren_a(~nBWU),
-		.data_a(M68K_DATA[15:8]),
-		.q_a(SRAM_OUT[15:8]),
+dpram #(.ADDRWIDTH(15)) SRAML
+(
+	.clock_a(CLK),
+	.address_a(M68K_ADDR[15:1]),
+	.wren_a(~nBWL),
+	.data_a(M68K_DATA[7:0]),
+	.q_a(SRAM_OUT[7:0]),
 
-		.clock_b(clk_sys),
-		.address_b(sram_addr),
-		.wren_b(sram_wr),
-		.data_b(sd_buff_dout[15:8]),
-		.q_b(sd_buff_din_sram[15:8])
-	);
+	.clock_b(clk_sys),
+	.address_b(sram_addr),
+	.wren_b(sram_wr),
+	.data_b(sd_buff_dout[7:0]),
+	.q_b(sd_buff_din_sram[7:0])
+);
+
+dpram #(.ADDRWIDTH(15)) SRAMU
+(
+	.clock_a(CLK),
+	.address_a(M68K_ADDR[15:1]),
+	.wren_a(~nBWU),
+	.data_a(M68K_DATA[15:8]),
+	.q_a(SRAM_OUT[15:8]),
+
+	.clock_b(clk_sys),
+	.address_b(sram_addr),
+	.wren_b(sram_wr),
+	.data_b(sd_buff_dout[15:8]),
+	.q_b(sd_buff_din_sram[15:8])
+);
 	
 endmodule

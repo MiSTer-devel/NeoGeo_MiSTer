@@ -1,5 +1,6 @@
 // NeoGeo logic definition
 // Copyright (C) 2018 Sean Gonsalves
+// Rewrite to fully synchronous logic by (C) 2023 Gyorgy Szombathelyi
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,7 +24,7 @@ module linebuffer(
 	input LOAD,
 	input CLEARING,
 	input [3:0] COLOR_INDEX,
-	input PCK2,
+	input PCK2_EN,
 	input [7:0] SPR_PAL,
 	input [7:0] ADDR_LOAD,
 	output [11:0] DATA_OUT
@@ -56,8 +57,8 @@ module linebuffer(
 	// BR: MESY NEPA...
 	// TL: JETU JUMA...
 	// TR: GENA HARU...
-	always @(posedge PCK2)
-		PAL_REG <= SPR_PAL;
+	always @(posedge CLK)
+		if (PCK2_EN) PAL_REG <= SPR_PAL;
 	
 	// Switch between sprite palette or backdrop clear
 	// BL: MORA NOKU...
@@ -71,27 +72,42 @@ module linebuffer(
 	// BR: PECU QUNY...
 	// TL: BAME CUNU...
 	// TR: EGED DUGA...
-	assign ADDR_MUX = LOAD ? (ADDR_COUNTER + 1'b1) : ADDR_LOAD;
+	assign ADDR_MUX = LOAD ? (ADDR_COUNTER_REG + 1'b1) : ADDR_LOAD;
 
 	// Address counter update
 	// BL: REVA QEVU...
 	// BR: PAJE QATA...
 	// TL: BEWA CENA...
 	// TR: EPAQ DAFU...
-	always @(posedge CK)
-		ADDR_COUNTER <= ADDR_MUX;
+
+	reg CK_D;
+	reg [7:0] ADDR_COUNTER_REG;
+	always @(posedge CLK) begin
+		CK_D <= CK;
+		ADDR_COUNTER_REG <= ADDR_COUNTER;
+	end
+	always @(*) begin
+		if (!CK_D & CK)
+			ADDR_COUNTER = ADDR_MUX;
+		else
+			ADDR_COUNTER = ADDR_COUNTER_REG;
+	end
+
+//	always @(posedge CK)
+//		ADDR_COUNTER <= ADDR_MUX;
 	
 	// Address counter latch
 	// BL: NACY OKYS...
 	// BR: PEXU QUVU...
 	// TL: ERYV ENOG...
 	// TR: EDYZ ASYX...
-	always @(posedge CLK) if(WE) ADDR_LATCH <= ADDR_COUNTER;
+	reg [11:0] DATA_LATCH;
+	always @(posedge CLK) if(WE) begin ADDR_LATCH <= ADDR_COUNTER; DATA_LATCH <= DATA_IN; end
 
 	spram #(8,12) UR(
 		.clock(CLK),
 		.address(ADDR_LATCH),
-		.data(DATA_IN),
+		.data(DATA_LATCH),
 		.wren(~WE),
 		.q(DATA_OUT)
 	);

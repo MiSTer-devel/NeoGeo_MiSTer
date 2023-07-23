@@ -97,6 +97,7 @@ module cd_sys(
 	
 	input DMA_SDRAM_BUSY
 );
+	parameter MCLK = 96671316;
 
 	reg CD_nRESET_DRIVE;
 	reg [15:0] REG_FF0002;
@@ -159,8 +160,6 @@ module cd_sys(
 		.WRITE_READY(CDDA_WR_READY)
 	);
 
-
-	localparam MCLK = 96671316;
 	localparam SECTOR_TIME_1X = MCLK / 75;
 	localparam SECTOR_TIME_2X = MCLK / 150;
 	localparam SECTOR_TIME_3X = MCLK / 225;

@@ -21,7 +21,7 @@
 module neo_sma
 (
 	input         nRESET,
-	input         CLK_24M,
+	input         CLK_48M,
 
 	input  [19:1] M68K_ADDR,
 	inout  [15:0] M68K_DATA,
@@ -33,7 +33,7 @@ module neo_sma
 	output [23:0] P2_ADDR
 );
 
-assign P2_ADDR = ENABLE ? bank + {M68K_ADDR,1'b0} : 24'bZ;
+assign P2_ADDR = ENABLE ? bank + {M68K_ADDR,1'b0} : 24'h0;
 
 wire ENABLE   = (TYPE>=3);
 wire BANK_SEL = (M68K_ADDR == BANK_ADDR);
@@ -41,7 +41,7 @@ wire ID_SEL   = (M68K_ADDR == 'h7F223);
 wire RNG_SEL  = (M68K_ADDR == RNG_ADDR1 || M68K_ADDR == RNG_ADDR2);
 
 reg [19:1] BANK_ADDR, RNG_ADDR1, RNG_ADDR2;
-always @(posedge CLK_24M) begin
+always @(posedge CLK_48M) begin
 	case(TYPE)
 		3: begin // kof99
 				BANK_ADDR <= 'h7FFF8;
@@ -191,11 +191,17 @@ wire [23:0] kof2000_map[64] =
 wire [5:0] kof2000_idx = {M68K_DATA[5],M68K_DATA[10],M68K_DATA[3],M68K_DATA[7],M68K_DATA[14],M68K_DATA[15]};
 ////////////////////////////////////////////////////
 
+reg nPORTWE_d;
+reg nPORTOE_d;
+always @(posedge CLK_48M) begin
+	nPORTWE_d <= nPORTWE;
+	nPORTOE_d <= nPORTOE;
+end
 
 reg [23:0] bank = 0;
-always @(negedge nPORTWE or negedge nRESET) begin
+always @(posedge CLK_48M or negedge nRESET) begin
 	if(~nRESET) bank <= 0;
-	else if(BANK_SEL) begin
+	else if(~nPORTWE & nPORTWE_d & BANK_SEL) begin
 		case(TYPE)
 			3: bank <= kof99_map[kof99_idx];
 			4: bank <= garou_map[garou_idx];
@@ -207,10 +213,10 @@ always @(negedge nPORTWE or negedge nRESET) begin
 end
 
 reg [15:0] rng = 0;
-always @(negedge nPORTOE or negedge nRESET) begin
+always @(posedge CLK_48M or negedge nRESET) begin
 	reg rst = 0;
 	if(~nRESET) rst = 1;
-	else begin
+	else if (~nPORTOE & nPORTOE_d) begin
 		if(rst) rng <= 'h2345;
 		else rng <= {rng[14:0], rng[2] ^ rng[3] ^ rng[5] ^ rng[6] ^ rng[7] ^ rng[11] ^ rng[12] ^ rng[15]};
 		rst <= 0;
