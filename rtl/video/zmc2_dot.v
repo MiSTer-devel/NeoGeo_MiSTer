@@ -18,7 +18,7 @@
 
 module zmc2_dot(
 	input CLK,
-	input CLK_EN_12M,
+	input CLK_EN_12M_N,
 	input EVEN,
 	input LOAD,
 	input H,
@@ -30,7 +30,7 @@ module zmc2_dot(
 	reg [31:0] SR;
 
 	always @(posedge CLK)
-	if (CLK_EN_12M) begin
+	if (CLK_EN_12M_N) begin
 		if (LOAD) SR <= CR;
 		else if (H) SR <= {SR[29:24], 2'b00, SR[21:16], 2'b00, SR[13:8], 2'b00, SR[5:0], 2'b00};
 		else SR <= {2'b00, SR[31:26], 2'b00, SR[23:18], 2'b00, SR[15:10], 2'b00, SR[7:2]};
