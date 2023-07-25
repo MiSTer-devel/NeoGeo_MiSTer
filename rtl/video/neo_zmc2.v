@@ -18,7 +18,7 @@
 
 module neo_zmc2(
 	input CLK,
-	input CLK_EN_12M,
+	input CLK_EN_12M_N,
 	input EVEN,
 	input LOAD,
 	input H,
@@ -35,7 +35,7 @@ module neo_zmc2(
 
 	// Not used here
 	//zmc2_zmc ZMC2ZMC(SDRD0, SDA_L, SDA_U, MA);
-	zmc2_dot ZMC2DOT(CLK, CLK_EN_12M, EVEN, LOAD, H, CR, GAD, GBD, DOTA, DOTB);
+	zmc2_dot ZMC2DOT(CLK, CLK_EN_12M_N, EVEN, LOAD, H, CR, GAD, GBD, DOTA, DOTB);
 
 endmodule
 
