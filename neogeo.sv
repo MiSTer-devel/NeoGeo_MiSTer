@@ -880,12 +880,14 @@ always @(posedge clk_sys) begin
 	end
 end
 
+localparam CD_MCLK = 48335658;
+
 wire CDDA_CLK;
 CEGen CEGEN_CDDA_CLK
 (
 	.CLK(CLK_48M),
 	.RST_N(nRESET),
-	.IN_CLK(48000000),
+	.IN_CLK(CD_MCLK),
 	.OUT_CLK(44100),
 	.CE(CDDA_CLK)
 );
@@ -896,7 +898,7 @@ wire CD_DATA_WR = ioctl_wr_x & CD_DATA_DOWNLOAD;
 wire CDDA_DOWNLOAD = ioctl_download & (ioctl_index[5:0] == 6'h04);
 wire CDDA_WR = ioctl_wr_x & CDDA_DOWNLOAD;
 
-cd_sys #(.MCLK(48000000)) cdsystem(
+cd_sys #(.MCLK(CD_MCLK)) cdsystem(
 	.nRESET(nRESET),
 	.clk_sys(CLK_48M), .CLK_68KCLK_EN(CLK_EN_68K_P),
 	.M68K_ADDR(M68K_ADDR), .M68K_DATA(M68K_DATA), .A22Z(A22Z), .A23Z(A23Z),
