@@ -29,7 +29,7 @@ wire READ_REQ = READ_CE & ~EMPTY;
 
 assign WRITE_READY = (FILLED_COUNT <= (BUFFER_AMOUNT - SECTOR_SIZE)); // Ready to receive sector
 
-always @(posedge CLK or negedge nRESET) begin
+always @(posedge CLK) begin
 	if (~nRESET) begin
 		OLD_WRITE <= 0;
 		OLD_READ <= 0;

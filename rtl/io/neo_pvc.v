@@ -87,7 +87,7 @@ always @(posedge CLK_48M) begin
 end
 
 reg [23:0] bank = 0;
-always @(posedge CLK_48M or negedge nRESET) begin
+always @(posedge CLK_48M) begin
 	if(~nRESET) {bank[23:16],bank[7:0]} <= 0;
 	else if (~nPORTWEU & nPORTWEU_d) begin
 		if(PORT_ACC && PORT_NO == 8) bank[7:0]   <= {M68K_DATA[15:9],1'b0};
@@ -95,7 +95,7 @@ always @(posedge CLK_48M or negedge nRESET) begin
 	end
 end
 
-always @(posedge CLK_48M or negedge nRESET) begin
+always @(posedge CLK_48M) begin
 	if(~nRESET) bank[15:8] <= 0;
 	else if (~nPORTWEL & nPORTWEL_d) begin
 		if(PORT_ACC && PORT_NO == 9) bank[15:8] <= M68K_DATA[7:0];

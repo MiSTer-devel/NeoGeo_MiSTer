@@ -199,7 +199,7 @@ always @(posedge CLK_48M) begin
 end
 
 reg [23:0] bank = 0;
-always @(posedge CLK_48M or negedge nRESET) begin
+always @(posedge CLK_48M) begin
 	if(~nRESET) bank <= 0;
 	else if(~nPORTWE & nPORTWE_d & BANK_SEL) begin
 		case(TYPE)
@@ -213,7 +213,7 @@ always @(posedge CLK_48M or negedge nRESET) begin
 end
 
 reg [15:0] rng = 0;
-always @(posedge CLK_48M or negedge nRESET) begin
+always @(posedge CLK_48M) begin
 	reg rst = 0;
 	if(~nRESET) rst = 1;
 	else if (~nPORTOE & nPORTOE_d) begin

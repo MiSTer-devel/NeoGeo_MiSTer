@@ -228,7 +228,7 @@ module cd_sys(
 	wire CD_DATA_WR_START =  CD_DATA_WR & ~CD_DATA_WR_PREV;
 	wire CD_DATA_WR_END   = ~CD_DATA_WR &  CD_DATA_WR_PREV;
 
-	always @(posedge clk_sys or negedge nRESET)
+	always @(posedge clk_sys)
 	begin
 		if (!nRESET)
 		begin
@@ -589,7 +589,7 @@ module cd_sys(
 
 	reg [1:0] CDD_nIRQ_SR;
 
-	always @(posedge clk_sys or negedge nRESET)
+	always @(posedge clk_sys)
 	begin
 		if (!nRESET)
 		begin

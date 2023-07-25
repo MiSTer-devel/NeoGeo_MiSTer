@@ -81,7 +81,7 @@ module z80ctrl(
 		nSDW_d <= nSDW;
 	end
 
-	always @(posedge CLK or negedge nRESET)
+	always @(posedge CLK)
 	begin
 		if (!nRESET)
 			nNMI_EN <= 1'b1;

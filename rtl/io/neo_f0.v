@@ -77,7 +77,7 @@ module neo_f0(
 	always @(posedge CLK)
 		nBITW0_d <= nBITW0;
 
-	always @(negedge nRESET or posedge CLK)
+	always @(posedge CLK)
 	begin
 		if (!nRESET)
 		begin

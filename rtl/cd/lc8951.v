@@ -69,7 +69,7 @@ module lc8951(
 	// 12 x 1800. LC8950 manual says that LC8951 /INT goes low for 1.8ms
 	localparam INT_CYCLES = 16'd21600;
 
-	always @(posedge clk_sys or negedge nRESET)
+	always @(posedge clk_sys)
 	begin
 		if (!nRESET)
 		begin

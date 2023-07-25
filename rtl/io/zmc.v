@@ -47,7 +47,7 @@ module zmc(
 	reg nSDRD0_d;
 	always @(posedge CLK) nSDRD0_d <= nSDRD0;
 
-	always @(posedge CLK, negedge nRESET)
+	always @(posedge CLK)
 	begin
 		if(!nRESET) begin
 			WINDOW_0 <= 'h1E;

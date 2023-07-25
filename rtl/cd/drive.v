@@ -82,7 +82,7 @@ module cd_drive(
 	reg [1:0] COMM_STATE;	// 0~2
 	reg COMM_RUN;
 
-	always @(posedge clk_sys or negedge nRESET)
+	always @(posedge clk_sys)
 	begin
 		if (!nRESET)
 		begin
