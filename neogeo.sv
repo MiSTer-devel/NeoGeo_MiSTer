@@ -325,14 +325,15 @@ localparam CONF_STR = {
 ////////////////////   CLOCKS   ///////////////////
 
 wire locked;
-wire clk_sys, CLK_48M;
+wire CLK_48M, CLK_96M;
 assign CLK_VIDEO = CLK_48M;
+wire clk_sys = CLK_48M;
 
 pll pll
 (
 	.refclk(CLK_50M),
 	.rst(0),
-	.outclk_0(clk_sys), // 96MHz
+	.outclk_0(CLK_96M),
 	.outclk_1(CLK_48M),
 	.reconfig_to_pll(reconfig_to_pll),
 	.reconfig_from_pll(reconfig_from_pll),
@@ -480,7 +481,6 @@ hps_io #(.CONF_STR(CONF_STR), .WIDE(1), .VDNUM(2)) hps_io
 (
 	.clk_sys(clk_sys),
 	.HPS_BUS(HPS_BUS),
-	.EXT_BUS(),
 
 	.forced_scandoubler(forced_scandoubler),
 
@@ -504,7 +504,7 @@ hps_io #(.CONF_STR(CONF_STR), .WIDE(1), .VDNUM(2)) hps_io
 	.ioctl_download(ioctl_download),
 	.ioctl_index(ioctl_idx),
 	.ioctl_wait((ddr_loading & ddram_wait) | memcp_wait),
-	
+
 	.sd_lba(sd_lba),
 	.sd_rd(sd_rd),
 	.sd_wr(sd_wr),
@@ -1056,6 +1056,19 @@ always_ff @(posedge clk_sys) begin
 	end
 end
 
+reg [26:0] ioctl_addr_r;
+reg        ioctl_wr_r;
+always @(posedge clk_sys) begin
+	ioctl_addr_r <= ioctl_addr_offset;
+	ioctl_wr_r <= ioctl_wr;
+end
+
+reg ioctl_wr_rd, ioctl_wr_rd1;
+always @(posedge CLK_96M) begin
+	ioctl_wr_rd <= ioctl_wr_r;
+	ioctl_wr_rd1 <= ioctl_wr_rd;
+end
+
 wire SDRAM_WR;
 wire SDRAM_RD;
 wire SDRAM_BURST;
@@ -1063,7 +1076,7 @@ wire [1:0] SDRAM_BS;
 wire sdr2_en;
 
 sdram_mux SDRAM_MUX(
-	.CLK(clk_sys),
+	.CLK(CLK_96M),
 	.nRESET(nRESET),
 	.nSYSTEM_G(nSYSTEM_G),
 	.SYSTEM_CDx(SYSTEM_CDx),
@@ -1111,9 +1124,9 @@ sdram_mux SDRAM_MUX(
 	.SROM_DATA(SROM_DATA),
 
 	.DL_EN(ioctl_download & ioctl_en),
-	.DL_ADDR(ioctl_addr_offset),
+	.DL_ADDR(ioctl_addr_r),
 	.DL_DATA(ioctl_dout),
-	.DL_WR(ioctl_wr),
+	.DL_WR(~ioctl_wr_rd1 & ioctl_wr_rd),
 
 	.SDRAM_ADDR(sdram_addr),
 	.SDRAM_DOUT(sdram_dout),
@@ -1127,7 +1140,7 @@ sdram_mux SDRAM_MUX(
 
 reg  [1:0] sdr_pri_128_64;
 wire sdr_pri_cpsel = (~sdr_cpaddr[26] | sdr_pri_128_64[1]) & (~sdr_cpaddr[25] | sdr_pri_128_64[0]);
-always @(posedge clk_sys) if (~nRESET) sdr_pri_128_64 <= {~sdram_sz[14] & &sdram_sz[1:0], ~sdram_sz[14] & sdram_sz[1]};
+always @(posedge CLK_96M) if (~nRESET) sdr_pri_128_64 <= {~sdram_sz[14] & &sdram_sz[1:0], ~sdram_sz[14] & sdram_sz[1]};
 
 wire sdram1_ready, sdram2_ready;
 wire [63:0] sdram1_dout, sdram2_dout;
@@ -1147,7 +1160,7 @@ sdram ram1(
 	.SDRAM_EN(1),
 
 	.init(~locked),	// Init SDRAM as soon as the PLL is locked
-	.clk(clk_sys),
+	.clk(CLK_96M),
 	.addr(sdram_addr[26:1]),
 	.sel(sdr_pri_sel),
 	.dout(sdram1_dout),
@@ -1179,7 +1192,7 @@ sdram ram2(
 	.SDRAM_EN(SDRAM2_EN),
 
 	.init(~locked),	// Init SDRAM as soon as the PLL is locked
-	.clk(clk_sys),
+	.clk(CLK_96M),
 	.addr(sdram_addr[25:1]),
 	.sel(~sdr_pri_sel),
 	.dout(sdram2_dout),
@@ -1686,7 +1699,7 @@ wire [7:0] M1_ROM_DATA;
 reg z80rd_req;
 wire z80rd_ack;
 wire z80_rom_rd = ~(nSDMRD | nSDROM | SYSTEM_CDx);
-always @(posedge clk_sys) begin
+always @(posedge DDRAM_CLK) begin
 	reg old_rd, old_rd1;
 	
 	old_rd <= z80_rom_rd;
@@ -1761,7 +1774,7 @@ begin
 	end
 end
 
-assign DDRAM_CLK = clk_sys;
+assign DDRAM_CLK = CLK_96M;
 
 // The ddram request and ack signals work on either edge
 // To trigger a read request, just set adpcm_rd to ~adpcm_rdack
@@ -1777,7 +1790,7 @@ wire ADPCMB_DATA_READY = ~((ADPCMB_READ_REQ ^ ADPCMB_READ_ACK) & (ADPCMB_ACK_COU
 
 reg OLD_CD_TR_RD_PCM;
 reg ADPCMA_RD_DTACK, ADPCMA_RD_WAIT;
-always @(posedge clk_sys) begin
+always @(posedge DDRAM_CLK) begin
 	reg [1:0] ADPCMA_OE_SR;
 	reg [1:0] ADPCMB_OE_SR;
 	ADPCMA_OE_SR <= {ADPCMA_OE_SR[0], nSDROE};
@@ -1872,7 +1885,7 @@ reg         sdr_cpreq;
 
 cpram cpram
 (
-	.clock(clk_sys),
+	.clock(CLK_96M),
 	.reset(~memcp_wait),
 
 	.wr(ddr_cpwr),
@@ -1902,10 +1915,11 @@ wire [26:0] cp_offset =
 	(cp_idx >= INDEX_VROMS)   ? ({cp_idx[7:0]-INDEX_VROMS[7:0], 19'h00000}) :
 										 27'd0;
 
-reg memcp_wait = 0;
-always @(posedge clk_sys) begin
-	reg [1:0] state = 0;
+reg memcp_req = 0;
+reg memcp_ack = 0;
+wire memcp_wait = (memcp_req != memcp_ack);
 
+always @(posedge clk_sys) begin
 	if(ioctl_download && ioctl_index == INDEX_MEMCP) begin
 		if(ioctl_wr) begin
 			case(ioctl_addr[3:0])
@@ -1916,7 +1930,7 @@ always @(posedge clk_sys) begin
 						cp_addr     <= cp_offset;
 						cp_end      <= cp_offset + {ioctl_dout[10:0], cp_size[15:0]};
 					end
-				6: if(ioctl_dout && cp_op) memcp_wait  <= 1;
+				6: if(ioctl_dout && cp_op) memcp_req <= ~memcp_req;
 			endcase
 
 			if(~cp_op) begin
@@ -1927,33 +1941,36 @@ always @(posedge clk_sys) begin
 			end
 		end
 	end
+end
 
-	case(state)
+reg [1:0] memcp_state = 0;
+always @(posedge CLK_96M) begin
+	case(memcp_state)
 		0: if(~memcp_wait) begin
 				ddr_cpreq <= 0;
 				sdr_cpreq <= 0;
 				cur_off   <= 0;
 			end
-			else if((~sdr2_en && ~sdr_pri_cpsel) || (cur_off >= cp_size)) memcp_wait <= 0;
+			else if((~sdr2_en && ~sdr_pri_cpsel) || (cur_off >= cp_size)) memcp_ack <= memcp_req;
 			else begin
-				ddr_cpreq <= 1;
-				state     <= 1;
+				ddr_cpreq   <= 1;
+				memcp_state <= 1;
 			end
 
 		1: if(ddr_cpbusy) ddr_cpreq <= 0;
 			else if(~ddr_cpreq & ~ddr_cpbusy) begin
-				sdr_cpreq <= 1;
-				state <= 2;
+				sdr_cpreq   <= 1;
+				memcp_state <= 2;
 			end
 
 		2: if(sdr_cpbusy) sdr_cpreq <= 0;
 			else if(~sdr_cpreq & ~sdr_cpbusy) begin
-				cur_off <= cur_off + 27'd1024;
-				state <= 0;
+				cur_off     <= cur_off + 27'd1024;
+				memcp_state <= 0;
 			end
 	endcase
 
-	if(~memcp_wait) state <= 0;
+	if(~memcp_wait) memcp_state <= 0;
 end
 
 wire [7:0] YM2610_DOUT;
