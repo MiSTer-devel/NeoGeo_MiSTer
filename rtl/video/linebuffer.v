@@ -101,12 +101,13 @@ module linebuffer(
 	// BR: PEXU QUVU...
 	// TL: ERYV ENOG...
 	// TR: EDYZ ASYX...
-	always @(posedge CLK) if(WE) begin ADDR_LATCH <= ADDR_COUNTER; end
+	reg [11:0] DATA_LATCH;
+	always @(posedge CLK) if(WE) begin ADDR_LATCH <= ADDR_COUNTER; DATA_LATCH <= DATA_IN; end
 
 	spram #(8,12) UR(
 		.clock(CLK),
 		.address(ADDR_LATCH),
-		.data(DATA_IN),
+		.data(DATA_LATCH),
 		.wren(~WE),
 		.q(DATA_OUT)
 	);
