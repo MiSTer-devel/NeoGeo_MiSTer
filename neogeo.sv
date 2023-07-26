@@ -941,17 +941,15 @@ cd_sys #(.MCLK(CD_MCLK)) cdsystem(
 
 // The P1 zone is writable on the Neo CD
 // Is there a write enable register for it ?
-wire CD_EXT_WR = DMA_RUNNING ? (SYSTEM_CDx & (DMA_ADDR_OUT[23:21] == 3'd0) & DMA_WR_OUT) :	// DMA writes to $000000~$1FFFFF
-						(SYSTEM_CDx & ~|{A23Z, A22Z, M68K_ADDR[21]} & ~M68K_RW & ~(nLDS & nUDS));				// CPU writes to $000000~$1FFFFF
-
-wire CD_WR_SDRAM_SIG = SYSTEM_CDx & |{CD_TR_WR_SPR, CD_TR_WR_FIX, CD_EXT_WR};
+wire CD_EXT_WR = DMA_RUNNING ? (SYSTEM_CDx & (DMA_ADDR_OUT[23:21] == 3'd0) & DMA_WR_OUT) :               // DMA writes to $000000~$1FFFFF
+										 (SYSTEM_CDx & ~|{A23Z, A22Z, M68K_ADDR[21]} & ~M68K_RW & ~(nLDS & nUDS));	// CPU writes to $000000~$1FFFFF
 
 wire nROMOE = nROMOEL & nROMOEU;
 wire nPORTOE = nPORTOEL & nPORTOEU;
 
 // CD system work ram is in SDRAM
 wire CD_EXT_RD = DMA_RUNNING ? (SYSTEM_CDx & (DMA_ADDR_IN[23:21] == 3'd0) & DMA_RD_OUT) :		// DMA reads from $000000~$1FFFFF
-										(SYSTEM_CDx & (~nWRL | ~nWRU));											// CPU reads from $100000~$1FFFFF
+										 (SYSTEM_CDx & (~nWRL | ~nWRU));											// CPU reads from $100000~$1FFFFF
 
 wire        sdram_ready;
 wire [26:1] sdram_addr;
@@ -1097,15 +1095,16 @@ sdram_mux SDRAM_MUX(
 	.CD_TR_AREA(CD_TR_AREA),
 	.CD_EXT_WR(CD_EXT_WR),
 	.CD_EXT_RD(CD_EXT_RD),
-	.CD_WR_SDRAM_SIG(CD_WR_SDRAM_SIG),
 	.CD_USE_FIX(CD_USE_FIX),
 	.CD_TR_RD_FIX(CD_TR_RD_FIX),
 	.CD_TR_WR_FIX(CD_TR_WR_FIX),
 	.CD_BANK_SPR(CD_BANK_SPR),
 	.CD_USE_SPR(CD_USE_SPR),
 	.CD_TR_RD_SPR(CD_TR_RD_SPR),
+	.CD_TR_WR_SPR(CD_TR_WR_SPR),
 
-	.DMA_ADDR_OUT(DMA_ADDR_OUT), .DMA_ADDR_IN(DMA_ADDR_IN),
+	.DMA_ADDR_OUT(DMA_ADDR_OUT),
+	.DMA_ADDR_IN(DMA_ADDR_IN),
 	.DMA_DATA_OUT(DMA_DATA_OUT),
 	.DMA_WR_OUT(DMA_WR_OUT),
 	.DMA_RUNNING(DMA_RUNNING),

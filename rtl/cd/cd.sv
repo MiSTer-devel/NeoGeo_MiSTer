@@ -566,7 +566,7 @@ module cd_sys(
 	wire LC8951_WR = (WRITING & (M68K_ADDR[11:2] == 10'b0001_000000));	// FF0101, FF0103
 	
 	// nAS used ?
-	wire TR_ZONE = DMA_RUNNING ? (DMA_ADDR_OUT[23:20] == 4'hE) : (M68K_ADDR[23:20] == 4'hE);
+	wire TR_ZONE = (DMA_RUNNING ? (DMA_ADDR_OUT[23:20] == 4'hE) : (M68K_ADDR[23:20] == 4'hE)) & SYSTEM_CDx;
 
 	wire TR_ZONE_RD = TR_ZONE & (DMA_RUNNING ? DMA_RD_OUT : M68K_RW & ~(nLDS & nUDS));
 	wire TR_ZONE_WR = TR_ZONE & (DMA_RUNNING ? DMA_WR_OUT : ~M68K_RW & ~(nLDS & nUDS));
