@@ -1070,6 +1070,7 @@ end
 wire SDRAM_WR;
 wire SDRAM_RD;
 wire SDRAM_BURST;
+wire SDRAM_RFSH;
 wire [1:0] SDRAM_BS;
 wire sdr2_en;
 
@@ -1127,11 +1128,14 @@ sdram_mux SDRAM_MUX(
 	.DL_DATA(ioctl_dout),
 	.DL_WR(~ioctl_wr_rd1 & ioctl_wr_rd),
 
+	.REFRESH_EN(RFSH),
+
 	.SDRAM_ADDR(sdram_addr),
 	.SDRAM_DOUT(sdram_dout),
 	.SDRAM_DIN(sdram_din),
 	.SDRAM_WR(SDRAM_WR),
 	.SDRAM_RD(SDRAM_RD),
+	.SDRAM_RFSH(SDRAM_RFSH),
 	.SDRAM_BURST(SDRAM_BURST),
 	.SDRAM_BS(SDRAM_BS),
 	.SDRAM_READY(sdram_ready)
@@ -1168,6 +1172,7 @@ sdram ram1(
 	.wr(SDRAM_WR),
 	.rd(SDRAM_RD),
 	.burst(SDRAM_BURST),
+	.refresh(SDRAM_RFSH),
 	.ready(sdram1_ready),
 
 	.cpsel(sdr_pri_cpsel),
@@ -1200,6 +1205,7 @@ sdram ram2(
 	.wr(SDRAM_WR),
 	.rd(SDRAM_RD),
 	.burst(SDRAM_BURST),
+	.refresh(SDRAM_RFSH),
 	.ready(sdram2_ready),
 
 	.cpsel(~sdr_pri_cpsel),
@@ -2099,11 +2105,12 @@ end
 
 //Re-create VSync as original one is barely equals to VBlank
 reg VSync;
+reg RFSH;
 always @(posedge CLK_VIDEO) begin
 	reg       old_hs;
 	reg       old_vbl;
 	reg [2:0] vbl;
-	reg [7:0] vblcnt, vspos;
+	reg [7:0] vblcnt, vspos, rfsh_cnt;
 	
 	if(ce_pix) begin
 		old_hs <= HSync;
@@ -2112,11 +2119,16 @@ always @(posedge CLK_VIDEO) begin
 			
 			if(~nBNKB) vblcnt <= vblcnt+1'd1;
 			if(old_vbl & ~nBNKB) vblcnt <= 0;
-			if(~old_vbl & nBNKB) vspos <= (vblcnt>>1) - 8'd7;
+			if(~old_vbl & nBNKB) begin
+				vspos <= (vblcnt>>1) - 8'd7;
+				rfsh_cnt <= vblcnt-2'd2;
+			end
 
 			{VSync,vbl} <= {vbl,1'b0};
 			if(vblcnt == vspos) {VSync,vbl} <= '1;
 		end
+		
+		RFSH <= (vblcnt < rfsh_cnt);
 	end
 end
 

@@ -50,6 +50,8 @@ module sdram_mux(
 	input      [26:0] CROM_ADDR,
 	input             SPR_EN,
 	output reg [63:0] CR_DOUBLE,	// 16 pixels
+	
+	input             REFRESH_EN,
 
 	output reg        SDRAM_WR,
 	output reg        SDRAM_RD,
@@ -59,6 +61,7 @@ module sdram_mux(
 	output reg [15:0] SDRAM_DIN,
 	input             SDRAM_READY,
 	output reg  [1:0] SDRAM_BS,
+	output reg        SDRAM_RFSH,
 
 	input             DL_EN,
 	input      [15:0] DL_DATA,
@@ -98,8 +101,9 @@ module sdram_mux(
 	wire REQ_CD_RD   = (~CD_RD_SDRAM_SIG_SR & CD_RD_SDRAM_SIG);
 	wire REQ_CD_WR   = (~CD_WR_SDRAM_SIG_SR & CD_WR_SDRAM_SIG);
 	wire REQ_M68K_RD = (~SDRAM_M68K_SIG_SR & SDRAM_M68K_SIG) | REQ_CD_RD;
-	wire REQ_CROM_RD = (SDRAM_CROM_SIG_SR & ~PCK1) & SPR_EN & ~CD_USE_SPR;
-	wire REQ_SROM_RD = (SDRAM_SROM_SIG_SR & ~PCK2) & FIX_EN & ~CD_USE_FIX;
+	wire REQ_CROM_RD = (SDRAM_CROM_SIG_SR & ~PCK1) & SPR_EN & ~CD_USE_SPR & ~REFRESH_EN;
+	wire REQ_SROM_RD = (SDRAM_SROM_SIG_SR & ~PCK2) & FIX_EN & ~CD_USE_FIX & ~REFRESH_EN;
+	wire REQ_RFSH    = (SDRAM_CROM_SIG_SR & ~PCK1) & REFRESH_EN;
 
 	wire CD_RD_SDRAM_SIG = CD_EXT_RD | CD_TR_RD_FIX | CD_TR_RD_SPR;
 	wire CD_WR_SDRAM_SIG = CD_EXT_WR | CD_TR_WR_FIX | CD_TR_WR_SPR;
@@ -123,11 +127,12 @@ module sdram_mux(
 			default:    CD_REMAP_TR_ADDR = 25'h0AAAAAA;		// DEBUG
 		endcase
 	end
-
+	
 	always @(posedge CLK) begin
-		reg M68K_RD_REQ, SROM_RD_REQ, CROM_RD_REQ, CD_WR_REQ;
+		reg M68K_RD_REQ, SROM_RD_REQ, CROM_RD_REQ, CD_WR_REQ, RFSH_REQ;
 		reg nAS_PREV;
 		reg old_ready;
+		reg [8:0] refresh_cnt;
 
 		if(DL_WR & DL_EN) begin
 			SDRAM_ADDR<= DL_ADDR[26:1];
@@ -138,8 +143,8 @@ module sdram_mux(
 		
 		old_ready <= SDRAM_READY;
 		if(old_ready & ~SDRAM_READY) begin
-			SDRAM_WR <= 0;
-			SDRAM_RD <= 0;
+			SDRAM_WR   <= 0;
+			SDRAM_RD   <= 0;
 		end
 
 		nAS_PREV <= nAS;
@@ -150,6 +155,8 @@ module sdram_mux(
 		SDRAM_M68K_SIG_SR <= SDRAM_M68K_SIG;
 		SDRAM_CROM_SIG_SR <= PCK1;
 		SDRAM_SROM_SIG_SR <= PCK2;
+		
+		refresh_cnt <= refresh_cnt + 1'd1;
 
 		if (!nRESET) begin
 			CROM_RD_REQ <= 0;
@@ -161,6 +168,9 @@ module sdram_mux(
 			SFIX_RD_RUN <= 0;
 			M68K_RD_RUN <= 0;
 			CD_TR_RUN   <= 0;
+			RFSH_REQ    <= 0;
+
+			if(!refresh_cnt) SDRAM_RFSH <= ~SDRAM_RFSH;
 
 			DMA_SDRAM_BUSY <= 0;
 			
@@ -190,6 +200,8 @@ module sdram_mux(
 			// See dev_notes.txt about why there's only one read for FIX graphics
 			// regardless of the S2H1 signal
 			if (REQ_SROM_RD) SROM_RD_REQ <= 1;
+
+			if (REQ_RFSH) RFSH_REQ <= 1;
 
 			if (SDRAM_READY & ~SDRAM_RD & ~SDRAM_WR) begin
 
@@ -274,6 +286,10 @@ module sdram_mux(
 					
 					SDRAM_DIN      <= DMA_RUNNING ? (CD_LDS_ONLY_WR ? {DMA_DATA_OUT[7:0],DMA_DATA_OUT[7:0]} :  DMA_DATA_OUT) :
 															  (CD_LDS_ONLY_WR ? {M68K_DATA[7:0],M68K_DATA[7:0]} : M68K_DATA);
+				end
+				else if(REQ_RFSH & RFSH_REQ) begin
+					RFSH_REQ       <= 0;
+					SDRAM_RFSH     <= ~SDRAM_RFSH;
 				end
 			end
 		end
