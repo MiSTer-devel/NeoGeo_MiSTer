@@ -184,7 +184,7 @@ module sdram_mux(
 			end
 		end
 		else begin
-			if (~nAS_PREV & nAS) PROM_DATA_READY <= 0;
+			if ((~nAS_PREV & nAS) | DMA_RUNNING) PROM_DATA_READY <= 0;
 			if (~DMA_RUNNING) DMA_SDRAM_BUSY <= 0;
 
 			// Detect 68k or CD read requests
