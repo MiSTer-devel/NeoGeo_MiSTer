@@ -411,7 +411,10 @@ reg SYSTEM_TYPE, SYSTEM_CD_TYPE;
 
 reg nRESET;
 always @(posedge CLK_48M) begin
-	nRESET <= &TRASH_ADDR;
+	reg rst_n;
+
+	nRESET <= rst_n;
+	rst_n <= &TRASH_ADDR;
 	if(CLK_EN_24M_N && ~&TRASH_ADDR) TRASH_ADDR <= TRASH_ADDR + 1'b1;
 
 	if (status[0] | status[14] | buttons[1] | bk_loading | RESET) begin
