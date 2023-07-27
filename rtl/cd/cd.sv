@@ -223,6 +223,8 @@ module cd_sys(
 	reg [7:0] DMA_TIMER;
 	reg [15:0] DMA_RD_DATA;
 	reg [31:0] DMA_COUNT_RUN;
+
+	localparam DMA_RW_CYCLES = MCLK / 4800000; // TODO: Tune this
 	
 	reg CD_DATA_WR_PREV;
 	wire CD_DATA_WR_START =  CD_DATA_WR & ~CD_DATA_WR_PREV;
@@ -338,7 +340,6 @@ module cd_sys(
 			if (~DMA_START_PREV & DMA_START)
 			begin
 				DMA_STATE <= 4'd1;
-				DMA_RUNNING <= 1;
 				DMA_IO_CNT <= 4'd0;
 
 				DMA_COUNT_RUN <= DMA_COUNT;
@@ -401,6 +402,7 @@ module cd_sys(
 						begin
 							nBR <= 1;
 							nBGACK <= 0;
+							DMA_RUNNING <= 1;
 							DMA_STATE <= DMA_STATE_START;
 						end
 					end
@@ -503,7 +505,7 @@ module cd_sys(
 					begin
 						DMA_RD_DATA[15:8] <= CACHE_DOUT; // Got upper byte
 						CACHE_RD_ADDR <= CACHE_RD_ADDR + 1'b1;
-						DMA_TIMER <= 8'd10;	// TODO: Tune this
+						DMA_TIMER <= DMA_RW_CYCLES[7:0] >> 1;	// TODO: Tune this
 						DMA_STATE <= DMA_STATE_CACHE_RD_L;
 					end
 
@@ -518,7 +520,7 @@ module cd_sys(
 					if (DMA_STATE == DMA_STATE_WR)
 					begin
 						DMA_WR_OUT <= 1;
-						DMA_TIMER <= 8'd20;	// TODO: Tune this
+						DMA_TIMER <= DMA_RW_CYCLES[7:0];	// TODO: Tune this
 						DMA_STATE <= DMA_STATE_WR_DONE;
 					end
 
@@ -534,7 +536,7 @@ module cd_sys(
 					if (DMA_STATE == DMA_STATE_RD)
 					begin
 						DMA_RD_OUT <= 1;
-						DMA_TIMER <= 8'd20;	// TODO: Tune this
+						DMA_TIMER <= DMA_RW_CYCLES[7:0];	// TODO: Tune this
 						DMA_STATE <= DMA_STATE_RD_DONE;
 					end
 
