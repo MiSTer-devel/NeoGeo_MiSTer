@@ -55,9 +55,8 @@ module sdram_mux(
 
 	output reg        SDRAM_WR,
 	output reg        SDRAM_RD,
-	output reg        SDRAM_BURST,
 	output reg [26:1] SDRAM_ADDR,
-	input      [63:0] SDRAM_DOUT,
+	input      [15:0] SDRAM_DOUT,
 	output reg [15:0] SDRAM_DIN,
 	input             SDRAM_READY,
 	output reg  [1:0] SDRAM_BS,
@@ -69,7 +68,6 @@ module sdram_mux(
 	input             DL_WR,
 
 	input             DMA_RUNNING,
-	input             DMA_WR_OUT,
 	input      [23:0] DMA_ADDR_IN,
 	input      [23:0] DMA_ADDR_OUT,
 	input      [15:0] DMA_DATA_OUT,
@@ -133,6 +131,7 @@ module sdram_mux(
 		reg nAS_PREV;
 		reg old_ready;
 		reg [8:0] refresh_cnt;
+		reg [1:0] cr_shift;
 
 		if(DL_WR & DL_EN) begin
 			SDRAM_ADDR<= DL_ADDR[26:1];
@@ -145,6 +144,11 @@ module sdram_mux(
 		if(old_ready & ~SDRAM_READY) begin
 			SDRAM_WR   <= 0;
 			SDRAM_RD   <= 0;
+		end
+		
+		if(~&cr_shift) begin
+			CR_DOUBLE[cr_shift*16 +:16] <= SDRAM_DOUT;
+			cr_shift <= cr_shift - 1'd1;
 		end
 
 		nAS_PREV <= nAS;
@@ -214,18 +218,19 @@ module sdram_mux(
 					DMA_SDRAM_BUSY <= 0;
 				end
 				if (SFIX_RD_RUN) begin
-					SROM_DATA      <= SDRAM_DOUT[15:0];
+					SROM_DATA      <= SDRAM_DOUT;
 					SFIX_RD_RUN    <= 0;
 				end
 				if (M68K_RD_RUN) begin
-					PROM_DATA      <= SDRAM_DOUT[15:0];
+					PROM_DATA      <= SDRAM_DOUT;
 					PROM_DATA_READY<= 1;
 					M68K_RD_RUN    <= 0;
 					DMA_SDRAM_BUSY <= 0;
 				end
 				if (CROM_RD_RUN) begin
-					CR_DOUBLE      <= SDRAM_DOUT;
+					CR_DOUBLE[63:48]<= SDRAM_DOUT;
 					CROM_RD_RUN    <= 0;
+					cr_shift       <= 2;
 				end
 
 				// Start requested access, if needed
@@ -234,7 +239,6 @@ module sdram_mux(
 					M68K_RD_RUN    <= 1;
 					CD_TR_RUN      <= CD_RD_SDRAM_SIG;
 					SDRAM_RD       <= 1;
-					SDRAM_BURST    <= 0;
 					DMA_SDRAM_BUSY <= DMA_RUNNING;
 					
 					casez ({CD_RD_SDRAM_SIG, ~nROMOE, ~nPORTOE})
@@ -258,14 +262,12 @@ module sdram_mux(
 					CROM_RD_REQ    <= 0;
 					CROM_RD_RUN    <= 1;
 					SDRAM_RD       <= 1;
-					SDRAM_BURST    <= 1;
 					SDRAM_ADDR     <= CROM_ADDR[26:1];
 				end
 				else if (SROM_RD_REQ | REQ_SROM_RD) begin
 					SROM_RD_REQ    <= 0;
 					SFIX_RD_RUN    <= 1;
 					SDRAM_RD       <= 1;
-					SDRAM_BURST    <= 0;
 
 					// SFIX ROM (CD)		$0080000~$009FFFF
 					// S1 ROM (cart)		$0080000~$00FFFFF
@@ -284,8 +286,8 @@ module sdram_mux(
 					// DMA writes are always done in words. FIX layer is on a 8bit bus so should only write the low byte.
 					SDRAM_BS       <= (CD_LDS_ONLY_WR | ((CD_EXT_WR | (CD_TR_AREA == 3'd0)) & (nLDS ^ nUDS))) ? {~CD_REMAP_TR_ADDR[0],CD_REMAP_TR_ADDR[0]} : 2'b11;
 					
-					SDRAM_DIN      <= DMA_RUNNING ? (CD_LDS_ONLY_WR ? {DMA_DATA_OUT[7:0],DMA_DATA_OUT[7:0]} :  DMA_DATA_OUT) :
-															  (CD_LDS_ONLY_WR ? {M68K_DATA[7:0],M68K_DATA[7:0]} : M68K_DATA);
+					SDRAM_DIN      <= DMA_RUNNING ? (CD_LDS_ONLY_WR ? {DMA_DATA_OUT[7:0],DMA_DATA_OUT[7:0]} : DMA_DATA_OUT) :
+															  (CD_LDS_ONLY_WR ? {M68K_DATA[7:0],   M68K_DATA[7:0]}    : M68K_DATA);
 				end
 				else if(REQ_RFSH & RFSH_REQ) begin
 					RFSH_REQ       <= 0;

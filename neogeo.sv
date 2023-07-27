@@ -953,7 +953,7 @@ wire CD_EXT_RD = DMA_RUNNING ? (SYSTEM_CDx & (DMA_ADDR_IN[23:21] == 3'd0) & DMA_
 
 wire        sdram_ready;
 wire [26:1] sdram_addr;
-wire [63:0] sdram_dout;
+wire [15:0] sdram_dout;
 wire [15:0] sdram_din;
 
 // ioctl_download is used to load the system ROM on CD systems, we need it !
@@ -1069,7 +1069,6 @@ end
 
 wire SDRAM_WR;
 wire SDRAM_RD;
-wire SDRAM_BURST;
 wire SDRAM_RFSH;
 wire [1:0] SDRAM_BS;
 wire sdr2_en;
@@ -1107,7 +1106,6 @@ sdram_mux SDRAM_MUX(
 	.DMA_ADDR_OUT(DMA_ADDR_OUT),
 	.DMA_ADDR_IN(DMA_ADDR_IN),
 	.DMA_DATA_OUT(DMA_DATA_OUT),
-	.DMA_WR_OUT(DMA_WR_OUT),
 	.DMA_RUNNING(DMA_RUNNING),
 	.DMA_SDRAM_BUSY(DMA_SDRAM_BUSY),
 
@@ -1136,7 +1134,6 @@ sdram_mux SDRAM_MUX(
 	.SDRAM_WR(SDRAM_WR),
 	.SDRAM_RD(SDRAM_RD),
 	.SDRAM_RFSH(SDRAM_RFSH),
-	.SDRAM_BURST(SDRAM_BURST),
 	.SDRAM_BS(SDRAM_BS),
 	.SDRAM_READY(sdram_ready)
 );
@@ -1146,7 +1143,7 @@ wire sdr_pri_cpsel = (~sdr_cpaddr[26] | sdr_pri_128_64[1]) & (~sdr_cpaddr[25] | 
 always @(posedge CLK_96M) if (~nRESET) sdr_pri_128_64 <= {~sdram_sz[14] & &sdram_sz[1:0], ~sdram_sz[14] & sdram_sz[1]};
 
 wire sdram1_ready, sdram2_ready;
-wire [63:0] sdram1_dout, sdram2_dout;
+wire [15:0] sdram1_dout, sdram2_dout;
 
 sdram ram1(
 	.SDRAM_CLK(SDRAM_CLK),
@@ -1171,7 +1168,6 @@ sdram ram1(
 	.bs(SDRAM_BS),
 	.wr(SDRAM_WR),
 	.rd(SDRAM_RD),
-	.burst(SDRAM_BURST),
 	.refresh(SDRAM_RFSH),
 	.ready(sdram1_ready),
 
@@ -1204,7 +1200,6 @@ sdram ram2(
 	.bs(SDRAM_BS),
 	.wr(SDRAM_WR),
 	.rd(SDRAM_RD),
-	.burst(SDRAM_BURST),
 	.refresh(SDRAM_RFSH),
 	.ready(sdram2_ready),
 
