@@ -159,7 +159,7 @@ module lspc_timer_sync(
 	
 	// Stop option
 	wire J257A_OUT = ~|{RASTERC[5:4]};
-	wire I234_OUT = |{RASTERC[8], ~VMODE, TIMER_STOP};
+	wire I234_OUT = |{RASTERC[8], ~VMODE, ~TIMER_STOP};
 	wire J238B_OUT = ~|{J257A_OUT, I234_OUT};
 	//FDM J69(LSPC_6M, J238B_OUT, , nTIMER_EN);
 	always @(posedge CLK) if (LSPC_EN_6M_P) nTIMER_EN <= ~J238B_OUT;
