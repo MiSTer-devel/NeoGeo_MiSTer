@@ -31,6 +31,11 @@ In addition, several bios files must be placed in the 'games\NeoGeo' folder for 
 * neo-epo.sp1 (AES)
 * uni-bios.rom
 
+These bios files must be placed in the 'games\NeoGeo-CD' folder:
+*	top-sp1.bin (CD)
+*	neocd.bin (CDZ)
+*	uni-bioscd.rom (CD znd CDZ)
+
 Sometimes these files may be named slightly different depending on where they are obtained, but they must be renamed to match the filenames above to work with MiSTer. You may choose between using original system BIOS (sp-s2.sp1/neo-epo.sp1) and uni-bios.rom. Using uni-bios is recommended, and can be obtained [here](http://unibios.free.fr/).
 
 Lastly, **romsets.xml** from the release folder must also be placed in the directory. The provided XML is for Darksoft ROMs only, you must make your own for MAME ROMs. This file describes to the core where the ROM sets are located and how to load them. **gog-romsets.xml** can be used (renamed to **romsets.xml**) for games purchased from gog.com (which also include all the needed bios files), see comments in gog-romsets.xml .
