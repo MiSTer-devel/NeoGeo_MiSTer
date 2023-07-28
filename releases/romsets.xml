@@ -82,7 +82,7 @@ https://lmgtfy.com/?q=darksoft+neo+geo+roll-up+pack
 	<romset name="kabukikl" pcm="1" altname="Far East of Eden: Kabuki Klash" altnamej="Tengai Makyou: Shin Den" publisher="Hudson" year="1995"/>
 	<romset name="karnovr" pcm="1" altname="Karnov's Revenge" altnamej="Fighter's History Dynamite" publisher="Data East Corporation" year="1994"/>
 	<romset name="kizuna" pcm="1" altname="Kizuna Encounter: Super Tag Battle" altnamej="Fu'un Super Tag Battle" publisher="SNK" year="1996"/>
-	<romset name="kof94" pcm="1" altname="King of Fighters '94, The" publisher="SNK" year="1994"/>
+	<romset name="kof94" pcm="1" altname="King of Fighters '94, The" publisher="SNK" year="1994" rom_wait="1" p_wait="1"/>
 	<romset name="kof95" pcm="1" altname="King of Fighters '95, The" publisher="SNK" year="1995"/>
 	<romset name="kof95a" pcm="1" altname="King of Fighters '95, The (NGM-084, alt board)" publisher="SNK" year="1995"/>
 	<romset name="kof95h" pcm="1" altname="King of Fighters '95, The (NGH-084)" publisher="SNK" year="1995"/>
