@@ -395,4 +395,30 @@ https://lmgtfy.com/?q=darksoft+neo+geo+roll-up+pack
 		<file name="bada-v1.bin" index="16"/>
 	</romset>
 
+	<!-- Not in darksoft pack -->
+	<!-- Att: Game requires files from kof98.zip (242-*) to be present in kof98ae2016.zip! -->
+	<romset name="kof98ae2016" pcm="1" altname="King of Fighters '98, The: Anniversary Edition" publisher="Hack" year="2016" ram="3">
+		<file name="242ae-p1.p1"   index="4"/>
+		<file name="242ae-p2.sp2"  index="6"/>
+		<file name="242ae-c1.c1"   index="64"/>
+		<file name="242ae-c2.c2"   index="65"/>
+		<file name="242-c3.c3"     index="96"/>
+		<file name="242-c4.c4"     index="97"/>
+		<file name="242ae-c5.c5"   index="128"/>
+		<file name="242ae-c6.c6"   index="129"/>
+		<file name="242ae-c7.c7"   index="160"/>
+		<file name="242ae-c8.c8"   index="161"/>
+		<file name="242ae-c9.c9"   index="192"/>
+		<file name="242ae-c10.c10" index="193"/>
+		<file name="242ae-c11.c11" index="224"/>
+		<file name="242ae-c12.c12" index="225"/>
+		<file name="242ae-m1.m1"   index="9"/>
+		<file name="242ae-s1.s1"   index="8"/>
+		<file name="242-v1.v1"     index="16"/>
+		<file name="242-v2.v2"     index="24"/>
+		<file name="242-v3.v3"     index="32"/>
+		<file name="242-v4.v4"     index="40"/>
+		<file name="242ae-v5.v5"   index="48"/>
+	</romset>
+
 </romsets>
