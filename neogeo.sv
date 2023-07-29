@@ -1812,7 +1812,7 @@ always @(posedge DDRAM_CLK) begin
 	ADPCMB_OE_SR <= {ADPCMB_OE_SR[0], nSDPOE};
 	if (ADPCMB_OE_SR == 2'b10 & ~SYSTEM_CDx) begin
 		ADPCMB_READ_REQ <= ~ADPCMB_READ_REQ;
-		ADPCMB_ADDR_LATCH <= {~use_pcm, ADPCMB_ADDR & (use_pcm ? V1ROM_MASK[24:0] : V2ROM_MASK[24:0])};
+		ADPCMB_ADDR_LATCH <= {~use_pcm, ADPCMB_ADDR & (use_pcm ? V1ROM_MASK[23:0] : V2ROM_MASK[23:0])};
 		// Data is needed on one previous 8MHz clk before next 55KHz clock->(96MHz/55KHz = 1728)-144-4=1580
 		ADPCMB_ACK_COUNTER <= 11'd1580;
 	end
