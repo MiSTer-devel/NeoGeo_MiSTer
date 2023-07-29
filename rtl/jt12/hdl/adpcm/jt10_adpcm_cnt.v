@@ -27,7 +27,7 @@ module jt10_adpcm_cnt(
     input      [ 5:0] cur_ch,
     input      [ 5:0] en_ch,
     // Address writes from CPU
-    input      [15:0] addr_in,
+    input      [16:0] addr_in,
     input      [ 2:0] addr_ch,
     input             up_start,
     input             up_end,
@@ -36,7 +36,7 @@ module jt10_adpcm_cnt(
     input             aoff,
     // ROM driver
     output     [19:0] addr_out,
-    output     [ 3:0] bank,
+    output     [ 4:0] bank,
     output            sel,
     output            roe_n,
     output            decon,
@@ -45,12 +45,12 @@ module jt10_adpcm_cnt(
     output reg [ 5:0] flags,
     input      [ 5:0] clr_flags,
     //
-    output [15:0] start_top,
-    output [15:0]   end_top
+    output [16:0] start_top,
+    output [16:0]   end_top
 );
 
 reg [20:0] addr1, addr2, addr3, addr4, addr5, addr6;
-reg [3:0] bank1, bank2, bank3, bank4, bank5, bank6;
+reg [4:0] bank1, bank2, bank3, bank4, bank5, bank6;
 reg [11:0] start1, start2, start3, start4, start5, start6,
            end1,   end2,   end3,   end4,   end5,   end6;
 reg on1, on2, on3, on4, on5, on6;
@@ -138,7 +138,7 @@ always @(posedge clk or negedge rst_n)
         done2  <= done1;
         start2 <=  (up_start && up1) ? addr_in[11:0] : start1;
         end2   <=  (up_end   && up1) ? addr_in[11:0] : end1;
-        bank2  <=  (up_start && up1) ? addr_in[15:12] : bank1;
+        bank2  <=  (up_start && up1) ? addr_in[16:12] : bank1;
         skip2  <= skip1;
 
         addr3  <= addr2; // clr2 ? {start2,9'd0} : addr2;

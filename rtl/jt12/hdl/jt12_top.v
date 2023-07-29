@@ -39,7 +39,7 @@ module jt12_top (
     input           en_hifi_pcm,  // high to enable PCM interpolation on YM2612 mode
     // ADPCM pins
     output  [19:0]  adpcma_addr,  // real hardware has 10 pins multiplexed through RMPX pin
-    output  [ 3:0]  adpcma_bank,
+    output  [ 4:0]  adpcma_bank,
     output          adpcma_roe_n, // ADPCM-A ROM output enable
     input   [ 7:0]  adpcma_data,  // Data from RAM
     output  [23:0]  adpcmb_addr,  // real hardware has 12 pins multiplexed through PMPX pin
@@ -140,7 +140,7 @@ wire    [3:0]   psg_addr;
 wire    [7:0]   psg_data, psg_dout;
 wire            psg_wr_n;
 // ADPCM-A
-wire [15:0] addr_a;
+wire [16:0] addr_a;
 wire [ 2:0] up_addr, up_lracl;
 wire        up_start, up_end;
 wire [ 7:0] aon_a, lracl;

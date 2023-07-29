@@ -397,7 +397,7 @@ https://lmgtfy.com/?q=darksoft+neo+geo+roll-up+pack
 
 	<!-- Not in darksoft pack -->
 	<!-- Att: Game requires files from kof98.zip (242-*) to be present in kof98ae2016.zip! -->
-	<romset name="kof98ae2016" pcm="1" altname="King of Fighters '98, The: Anniversary Edition" publisher="Hack" year="2016" ram="3">
+	<romset name="kof98ae2016" pcm="2" altname="King of Fighters '98, The: Anniversary Edition" publisher="Hack" year="2016" ram="3">
 		<file name="242ae-p1.p1"   index="4"/>
 		<file name="242ae-p2.sp2"  index="6"/>
 		<file name="242ae-c1.c1"   index="64"/>

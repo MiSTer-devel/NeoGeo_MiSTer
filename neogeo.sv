@@ -674,7 +674,8 @@ parameter INDEX_CROMS = 64;
 
 wire video_mode = status[3];
 
-wire [3:0] cart_pchip = cfg[22:20];
+wire       adpcma_ext = cfg[19];
+wire [2:0] cart_pchip = cfg[22:20];
 wire       use_pcm    = cfg[23];
 wire [1:0] cart_chip  = cfg[25:24]; // legacy option: 0 - none, 1 - PRO-CT0, 2 - Link MCU
 wire [1:0] cmc_chip   = cfg[27:26]; // type 1/2
@@ -1003,8 +1004,8 @@ always_ff @(posedge clk_sys) begin
 		end else begin
 			P2ROM_MASK <= P2ROM_MASK | P2ROM_MASK[26:1];
 			CROM_MASK  <= CROM_MASK  | CROM_MASK[26:1];
-			V1ROM_MASK <= V1ROM_MASK | V1ROM_MASK[26:1];
-			V2ROM_MASK <= V2ROM_MASK | V2ROM_MASK[26:1];
+			V1ROM_MASK <= adpcma_ext ? 27'h1FFFFFF : (V1ROM_MASK | V1ROM_MASK[26:1]);
+			V2ROM_MASK <= adpcma_ext ? 27'h0       : (V2ROM_MASK | V2ROM_MASK[26:1]);
 			MROM_MASK  <= MROM_MASK  | MROM_MASK[26:1];
 		end
 	end
@@ -1731,7 +1732,7 @@ assign { nMREQ }        = ~CD_HAS_Z80_BUS ? { Z80_nMREQ            } : {~(CD_TR_
 assign M68K_DATA[7:0]   = ~(CD_HAS_Z80_BUS & CD_TR_RD_Z80) ? 8'bzzzz_zzzz : SDD_IN;
 
 wire [19:0] ADPCMA_ADDR;
-wire  [3:0] ADPCMA_BANK;
+wire  [4:0] ADPCMA_BANK;
 wire [23:0] ADPCMB_ADDR;
 
 reg adpcm_wr, adpcm_rd;
@@ -1784,7 +1785,7 @@ assign DDRAM_CLK = CLK_96M;
 
 reg ADPCMA_READ_REQ, ADPCMB_READ_REQ;
 reg ADPCMA_READ_ACK, ADPCMB_READ_ACK;
-reg [23:0] ADPCMA_ADDR_LATCH;	// 16MB
+reg [24:0] ADPCMA_ADDR_LATCH;	// 16MB(32MB)
 reg [24:0] ADPCMB_ADDR_LATCH;	// 32MB
 reg [7:0] ADPCMA_ACK_COUNTER;
 reg [10:0] ADPCMB_ACK_COUNTER;
@@ -1802,7 +1803,7 @@ always @(posedge DDRAM_CLK) begin
 	// Trigger ADPCM A data read on nSDROE falling edge
 	if (ADPCMA_OE_SR == 2'b10 & ~CD_USE_PCM) begin
 		ADPCMA_READ_REQ <= ~ADPCMA_READ_REQ;
-		ADPCMA_ADDR_LATCH <= {ADPCMA_BANK, ADPCMA_ADDR} & V1ROM_MASK[23:0];
+		ADPCMA_ADDR_LATCH <= {ADPCMA_BANK, ADPCMA_ADDR} & V1ROM_MASK[24:0];
 		// Data is needed on one previous 8MHz clk before next 666KHz clock->(96MHz/666KHz = 144)-12-4=128
 		ADPCMA_ACK_COUNTER <= 8'd128;
 	end
@@ -1811,7 +1812,7 @@ always @(posedge DDRAM_CLK) begin
 	ADPCMB_OE_SR <= {ADPCMB_OE_SR[0], nSDPOE};
 	if (ADPCMB_OE_SR == 2'b10 & ~SYSTEM_CDx) begin
 		ADPCMB_READ_REQ <= ~ADPCMB_READ_REQ;
-		ADPCMB_ADDR_LATCH <= {~use_pcm, ADPCMB_ADDR & (use_pcm ? V1ROM_MASK[23:0] : V2ROM_MASK[23:0])};
+		ADPCMB_ADDR_LATCH <= {~use_pcm, ADPCMB_ADDR & (use_pcm ? V1ROM_MASK[24:0] : V2ROM_MASK[24:0])};
 		// Data is needed on one previous 8MHz clk before next 55KHz clock->(96MHz/55KHz = 1728)-144-4=1580
 		ADPCMB_ACK_COUNTER <= 11'd1580;
 	end

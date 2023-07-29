@@ -35,7 +35,7 @@ module jt10(
     output          irq_n,
     // ADPCM pins
     output  [19:0]  adpcma_addr,  // real hardware has 10 pins multiplexed through RMPX pin
-    output  [3:0]   adpcma_bank,
+    output  [4:0]   adpcma_bank,
     output          adpcma_roe_n, // ADPCM-A ROM output enable
     input   [7:0]   adpcma_data,  // Data from RAM
     output  [23:0]  adpcmb_addr,  // real hardware has 12 pins multiplexed through PMPX pin
