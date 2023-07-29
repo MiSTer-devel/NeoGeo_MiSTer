@@ -421,4 +421,27 @@ https://lmgtfy.com/?q=darksoft+neo+geo+roll-up+pack
 		<file name="242ae-v5.v5"   index="48"/>
 	</romset>
 
+	<romset name="kof98Ultimate" pcm="2" altname="King of Fighters '98, The: Ultimate Match" publisher="Hack" year="2020" ram="3">
+		<file name="274-p1.p1"   index="4"/>
+		<file name="274-p2.sp2"  index="6"/>
+		<file name="274-c1.c1"   index="64"/>
+		<file name="274-c2.c2"   index="65"/>
+		<file name="274-c3.c3"   index="96"/>
+		<file name="274-c4.c4"   index="97"/>
+		<file name="274-c5.c5"   index="128"/>
+		<file name="274-c6.c6"   index="129"/>
+		<file name="274-c7.c7"   index="160"/>
+		<file name="274-c8.c8"   index="161"/>
+		<file name="274-c9.c9"   index="192"/>
+		<file name="274-c9A.c9A" index="193"/>
+		<file name="274-c9B.c9B" index="224"/>
+		<file name="274-c9C.c9C" index="225"/>
+		<file name="274-m1.m1"   index="9"/>
+		<file name="274-s1.s1"   index="8"/>
+		<file name="274-v1.v1"   index="16"/>
+		<file name="274-v2.v2"   index="24"/>
+		<file name="274-v3.v3"   index="32"/>
+		<file name="274-v4.v4"   index="40"/>
+		<file name="274-v5.v5"   index="48"/>
+	</romset>
 </romsets>
