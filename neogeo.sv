@@ -674,6 +674,7 @@ parameter INDEX_CROMS = 64;
 
 wire video_mode = status[3];
 
+wire       ms5p_bank  = cfg[17];
 wire       xram       = cfg[18];
 wire       adpcma_ext = cfg[19];
 wire [2:0] cart_pchip = cfg[22:20];
@@ -1484,10 +1485,11 @@ begin
 	reg nPORTWEL_d;
 	nPORTWEL_d <= nPORTWEL;
 
-	if (!nRESET)
-		P_BANK <= 0;
-	else if (nPORTWEL & ~nPORTWEL_d)
-		if (!SYSTEM_CDx) P_BANK <= M68K_DATA[3:0];
+	if (!nRESET || SYSTEM_CDx) P_BANK <= 0;
+	else if (~nPORTWEL & nPORTWEL_d) begin
+		if(~ms5p_bank) P_BANK <= M68K_DATA[3:0];
+		else if(&M68K_ADDR[19:4] && M68K_ADDR[3:1] == 2) P_BANK <= M68K_DATA[7:4] - 1'd1;
+	end
 end
 
 // PRO-CT0 used as security chip

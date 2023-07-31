@@ -74,31 +74,31 @@ module neo_c1(
 	
 	c1_inputs C1INPUTS(nCTRL1_ZONE, nCTRL2_ZONE, nSTATUSB_ZONE, M68K_DATA, P1_IN, P2_IN,
 						nWP, nCD2, nCD1, SYSTEM_TYPE[0]);
-	
+
 	// 000000~0FFFFF read/write
 	assign nROM_ZONE = |{A23Z, A22Z, M68K_ADDR[21], M68K_ADDR[20]};
-	
+
 	// 100000~1FFFFF read/write
 	assign nWRAM_ZONE = |{A23Z, A22Z, M68K_ADDR[21], ~M68K_ADDR[20]};
-	
+
 	// 200000~2FFFFF read/write
 	assign nPORT_ZONE = |{A23Z, A22Z, ~M68K_ADDR[21], M68K_ADDR[20]};
-	
+
 	// 300000~3FFFFF read/write
 	assign nIO_ZONE = |{A23Z, A22Z, ~M68K_ADDR[21], ~M68K_ADDR[20]};
-	
-		// 300000~3FFFFE even bytes read/write
-		assign nC1REGS_ZONE = nUDS | nIO_ZONE;
-		
-			// 300000~31FFFE even bytes read only
-			assign nCTRL1_ZONE = nC1REGS_ZONE | ~RW | |{M68K_ADDR[19], M68K_ADDR[18], M68K_ADDR[17]};
-			
-			// 320000~33FFFE even bytes read/write
-			assign nICOM_ZONE = nC1REGS_ZONE | |{M68K_ADDR[19], M68K_ADDR[18], ~M68K_ADDR[17]};
-	
-			// 340000~35FFFE even bytes read only - Todo: MAME says A17 is used, see right below
-			assign nCTRL2_ZONE = nC1REGS_ZONE | ~RW | |{M68K_ADDR[19], ~M68K_ADDR[18], M68K_ADDR[17]};
-			// 360000~37FFFF is not mapped ?
+
+	// 300000~3FFFFE even bytes read/write
+	assign nC1REGS_ZONE = nUDS | nIO_ZONE;
+
+	// 300000~31FFFE even bytes read only
+	assign nCTRL1_ZONE = nC1REGS_ZONE | ~RW | |{M68K_ADDR[19], M68K_ADDR[18], M68K_ADDR[17]};
+
+	// 320000~33FFFE even bytes read/write
+	assign nICOM_ZONE = nC1REGS_ZONE | |{M68K_ADDR[19], M68K_ADDR[18], ~M68K_ADDR[17]};
+
+	// 340000~35FFFE even bytes read only - Todo: MAME says A17 is used, see right below
+	assign nCTRL2_ZONE = nC1REGS_ZONE | ~RW | |{M68K_ADDR[19], ~M68K_ADDR[18], M68K_ADDR[17]};
+	// 360000~37FFFF is not mapped ?
 
 	// 30xxxx 31xxxx odd bytes read only
 	assign nDIPRD0 = |{nIO_ZONE, M68K_ADDR[19], M68K_ADDR[18], M68K_ADDR[17], ~RW, nLDS};

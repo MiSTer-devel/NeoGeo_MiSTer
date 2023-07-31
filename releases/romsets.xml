@@ -311,6 +311,7 @@ https://lmgtfy.com/?q=darksoft+neo+geo+roll-up+pack
 	<romset name="mslug3b6,mslug6" pcm="1" altname="Metal Slug 6 (Metal Slug 3 bootleg)" publisher="Hack / Bootleg" year="2000" ram="2"/>
 	<romset name="mslug5" pvc="1" pcm="1" altname="Metal Slug 5" publisher="SNK Playmore" year="2003" ram="2"/>
 	<romset name="mslug5h" pvc="1" pcm="1" altname="Metal Slug 5 (NGH-2680)" publisher="SNK Playmore" year="2003" ram="2"/>
+	<romset name="ms5plus" ms5p="1" pcm="1" altname="Metal Slug 5 Plus (bootleg)" publisher="Bootleg" year="2003" ram="2"/>
 	<!-- Non-NeoGeo titles made for specific board. Do not work <romset name="ms5pcb" pcm="1" altname="Metal Slug 5 (PCB)" publisher="SNK Playmore" year="2003" ram="2"/> -->
 	<romset name="nblktigr" pcm="1" altname="Neo Black Tiger" publisher="OzzyOuzo" year="2020" ram="2"/>
 	<romset name="rotd" pcm="1" altname="Rage of the Dragons" publisher="Evoga" year="2002"/>
