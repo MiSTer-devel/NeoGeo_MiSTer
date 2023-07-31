@@ -78,6 +78,7 @@ https://lmgtfy.com/?q=darksoft+neo+geo+roll-up+pack
 	<romset name="ironclado,irnclado" pcm="1" altname="Ironclad (prototype, bootleg)" altnamej="Choutetsu Brikin'ger (prototype, bootleg)" publisher="Bootleg" year="1996"/>
 	<romset name="irrmaze" pcm="1" altname="Irritating Maze, The" altnamej="Ultra Denryu Iraira Bou" publisher="SNK / Saurus" year="1997"/>
 	<romset name="janshin" pcm="1" altname="Janshin Densetsu: Quest of Jongmaster" publisher="Aicom" year="1994"/>
+	<romset name="jockeygp" xram="1" altname="Jockey Grand Prix" publisher="Sun Amusement / BrezzaSoft" year="2001"/>
 	<romset name="joyjoy" pcm="0" altname="Puzzled" altnamej="Joy Joy Kid" publisher="SNK" year="1990" vromb_offset="0x200000"/>
 	<romset name="kabukikl" pcm="1" altname="Far East of Eden: Kabuki Klash" altnamej="Tengai Makyou: Shin Den" publisher="Hudson" year="1995"/>
 	<romset name="karnovr" pcm="1" altname="Karnov's Revenge" altnamej="Fighter's History Dynamite" publisher="Data East Corporation" year="1994"/>
@@ -179,7 +180,7 @@ https://lmgtfy.com/?q=darksoft+neo+geo+roll-up+pack
 	<romset name="twinspri" pcm="1" altname="Twinkle Star Sprites" publisher="ADK / SNK" year="1996"/>
 	<romset name="tws96,twsoc96" pcm="1" altname="Tecmo World Soccer '96" publisher="Tecmo" year="1996"/>
 	<romset name="viewpoin" pcm="1" altname="Viewpoint" publisher="Sammy / Aicom" year="1992"/>
-	<!-- Black Jack slot machine, not a game. Requires custom sram board, not implemented in fpga <romset name="vliner,vlinero" pcm="0" altname="V-Liner" publisher="Dyna / BrezzaSoft" year="2001"/> -->
+	<romset name="vliner" xram="1" altname="V-Liner" publisher="Dyna / BrezzaSoft" year="2001"/>
 	<romset name="wakuwak7" pcm="1" altname="Waku Waku 7" publisher="Sunsoft" year="1996"/>
 	<romset name="wh1" pcm="1" altname="World Heroes" publisher="Alpha Denshi Co." year="1992"/>
 	<romset name="wh1h" pcm="1" altname="World Heroes (ALH-005)" publisher="Alpha Denshi Co." year="1992"/>
