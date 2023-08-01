@@ -42,7 +42,8 @@ module lspc2_a2_sync(
 	output EVEN1,						// For ZMC2
 	output reg EVEN2,
 	output IPL0, IPL1,
-	input  VBLANK_IRQ_EN,
+	input  CD_VBLANK_IRQ_EN,
+	input  CD_TIMER_IRQ_EN,
 	output CHG,							// Also called TMS0
 	output LD1, LD2,					// Buffer address load
 	output reg PCK1, PCK2,
@@ -708,7 +709,7 @@ module lspc2_a2_sync(
 	resetp_sync RSTP_SYNC(CLK, CLK_EN_24M_N, RESET, nRESETP);
 	
 	wire BNK;
-	irq_sync IRQ_SYNC(CLK, WR_IRQ_ACK, M68K_DATA[2:0], RESET, D46A_OUT, BNK, VBLANK_IRQ_EN, LSPC_EN_6M_P, IPL0, IPL1);
+	irq_sync IRQ_SYNC(CLK, WR_IRQ_ACK, M68K_DATA[2:0], RESET, D46A_OUT, CD_TIMER_IRQ_EN, BNK, CD_VBLANK_IRQ_EN, LSPC_EN_6M_P, IPL0, IPL1);
 	
 	wire FLIP, P50_CO;
 	videosync_sync VS_SYNC(CLK, CLK_EN_24M_P, CLK_EN_24M_N, LSPC_3M, LSPC_1_5M, LSPC_EN_1_5M_P, LSPC_EN_1_5M_N, nRESETP, VMODE, PIXELC, RASTERC, HSYNC, VSYNC, BNK,

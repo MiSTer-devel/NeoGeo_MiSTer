@@ -23,6 +23,7 @@ module irq_sync(
 	input [2:0] ACK_BITS,
 	input RESET_IRQ,
 	input TIMER_IRQ,
+	input TIMER_IRQ_EN,
 	input VBL_IRQ,
 	input VBL_IRQ_EN,
 	input CLK_EN,
@@ -43,7 +44,7 @@ module irq_sync(
 	//FD3 B52(TIMER_IRQ, 1'b0, ACK[1], B52_Q, B52_nQ);
 	//FD3 C52(VBL_IRQ, 1'b0, ACK[2], C52_Q);
 	register B56(CLK, ~ACK[0], 1'b0, RESET_IRQ, 1'b0, B56_Q);
-	register B52(CLK, ~ACK[1], 1'b0, TIMER_IRQ, 1'b0, B52_Q);
+	register B52(CLK, ~ACK[1], 1'b0, TIMER_IRQ, ~TIMER_IRQ_EN, B52_Q);
 	register C52(CLK, ~ACK[2], 1'b0, VBL_IRQ, ~VBL_IRQ_EN, C52_Q);
 	
 	// B49
