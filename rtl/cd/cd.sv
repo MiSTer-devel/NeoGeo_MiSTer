@@ -58,6 +58,7 @@ module cd_sys(
 	output reg CD_UPLOAD_EN, // The bios writes to Z80 RAM without CD_UPLOAD_EN enabled. Maybe this is only watchdog disable?
 
 	output CD_VBLANK_IRQ_EN,
+	output CD_TIMER_IRQ_EN,
 
 	input IACK,
 	output reg CD_IRQ,
@@ -796,6 +797,7 @@ module cd_sys(
 	endfunction
 
 	assign CD_VBLANK_IRQ_EN = &{REG_FF0004[5:4]};
+	assign CD_TIMER_IRQ_EN = &{REG_FF0004[9:8]};
 
 	assign M68K_DATA = (SYSTEM_CDx & ~nAS & M68K_RW & IACK) ? {8'h00, CD_IRQ_VECTOR} :		// Vectored interrupt handler
 							(READING & {M68K_ADDR[11:1], 1'b0} == 12'h004) ? {4'h0, REG_FF0004} :
