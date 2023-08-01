@@ -803,6 +803,7 @@ module cd_sys(
 							(READING & {M68K_ADDR[11:1], 1'b0} == 12'h004) ? {4'h0, REG_FF0004} :
 							(READING & {M68K_ADDR[11:1], 1'b0} == 12'h11C) ? {3'b110, CD_LID, CD_JUMPERS, 8'h00} :	// Top mech
 							(READING & {M68K_ADDR[11:1], 1'b0} == 12'h160) ? {11'b00000000_000, CDCK, CDD_DOUT} :	// REG_CDDINPUT
+							(READING & {M68K_ADDR[11:1], 1'b0} == 12'h166) ? {16'd0} : // Bit 5 needs to be clear for VU meters in CD player to work
 							(READING & {M68K_ADDR[11:1], 1'b0} == 12'h188) ? bit_reverse(CD_AUDIO_L) :	// CDDA L
 							(READING & {M68K_ADDR[11:1], 1'b0} == 12'h18A) ? bit_reverse(CD_AUDIO_R) :	// CDDA R
 							(LC8951_RD) ? {8'h00, LC8951_DOUT} :
