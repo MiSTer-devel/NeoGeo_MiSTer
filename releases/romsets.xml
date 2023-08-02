@@ -331,7 +331,7 @@ https://lmgtfy.com/?q=darksoft+neo+geo+roll-up+pack
 	<romset name="svccpru" pcm="1" altname="SNK vs. Capcom Remix Ultra" publisher="Hack / Bootleg" year="2003" ram="2"/>
 	<!-- Non-NeoGeo titles made for specific board. Do not work <romset name="svcpcb,svcpcba" pcm="1" altname="SNK vs. Capcom (PCB)" publisher="SNK Playmore" year="2003"/> -->
 	<!-- Not in darksoft pack -->
-	<romset name="cphd" pcm="1" altname="Crouching Pony Hidden Dragon Demo" publisher="Le Cortex" year="2013" ram="2">
+	<romset name="cphd" pcm="0" altname="Crouching Pony Hidden Dragon Demo" publisher="Le Cortex" year="2013" ram="2">
 		<file name="cphd.p1" index="4"/>
 		<file name="cphd.p2" index="6"/>
 		<file name="cphd.s1" index="8"/>
