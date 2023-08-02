@@ -1826,6 +1826,7 @@ reg ADPCMA_READ_REQ, ADPCMB_READ_REQ;
 reg ADPCMA_READ_ACK, ADPCMB_READ_ACK;
 reg [24:0] ADPCMA_ADDR_LATCH;	// 16MB(32MB)
 reg [24:0] ADPCMB_ADDR_LATCH;	// 32MB
+reg [23:0] ADPCMB_MASK;
 reg [7:0] ADPCMA_ACK_COUNTER;
 reg [10:0] ADPCMB_ACK_COUNTER;
 wire ADPCMA_DATA_READY = ~((ADPCMA_READ_REQ ^ ADPCMA_READ_ACK) & (ADPCMA_ACK_COUNTER == 8'd0));
@@ -1847,11 +1848,13 @@ always @(posedge DDRAM_CLK) begin
 		ADPCMA_ACK_COUNTER <= 8'd128;
 	end
 	
+	ADPCMB_MASK <= use_pcm ? V1ROM_MASK[23:0] : V2ROM_MASK[23:0];
+	
 	// Trigger ADPCM B data read on nSDPOE falling edge
 	ADPCMB_OE_SR <= {ADPCMB_OE_SR[0], nSDPOE};
 	if (ADPCMB_OE_SR == 2'b10 & ~SYSTEM_CDx) begin
 		ADPCMB_READ_REQ <= ~ADPCMB_READ_REQ;
-		ADPCMB_ADDR_LATCH <= {~use_pcm, ADPCMB_ADDR & (use_pcm ? V1ROM_MASK[23:0] : V2ROM_MASK[23:0])};
+		ADPCMB_ADDR_LATCH <= {~use_pcm, ADPCMB_ADDR & ADPCMB_MASK};
 		// Data is needed on one previous 8MHz clk before next 55KHz clock->(96MHz/55KHz = 1728)-144-4=1580
 		ADPCMB_ACK_COUNTER <= 11'd1580;
 	end
@@ -1875,8 +1878,10 @@ end
 assign M68K_DATA[7:0] = ~CD_TR_RD_PCM ? 8'bzzzz_zzzz : ADPCMA_DOUT;
 
 wire [7:0] ADPCMA_DOUT;
-wire [7:0] ADPCMA_DATA = CD_USE_PCM ? 8'd0 : ADPCMA_DOUT;
-wire [7:0] ADPCMB_DATA;
+wire [7:0] ADPCMA_DATA = (CD_USE_PCM || !V1ROM_MASK) ? 8'h80 : ADPCMA_DOUT;
+
+wire [7:0] ADPCMB_DOUT;
+wire [7:0] ADPCMB_DATA = (!ADPCMB_MASK) ? 8'h80 : ADPCMB_DOUT;
 
 reg [27:0] ddr_waddr;
 reg [15:0] ddr_wr_din;
@@ -1897,7 +1902,7 @@ ddram DDRAM(
 	.rd_ack(ADPCMA_READ_ACK),
 
 	.rdaddr2(ADPCMB_ADDR_LATCH),
-	.dout2(ADPCMB_DATA),
+	.dout2(ADPCMB_DOUT),
 	.rd_req2(ADPCMB_READ_REQ),
 	.rd_ack2(ADPCMB_READ_ACK),
 
