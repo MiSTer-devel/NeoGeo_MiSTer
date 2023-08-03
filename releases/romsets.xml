@@ -447,4 +447,29 @@ https://lmgtfy.com/?q=darksoft+neo+geo+roll-up+pack
 		<file name="274-v4.v4"   index="40"/>
 		<file name="274-v5.v5"   index="48"/>
 	</romset>
+
+	<!-- Not in darksoft pack -->
+	<romset name="kof99ae" altname="King of Fighters '99 (15th Anniversary Edition)" publisher="Hack" year="2020" ram="3">
+		<file name="kof99ae_p1.bin"  index="4"/>
+		<file name="kof99ae_p2.bin"  index="6"/>
+		<file name="kof99ae_c1.bin"  index="64"/>
+		<file name="kof99ae_c2.bin"  index="65"/>
+		<file name="kof99ae_c3.bin"  index="96"/>
+		<file name="kof99ae_c4.bin"  index="97"/>
+		<file name="kof99ae_c5.bin"  index="128"/>
+		<file name="kof99ae_c6.bin"  index="129"/>
+		<file name="kof99ae_c7.bin"  index="160"/>
+		<file name="kof99ae_c8.bin"  index="161"/>
+		<file name="kof99ae_c9.bin"  index="192"/>
+		<file name="kof99ae_c10.bin" index="193"/>
+		<file name="kof99ae_c11.bin" index="224"/>
+		<file name="kof99ae_c12.bin" index="225"/>
+		<file name="kof99ae_m1.bin"  index="9"/>
+		<file name="kof99ae_s1.bin"  index="8"/>
+		<file name="kof99ae_v1.bin"  index="16"/>
+		<file name="kof99ae_v2.bin"  index="24"/>
+		<file name="kof99ae_v3.bin"  index="32"/>
+		<file name="kof99ae_v4.bin"  index="40"/>
+	</romset>
+
 </romsets>
