@@ -36,7 +36,7 @@ https://lmgtfy.com/?q=darksoft+neo+geo+roll-up+pack
 	<romset name="bakatono" altname="Bakatonosama Mahjong Manyuuki" publisher="Monolith Corp." year="1991"/>
 	<romset name="bangbead" altname="Bang Bead" publisher="Visco" year="2000"/>
 	<romset name="bjourney" altname="Blue's Journey" altnamej="Raguy" publisher="Alpha Denshi Co." year="1990" vromb_offset="0x200000"/>
-	<romset name="breakers" altname="Breakers" publisher="Visco" year="1996"/>
+	<romset name="breakers" altname="Breakers" publisher="Visco" year="1996" rom_wait="0" p_wait="0"/>
 	<romset name="breakrev" altname="Breakers Revenge" publisher="Visco" year="1998"/>
 	<romset name="bstars" altname="Baseball Stars Professional" publisher="SNK" year="1990" vromb_offset="0x200000"/>
 	<romset name="bstarsh" altname="Baseball Stars Professional (NGH-002)" publisher="SNK" year="1990" vromb_offset="0x200000"/>
@@ -51,13 +51,13 @@ https://lmgtfy.com/?q=darksoft+neo+geo+roll-up+pack
 	<romset name="ctomaday" altname="Captain Tomaday" publisher="Visco" year="1999"/>
 	<romset name="cyberlip" altname="Cyber-Lip" publisher="SNK" year="1990" vromb_offset="0x200000"/>
 	<romset name="diggerma" altname="Digger Man" publisher="Kyle Hodgetts" year="2000"/>
-	<romset name="doubledr" altname="Double Dragon" publisher="Technos Japan" year="1995"/>
+	<romset name="doubledr" altname="Double Dragon" publisher="Technos Japan" year="1995" rom_wait="0" p_wait="0"/>
 	<romset name="eightman" altname="Eight Man" publisher="SNK / Pallas" year="1991"/>
 	<romset name="fatfursp" altname="Fatal Fury Special" altnamej="Garou Densetsu Special" publisher="SNK" year="1993"/>
 	<romset name="fatfurspa,ftfurspa" altname="Fatal Fury Special (NGM-058 ~ NGH-058, set 2)" altnamej="Garou Densetsu Special (NGM-058 ~ NGH-058, set 2)" publisher="SNK" year="1993"/>
 	<romset name="fatfury1" altname="Fatal Fury: King of Fighters" altnamej="Garou Densetsu: Shukumei no Tatakai" publisher="SNK" year="1991"/>
 	<romset name="fatfury2" ct0="1" altname="Fatal Fury 2" altnamej="Garou Densetsu 2: Arata-naru Tatakai" publisher="SNK" year="1992"/>
-	<romset name="fatfury3" altname="Fatal Fury 3: Road to the Final Victory" altnamej="Garou Densetsu 3: Haruka-naru Tatakai" publisher="SNK" year="1995"/>
+	<romset name="fatfury3" altname="Fatal Fury 3: Road to the Final Victory" altnamej="Garou Densetsu 3: Haruka-naru Tatakai" publisher="SNK" year="1995" rom_wait="0" p_wait="1"/>
 	<romset name="fbfrenzy" altname="Football Frenzy" publisher="SNK" year="1992"/>
 	<romset name="fightfev" altname="Fight Fever" altnamej="Wang Jung Wang" publisher="Viccom" year="1994"/>
 	<romset name="fightfeva,fghtfeva" altname="Fight Fever (set 2)" altnamej="Wang Jung Wang (set 2)" publisher="Viccom" year="1994"/>
@@ -86,7 +86,7 @@ https://lmgtfy.com/?q=darksoft+neo+geo+roll-up+pack
 	<romset name="kof94" altname="King of Fighters '94, The" publisher="SNK" year="1994" rom_wait="1" p_wait="1"/>
 	<romset name="kof95" altname="King of Fighters '95, The" publisher="SNK" year="1995"/>
 	<romset name="kof95a" altname="King of Fighters '95, The (NGM-084, alt board)" publisher="SNK" year="1995"/>
-	<romset name="kof95h" altname="King of Fighters '95, The (NGH-084)" publisher="SNK" year="1995"/>
+	<romset name="kof95h" altname="King of Fighters '95, The (NGH-084)" publisher="SNK" year="1995" rom_wait="0" p_wait="1"/>
 	<romset name="kotm" altname="King of the Monsters" publisher="SNK" year="1991"/>
 	<romset name="kotmh" altname="King of the Monsters (set 2)" publisher="SNK" year="1991"/>
 	<romset name="kotm2" altname="King of the Monsters 2: The Next Thing" publisher="SNK" year="1992"/>
@@ -111,7 +111,7 @@ https://lmgtfy.com/?q=darksoft+neo+geo+roll-up+pack
 	<romset name="mslug2t" altname="Metal Slug 2 Turbo (hack)" publisher="Hack / Bootleg" year="1998"/>
 	<romset name="mutnat" altname="Mutation Nation" publisher="SNK" year="1992"/>
 	<romset name="nam1975" altname="NAM-1975" publisher="SNK" year="1990" vromb_offset="0x200000"/>
-	<romset name="ncombat" altname="Ninja Combat" publisher="Alpha Denshi Co." year="1990" vromb_offset="0x200000"/>
+	<romset name="ncombat" altname="Ninja Combat" publisher="Alpha Denshi Co." year="1990" vromb_offset="0x200000" rom_wait="1" p_wait="0"/>
 	<romset name="ncombath" altname="Ninja Combat (NGH-009)" publisher="Alpha Denshi Co." year="1990" vromb_offset="0x200000"/>
 	<romset name="ncommand" altname="Ninja Commando" publisher="Alpha Denshi Co." year="1992" rom_wait="1"/>
 	<romset name="neobombe" altname="Neo Bomberman" publisher="Hudson" year="1997"/>
@@ -159,12 +159,12 @@ https://lmgtfy.com/?q=darksoft+neo+geo+roll-up+pack
 	<romset name="sengoku2" altname="Sengoku 2" altnamej="Sengoku Denshou 2" publisher="SNK" year="1993"/>
 	<romset name="socbrawl" altname="Soccer Brawl" publisher="SNK" year="1991"/>
 	<romset name="socbrawlh,scbrawlh" altname="Soccer Brawl (NGH-031)" publisher="SNK" year="1991"/>
-	<romset name="sonicwi2" altname="Aero Fighters 2" altnamej="Sonic Wings 2" publisher="Video System Co." year="1994"/>
-	<romset name="sonicwi3" altname="Aero Fighters 3" altnamej="Sonic Wings 3" publisher="Video System Co." year="1995"/>
+	<romset name="sonicwi2" altname="Aero Fighters 2" altnamej="Sonic Wings 2" publisher="Video System Co." year="1994" rom_wait="0" p_wait="0"/>
+	<romset name="sonicwi3" altname="Aero Fighters 3" altnamej="Sonic Wings 3" publisher="Video System Co." year="1995" rom_wait="0" p_wait="0"/>
 	<romset name="spinmast" altname="Spinmaster" altnamej="Miracle Adventure" publisher="Data East Corporation" year="1993"/>
 	<romset name="ssideki" ct0="1" altname="Super Sidekicks" altnamej="Tokuten Ou" publisher="SNK" year="1992"/>
 	<romset name="ssideki2" altname="Super Sidekicks 2: The World Championship" altnamej="Tokuten Ou 2: Real Fight Football" publisher="SNK" year="1994"/>
-	<romset name="ssideki3" altname="Super Sidekicks 3: The Next Glory" altnamej="Tokuten Ou 3: Eikou e no Chousen" publisher="SNK" year="1995"/>
+	<romset name="ssideki3" altname="Super Sidekicks 3: The Next Glory" altnamej="Tokuten Ou 3: Eikou e no Chousen" publisher="SNK" year="1995" rom_wait="0" p_wait="0"/>
 	<romset name="ssideki4" altname="Ultimate 11, The: The SNK Football Championship" altnamej="Tokuten Ou: Honoo no Libero" publisher="SNK" year="1996"/>
 	<romset name="stakwin" altname="Stakes Winner" altnamej="Stakes Winner: GI Kinzen Seiha e no Michi" publisher="Saurus" year="1995"/>
 	<romset name="stakwin2" altname="Stakes Winner 2" publisher="Saurus" year="1996"/>
@@ -240,8 +240,8 @@ https://lmgtfy.com/?q=darksoft+neo+geo+roll-up+pack
 	<romset name="blazstar" altname="Blazing Star" publisher="Yumekobo" year="1998" ram="1"/>
 	<!-- glitchy, needs a special dev board --><romset name="dragonsh" altname="Dragon's Heaven" publisher="Face" year="1997" ram="1"/>
 	<romset name="kof96" altname="King of Fighters '96, The" publisher="SNK" year="1996" ram="1"/>
-	<romset name="kof96h" altname="King of Fighters '96, The (NGH-214)" publisher="SNK" year="1996" ram="1"/>
-	<romset name="kof97" altname="King of Fighters '97, The" publisher="SNK" year="1997" ram="1"/>
+	<romset name="kof96h" altname="King of Fighters '96, The (NGH-214)" publisher="SNK" year="1996" ram="1" rom_wait="0" p_wait="1"/>
+	<romset name="kof97" altname="King of Fighters '97, The" publisher="SNK" year="1997" ram="1" rom_wait="0" p_wait="1"/>
 	<romset name="kof97h" altname="King of Fighters '97, The (NGH-2320)" publisher="SNK" year="1997" ram="1"/>
 	<romset name="kof97k" altname="King of Fighters '97, The (Korean release)" publisher="SNK" year="1997" ram="1"/>
 	<romset name="kof97oro" altname="King of Fighters '97 Chongchu Jianghu Plus 2003, The (bootleg)" publisher="Hack / Bootleg" year="1997" ram="1"/>
@@ -260,7 +260,7 @@ https://lmgtfy.com/?q=darksoft+neo+geo+roll-up+pack
 	<romset name="preisle2" altname="Prehistoric Isle 2" publisher="Yumekobo / Saurus" year="1999" ram="1"/>
 	<romset name="pulstar" altname="Pulstar" publisher="Aicom" year="1995" ram="1"/>
 	<romset name="ragnagrd" altname="Ragnagard" altnamej="Shin-Oh-Ken" publisher="Saurus" year="1996" ram="1"/>
-	<romset name="rbff2" altname="Real Bout Fatal Fury 2: The Newcomers" altnamej="Real Bout Garou Densetsu 2: The Newcomers" publisher="SNK" year="1998" ram="1"/>
+	<romset name="rbff2" altname="Real Bout Fatal Fury 2: The Newcomers" altnamej="Real Bout Garou Densetsu 2: The Newcomers" publisher="SNK" year="1998" ram="1" rom_wait="0" p_wait="1"/>
 	<romset name="rbff2h" altname="Real Bout Fatal Fury 2: The Newcomers (NGH-2400)" altnamej="Real Bout Garou Densetsu 2: The Newcomers (NGH-2400)" publisher="SNK" year="1998" ram="1"/>
 	<romset name="rbff2k" altname="Real Bout Fatal Fury 2: The Newcomers (Korean release)" publisher="SNK" year="1998" ram="1"/>
 	<romset name="rbffspec" altname="Real Bout Fatal Fury Special" altnamej="Real Bout Garou Densetsu Special" publisher="SNK" year="1997" ram="1"/>
@@ -282,17 +282,17 @@ https://lmgtfy.com/?q=darksoft+neo+geo+roll-up+pack
 	<romset name="garoup" altname="Garou: Mark of the Wolves (prototype)" publisher="SNK" year="1999" ram="2"/>
 	<romset name="kof98" altname="King of Fighters '98, The: The Slugfest" altnamej="King of Fighters '98: Dream Match Never Ends" publisher="SNK" year="1998" ram="2"/>
 	<romset name="kof98a" altname="King of Fighters '98, The: The Slugfest (NGM-2420, alt board)" altnamej="King of Fighters '98: Dream Match Never Ends (NGM-2420, alt board)" publisher="SNK" year="1998" ram="2"/>
-	<romset name="kof98h" altname="King of Fighters '98, The: The Slugfest (NGH-2420)" altnamej="King of Fighters '98: Dream Match Never Ends (NGH-2420)" publisher="SNK" year="1998" ram="2"/>
+	<romset name="kof98h" altname="King of Fighters '98, The: The Slugfest (NGH-2420)" altnamej="King of Fighters '98: Dream Match Never Ends (NGH-2420)" publisher="SNK" year="1998" ram="2" rom_wait="0" p_wait="1"/>
 	<romset name="kof98k" altname="King of Fighters '98, The: The Slugfest (Korean release)" publisher="SNK" year="1998" ram="2"/>
 	<romset name="kof98ka" altname="King of Fighters '98, The: The Slugfest (Korean release, set 2)" publisher="SNK" year="1998" ram="2"/>
-	<romset name="kof99" sma="1" altname="King of Fighters '99, The: Millennium Battle" publisher="SNK" year="1999" ram="2"/>
+	<romset name="kof99" sma="1" altname="King of Fighters '99, The: Millennium Battle" publisher="SNK" year="1999" ram="2" rom_wait="0" p_wait="1"/>
 	<romset name="kof99e" sma="1" altname="King of Fighters '99, The: Millennium Battle (earlier release)" publisher="SNK" year="1999" ram="2"/>
 	<romset name="kof99h" sma="1" altname="King of Fighters '99, The: Millennium Battle (NGH-2510)" publisher="SNK" year="1999" ram="2"/>
 	<romset name="kof99k" sma="1" altname="King of Fighters '99, The: Millennium Battle (Korean release)" publisher="SNK" year="1999" ram="2"/>
 	<romset name="kof99p" altname="King of Fighters '99, The: Millennium Battle (prototype)" publisher="SNK" year="1999" ram="2"/>
-	<romset name="kof2000,kof2000n" cmc="2" sma="5" altname="King of Fighters 2000, The" publisher="SNK" year="2000"/>
-	<romset name="kof2001" altname="King of Fighters 2001, The" publisher="Eolith / SNK" year="2001" ram="2"/>
-	<romset name="kof2001h" altname="King of Fighters 2001, The (NGH-2621)" publisher="Eolith / SNK" year="2001" ram="2"/>
+	<romset name="kof2000,kof2000n" cmc="2" sma="5" altname="King of Fighters 2000, The" publisher="SNK" year="2000" rom_wait="0" p_wait="1"/>
+	<romset name="kof2001" altname="King of Fighters 2001, The" publisher="Eolith / Playmore" year="2001" ram="2"/>
+	<romset name="kof2001h" altname="King of Fighters 2001, The (NGH-2620)" publisher="Eolith / Playmore" year="2001" ram="2" rom_wait="0" p_wait="1"/>
 	<romset name="ct2k3sa" altname="Crouching Tiger Hidden Dragon 2003 Super Plus (The King of Fighters 2001 bootleg)" publisher="Hack / Bootleg" year="2003" ram="2"/>
 	<romset name="kof2002" altname="King of Fighters 2002, The" publisher="Eolith / Playmore" year="2002" ram="2"/>
 	<romset name="kof2002b" altname="King of Fighters 2002, The (bootleg)" publisher="Bootleg" year="2002" ram="2"/>
