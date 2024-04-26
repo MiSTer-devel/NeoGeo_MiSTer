@@ -273,6 +273,16 @@ https://lmgtfy.com/?q=darksoft+neo+geo+roll-up+pack
 	<romset name="shocktroa,shcktroa" altname="Shock Troopers (set 2)" publisher="Saurus" year="1997" ram="1"/>
 	<!-- Not in darksoft pack -->
 	<romset name="xenocrisis" vromb_offset="0x1000000" altname="Xeno Crisis" publisher="Bitmap Bureau Ltd" year="2021"/>
+	<romset name="cyborgforce" altname="Cyborg Force" publisher="Neo Byte Force" year="2023">
+		<file name="cyborg-p1.bin" index="4"/>
+		<file name="cyborg-p2.bin" index="6"/>
+		<file name="cyborg-s1.bin" index="8"/>
+		<file name="cyborg-m1.bin" index="9"/>
+		<file name="cyborg-v1.bin" index="16"/>
+		<file name="cyborg-v2.bin" index="32"/>
+		<file name="cyborg-c1.bin" index="64" size="0x5c82c0"/>
+		<file name="cyborg-c2.bin" index="65" size="0x5c82c0"/>
+	</romset>
 
 	<!-- ROMs requiring 96MB SDRAM (32MB+64MB) -->
 
