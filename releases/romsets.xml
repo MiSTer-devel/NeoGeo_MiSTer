@@ -337,7 +337,7 @@ https://lmgtfy.com/?q=darksoft+neo+geo+roll-up+pack
 	<romset name="smbng" altname="New Super Mario Bros. Demo" publisher="OzzyOuzo" year="2020" ram="2"/>
 	<romset name="svc" cmc="2" pvc="1" altname="SNK vs. Capcom: SVC Chaos" publisher="SNK Playmore" year="2003" ram="2"/>
 	<romset name="svcplus" altname="SNK vs. Capcom Plus (bootleg)" publisher="Hack / Bootleg" year="2003" ram="2"/>
-	<romset name="svcsplus" altname="SNK vs. Capcom Super Plus (bootleg)" publisher="Hack / Bootleg" year="2003" ram="2"/>
+	<romset name="svcsplus" pvc="1" altname="SNK vs. Capcom Super Plus (bootleg)" publisher="Hack / Bootleg" year="2003" ram="2"/>
 	<romset name="svccpru" altname="SNK vs. Capcom Remix Ultra" publisher="Hack / Bootleg" year="2003" ram="2"/>
 	<!-- Non-NeoGeo titles made for specific board. Do not work <romset name="svcpcb,svcpcba" altname="SNK vs. Capcom (PCB)" publisher="SNK Playmore" year="2003"/> -->
 	<!-- Not in darksoft pack -->
