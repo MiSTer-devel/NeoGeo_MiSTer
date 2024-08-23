@@ -75,7 +75,7 @@ always @(posedge clk)
     end
 
 reg psg_cen_1008, psg_cen_240, psg_cen_48, psg_cen_144;
-always @(negedge clk) begin
+always @(posedge clk) begin
     psg_cen_240 <= psgcnt48 ==6'd47 && psgcnt240 == 3'd0;
     psg_cen_48  <= psgcnt48 ==6'd47;
     psg_cen_144 <= psgcnt48 ==6'd47 && psgcnt144==2'd0;
@@ -144,7 +144,7 @@ always @(posedge clk)
     end 
 // evenly spaced clock enable signals
 reg cen_1008, cen_252, cen_63, cen_9;
-always @(negedge clk) begin
+always @(posedge clk) begin
     cen_9    <= clkcnt9  ==4'd8;
     cen_63   <= clkcnt9  ==4'd8 && clkcnt63  ==3'd0;
     cen_252  <= clkcnt9  ==4'd8 && clkcnt63  ==3'd0 && clkcnt252 ==2'd0;

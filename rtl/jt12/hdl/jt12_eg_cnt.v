@@ -29,7 +29,7 @@ module jt12_eg_cnt(
 
 reg	[1:0] eg_cnt_base;
 
-always @(posedge clk) begin : envelope_counter
+always @(posedge clk, posedge rst) begin : envelope_counter
 	if( rst ) begin
 		eg_cnt_base	<= 2'd0;
 		eg_cnt		<=15'd0;

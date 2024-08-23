@@ -21,10 +21,6 @@
     
     */
 
-// altera message_off 10030
-
-`timescale 1ns / 1ps
-
 // Compression vs dynamic range
 // 0 -> 43.6dB
 // 1 -> 29.1
@@ -33,12 +29,12 @@
 
 module jt49_exp(
     input            clk,
-    input      [1:0] comp,  // compression
+    input      [2:0] comp,  // compression
     input      [4:0] din,
     output reg [7:0] dout 
 );
 
-reg [7:0] lut[0:127];
+reg [7:0] lut[0:159];
 
 always @(posedge clk)
     dout <= lut[ {comp,din} ];
@@ -172,6 +168,38 @@ initial begin
     lut[125] = 8'd229;
     lut[126] = 8'd241;
     lut[127] = 8'd255;
+    lut[128] = 8'd0;
+    lut[129] = 8'd8;
+    lut[130] = 8'd10;
+    lut[131] = 8'd12;
+    lut[132] = 8'd16;
+    lut[133] = 8'd22;
+    lut[134] = 8'd29;
+    lut[135] = 8'd35;
+    lut[136] = 8'd44;
+    lut[137] = 8'd50;
+    lut[138] = 8'd56;
+    lut[139] = 8'd60;
+    lut[140] = 8'd64;
+    lut[141] = 8'd85;
+    lut[142] = 8'd97;
+    lut[143] = 8'd103;
+    lut[144] = 8'd108;
+    lut[145] = 8'd120;
+    lut[146] = 8'd127;
+    lut[147] = 8'd134;
+    lut[148] = 8'd141;
+    lut[149] = 8'd149;
+    lut[150] = 8'd157;
+    lut[151] = 8'd166;
+    lut[152] = 8'd175;
+    lut[153] = 8'd185;
+    lut[154] = 8'd195;
+    lut[155] = 8'd206;
+    lut[156] = 8'd217;
+    lut[157] = 8'd229;
+    lut[158] = 8'd241;
+    lut[159] = 8'd255;
 
 end
 endmodule

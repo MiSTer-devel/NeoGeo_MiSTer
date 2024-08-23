@@ -139,7 +139,7 @@ jt12_single_acc #(.win(16),.wout(16)) u_right(
 // Dump each channel independently
 // It dumps values in decimal, left and right
 integer f0,f1,f2,f4,f5,f6;
-reg signed [15:0] sum_l[7], sum_r[7];
+reg signed [15:0] sum_l[0:7], sum_r[0:7];
 
 initial begin
     f0=$fopen("fm0.raw","w");

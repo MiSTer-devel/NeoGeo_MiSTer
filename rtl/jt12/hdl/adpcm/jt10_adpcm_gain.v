@@ -38,7 +38,12 @@ module jt10_adpcm_gain(
     output     signed [15:0] pcm_att
 );
 
+reg [9:0] lin_5b, lin1, lin2, lin6;
+reg [7:0] lracl1, lracl2, lracl3, lracl4, lracl5, lracl6;
+reg [6:0] db5;
 reg [5:0] up_ch_dec;
+reg [3:0] sh1, sh6;
+
 always @(*)
     case(up_ch)
         3'd0: up_ch_dec = 6'b000_001;
@@ -52,7 +57,6 @@ always @(*)
 
 //wire [5:0] en_ch2 = { en_ch[4:0], en_ch[5] }; // shift the bits to fit in the pipeline slot correctly
 
-reg  [6:0] db5;
 always @(*)
     case( db5[2:0] )
         3'd0: lin_5b = 10'd512;
@@ -65,9 +69,6 @@ always @(*)
         3'd7: lin_5b = 10'd280;
     endcase
 
-reg [7:0] lracl1, lracl2, lracl3, lracl4, lracl5, lracl6;
-reg  [9:0] lin_5b, lin1, lin2, lin6;
-reg [3:0] sh1, sh6;
 
 // dB to linear conversion
 assign lr = lracl1[7:6];
@@ -114,6 +115,8 @@ reg [3:0] shcnt1, shcnt2, shcnt3, shcnt4, shcnt5, shcnt6;
 reg shcnt_mod3, shcnt_mod4, shcnt_mod5;
 reg [31:0] pcm2_mul;
 wire signed [15:0] lin2s = {6'b0,lin2};
+reg signed [15:0] pcm1, pcm2, pcm3, pcm4, pcm5, pcm6;
+reg match2;
 
 always @(*) begin
     shcnt_mod3 = shcnt3 != 0;
@@ -121,9 +124,6 @@ always @(*) begin
     shcnt_mod5 = shcnt5 != 0;
     pcm2_mul   = pcm2 * lin2s;
 end
-
-reg signed [15:0] pcm1, pcm2, pcm3, pcm4, pcm5, pcm6;
-reg match2;
 
 assign pcm_att = pcm1;
 

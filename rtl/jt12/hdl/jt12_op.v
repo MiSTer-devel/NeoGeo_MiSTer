@@ -1,4 +1,3 @@
-`timescale 1ns / 1ps
 
 
 /* This file is part of JT12.
@@ -269,5 +268,64 @@ always @(posedge clk) if( clk_en ) begin
     // Extra register, take output after here
     op_result_internal <= op_XII;   
 end
+
+`ifdef SIMULATION
+reg signed [13:0] op_sep2_0;
+reg signed [13:0] op_sep4_0;
+reg signed [13:0] op_sep5_0;
+reg signed [13:0] op_sep6_0;
+reg signed [13:0] op_sep0_0;
+reg signed [13:0] op_sep1_0;
+reg signed [13:0] op_sep2_1;
+reg signed [13:0] op_sep4_1;
+reg signed [13:0] op_sep5_1;
+reg signed [13:0] op_sep6_1;
+reg signed [13:0] op_sep0_1;
+reg signed [13:0] op_sep1_1;
+reg signed [13:0] op_sep2_2;
+reg signed [13:0] op_sep4_2;
+reg signed [13:0] op_sep5_2;
+reg signed [13:0] op_sep6_2;
+reg signed [13:0] op_sep0_2;
+reg signed [13:0] op_sep1_2;
+reg signed [13:0] op_sep2_3;
+reg signed [13:0] op_sep4_3;
+reg signed [13:0] op_sep5_3;
+reg signed [13:0] op_sep6_3;
+reg signed [13:0] op_sep0_3;
+reg signed [13:0] op_sep1_3;
+reg        [ 4:0] sepcnt;
+
+always @(posedge clk) if(clk_en) begin
+    sepcnt <= zero ? 5'd0 : sepcnt+5'd1;
+    case( (sepcnt+14)%24  )
+        0: op_sep0_0 <= op_XII;
+        1: op_sep1_0 <= op_XII;
+        2: op_sep2_0 <= op_XII;
+        3: op_sep4_0 <= op_XII;
+        4: op_sep5_0 <= op_XII;
+        5: op_sep6_0 <= op_XII;
+        6: op_sep0_2 <= op_XII;
+        7: op_sep1_2 <= op_XII;
+        8: op_sep2_2 <= op_XII;
+        9: op_sep4_2 <= op_XII;
+       10: op_sep5_2 <= op_XII;
+       11: op_sep6_2 <= op_XII;
+       12: op_sep0_1 <= op_XII;
+       13: op_sep1_1 <= op_XII;
+       14: op_sep2_1 <= op_XII;
+       15: op_sep4_1 <= op_XII;
+       16: op_sep5_1 <= op_XII;
+       17: op_sep6_1 <= op_XII;
+       18: op_sep0_3 <= op_XII;
+       19: op_sep1_3 <= op_XII;
+       20: op_sep2_3 <= op_XII;
+       21: op_sep4_3 <= op_XII;
+       22: op_sep5_3 <= op_XII;
+       23: op_sep6_3 <= op_XII;
+    endcase
+end
+
+`endif
 
 endmodule

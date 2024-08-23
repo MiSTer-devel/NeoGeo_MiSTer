@@ -24,7 +24,6 @@ module jt12_reg(
     input           rst,
     input           clk,
     input           clk_en /* synthesis direct_enable */,
-    input   [7:0]   din,
     
     input   [2:0]   ch,     // channel to update
     input   [1:0]   op,
@@ -33,16 +32,20 @@ module jt12_reg(
     input           flag_A,
     input           overflow_A,
 
-    input           up_keyon,   
+    // channel udpates
+    input   [2:0]   ch_sel,
+    input   [7:0]   ch_din,
     input           up_alg, 
     input           up_fnumlo,
+    // operator updates
+    input   [7:0]   din,
+    input           up_keyon,
     input           up_pms,
     input           up_dt1,
     input           up_tl,
     input           up_ks_ar,
     input           up_amen_dr,
     input           up_sr,
-        
     input           up_sl_rr,
     input           up_ssgeg,
 
@@ -181,23 +184,6 @@ wire update_op_IV = cur == req_opch_IV;
 // key on/off
 wire    [3:0]   keyon_op = din[7:4];
 wire    [2:0]   keyon_ch = din[2:0];
-// channel data
-wire    [2:0]   fb_in   = din[5:3];
-wire    [2:0]   alg_in  = din[2:0];
-wire    [2:0]   pms_in  = din[2:0];
-wire    [1:0]   ams_in  = din[5:4];
-wire    [7:0]   fnlo_in = din;
-
-
-wire    update_ch_I  = cur_ch == ch;
-wire    update_ch_IV = num_ch==6 ? 
-    { ~cur_ch[2], cur_ch[1:0]} == ch : // 6 channels
-    cur[1:0] == ch[1:0]; // 3 channels
-
-wire up_alg_ch  = up_alg    & update_ch_I;
-wire up_fnumlo_ch=up_fnumlo & update_ch_I;
-wire up_pms_ch  = up_pms    & update_ch_I;
-wire up_ams_ch  = up_pms    & update_ch_IV;
 
 always @(*) begin
     // next = cur==5'd23 ? 5'd0 : cur +1'b1;
@@ -327,46 +313,27 @@ assign { tl_IV,   dt1_I,    mul_II,    ks_II,
 
 
 // memory for CH registers
-// Block/fnum data is latched until fnum low byte is written to
-// Trying to synthesize this memory as M-9K RAM in Altera devices
-// turns out worse in terms of resource utilization. Probably because
-// this memory is already very small. It is better to leave it as it is.
-localparam regch_width=25;
-wire [regch_width-1:0] regch_out;
-wire [regch_width-1:0] regch_in = {
-    up_fnumlo_ch? { latch_fnum, fnlo_in } : { block_I_raw, fnum_I_raw }, // 14
-    up_alg_ch   ? { fb_in, alg_in } : { fb_I, alg_I },//3+3
-    up_ams_ch   ?            ams_in : ams_IV, //2
-    up_pms_ch   ?            pms_in : pms_I   //3
-}; 
+jt12_reg_ch #(.NUM_CH(num_ch)) u_regch(
+    .rst        ( rst           ),
+    .clk        ( clk           ),
+    .cen        ( clk_en        ),
+    .din        ( ch_din        ),
 
-assign {    block_I_raw, fnum_I_raw, 
-            fb_I, alg_I, ams_IV, pms_I } = regch_out;
+    .up_ch      ( ch_sel        ),
+    .latch_fnum ( latch_fnum    ),
+    .up_fnumlo  ( up_fnumlo     ),
+    .up_alg     ( up_alg        ),
+    .up_pms     ( up_pms        ),
 
-jt12_sh_rst #(.width(regch_width),.stages(num_ch)) u_regch(
-    .clk    ( clk       ),
-    .clk_en ( clk_en    ),
-    .rst    ( rst       ),
-    .din    ( regch_in  ),
-    .drop   ( regch_out )
+    .ch         ( next_ch       ), // next active channel
+    .block      ( block_I_raw   ),
+    .fnum       ( fnum_I_raw    ),
+    .fb         ( fb_I          ),
+    .alg        ( alg_I         ),
+    .rl         ( rl            ),
+    .ams_IV     ( ams_IV        ),
+    .pms        ( pms_I         )
 );
 
-generate
-if( num_ch==6 ) begin
-    // RL is on a different register to 
-    // have the reset to 1
-    wire [1:0] rl_in   = din[7:6];	 
-    jt12_sh_rst #(.width(2),.stages(num_ch),.rstval(1'b1)) u_regch_rl(
-        .clk    ( clk       ),
-        .clk_en ( clk_en    ),
-        .rst    ( rst       ),
-        .din    ( up_pms_ch ? rl_in :  rl   ),
-        .drop   ( rl    )
-    );
-end else begin // YM2203 has no stereo output
-    assign rl=2'b11;
-end
-    
-endgenerate
 `endif
 endmodule

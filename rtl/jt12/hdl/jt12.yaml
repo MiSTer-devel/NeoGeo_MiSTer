@@ -1,0 +1,10 @@
+modules:
+  other:
+    - from: jt12/hdl
+      get:
+        - "*.v"
+        - adpcm/*.v
+    - from: jt12/jt49/hdl
+      get:
+        - jt49.yaml
+

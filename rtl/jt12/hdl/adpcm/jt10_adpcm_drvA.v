@@ -54,8 +54,6 @@ module jt10_adpcm_drvA(
 	 input   [5:0]   ch_enable
 );
 
-/* verilator tracing_on */
-
 reg  [5:0] cur_ch;
 reg  [5:0] en_ch;
 reg  [3:0] data;

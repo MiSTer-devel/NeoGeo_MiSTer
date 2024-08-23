@@ -24,7 +24,7 @@ module jt12_eg_ctrl(
 	input				keyoff_now,
 	input		[2:0]	state_in,
 	input		[9:0]	eg,
-	// envelope configuration	
+	// envelope configuration
 	input		[4:0]	arate, // attack  rate
 	input		[4:0]	rate1, // decay   rate
 	input		[4:0]	rate2, // sustain rate
@@ -42,16 +42,16 @@ module jt12_eg_ctrl(
 	output reg			pg_rst
 );
 
-localparam 	ATTACK = 3'b001, 
-			DECAY  = 3'b010, 
+localparam 	ATTACK = 3'b001,
+			DECAY  = 3'b010,
 			HOLD   = 3'b100,
-			RELEASE= 3'b000; // default state is release 
+			RELEASE= 3'b000; // default state is release
 
 // wire is_decaying = state_in[1] | state_in[2];
 
 reg		[4:0]	sustain;
 
-always @(*) 
+always @(*)
 	if( sl == 4'd15 )
 		sustain = 5'h1f; // 93dB
 	else
@@ -74,14 +74,14 @@ always @(*) begin
 	pg_rst = keyon_now | ssg_pg_rst;
 end
 
-always @(*) 
+always @(*)
 	casez ( { keyoff_now, keyon_now, state_in} )
 		5'b01_???: begin // key on
 			base_rate	= arate;
 			state_next	= ATTACK;
 			ssg_inv_out	= ssg_att & ssg_en;
 		end
-		{2'b00, ATTACK}: 
+		{2'b00, ATTACK}:
 			if( eg==10'd0 ) begin
 				base_rate	= rate1;
 				state_next	= DECAY;
@@ -99,7 +99,7 @@ always @(*)
 				ssg_inv_out	= ssg_en & (ssg_alt ^ ssg_inv_in);
 			end
 			else begin
-				base_rate	=  eg[9:5] >= sustain ? rate2 : rate1;
+				base_rate	=  eg[9:5] >= sustain ? rate2 : rate1; // equal comparison according to Nuke
 				state_next	= DECAY;
 				ssg_inv_out = ssg_inv_in;
 			end

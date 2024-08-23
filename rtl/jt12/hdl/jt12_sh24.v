@@ -18,7 +18,6 @@
 	Date: 1-31-2017
 	*/
 
-`timescale 1ns / 1ps
 
 module jt12_sh24 #(parameter width=5 )
 (

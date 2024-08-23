@@ -1,5 +1,5 @@
-set_global_assignment -name QIP_FILE rtl/jt12/hdl/jt10.qip
-set_global_assignment -name QIP_FILE rtl/jt49/hdl/jt49.qip
+set_global_assignment -name QIP_FILE rtl/jt12/target/quartus/jt10.qip
+set_global_assignment -name QIP_FILE rtl/jt49/syn/quartus/jt49.qip
 set_global_assignment -name QIP_FILE rtl/video/video.qip
 set_global_assignment -name QIP_FILE rtl/cd/cd.qip
 set_global_assignment -name QIP_FILE rtl/io/io.qip
@@ -11,4 +11,4 @@ set_global_assignment -name QIP_FILE rtl/cpu/T80/T80.qip
 set_global_assignment -name VERILOG_FILE rtl/cpu/cpu_z80.v
 set_global_assignment -name VERILOG_FILE rtl/cpu/cpu_68k.v
 set_global_assignment -name SYSTEMVERILOG_FILE neogeo.sv
-set_global_assignment -name SDC_FILE neogeo.sdc
+set_global_assignment -name SDC_FILE NeoGeo.sdc

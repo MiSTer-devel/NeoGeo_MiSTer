@@ -18,7 +18,6 @@
 	Date: 25-2-2017
 	*/
 
-`timescale 1ns / 1ps
 
 /*
 

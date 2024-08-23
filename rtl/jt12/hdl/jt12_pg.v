@@ -24,7 +24,6 @@ http://gendev.spritesmind.net/forum/viewtopic.php?t=386&postdays=0&postorder=asc
     
     */
 
-`timescale 1ns / 1ps
 
 /*
 
