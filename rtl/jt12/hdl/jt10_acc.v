@@ -80,8 +80,8 @@ reg acc_en_l, acc_en_r;
 always @(*)
     case( {cur_op,cur_ch} )
         {2'd0,3'd0}: begin // ADPCM-A:
-            acc_input_l = (adpcmA_l <<< 2) + (adpcmA_l <<< 1);
-            acc_input_r = (adpcmA_r <<< 2) + (adpcmA_r <<< 1);
+            acc_input_l = (adpcmA_l <<< 2) + (adpcmA_l <<< 1) + adpcmA_l + (adpcmA_l >>> 2); // amplify by 7.25x to match AES channel balance
+            acc_input_r = (adpcmA_r <<< 2) + (adpcmA_r <<< 1) + adpcmA_r + (adpcmA_r >>> 2);
             `ifndef NOMIX
             acc_en_l    = 1'b1;
             acc_en_r    = 1'b1;
