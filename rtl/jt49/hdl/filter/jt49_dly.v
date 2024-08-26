@@ -22,7 +22,7 @@
 // Delay stage
 // use for long delays
 
-module jt49_dly #(parameter dw=8, depth=10)(
+module jt49_dly #(parameter DW=8, depth=10)(
     input                clk,
     input                cen,
     input                rst,
@@ -36,10 +36,10 @@ reg [depth-1:0] rdpos, wrpos;
 
 
 // memory
-reg [dw-1:0] ram[0:2**depth-1];
+reg [DW-1:0] ram[0:2**depth-1];
 always @(posedge clk) 
     if(rst)
-        pre_dout <= {dw{1'b0}};
+        pre_dout <= {DW{1'b0}};
     else begin
         pre_dout <= ram[rdpos];
         if( cen ) ram[wrpos] <= din;
@@ -57,7 +57,7 @@ always @(posedge clk)
     if( rst ) begin
         rdpos <= { {depth-1{1'b0}}, 1'b1};
         wrpos <= {depth{1'b1}};
-        dout <= {dw{1'b0}};
+        dout <= {DW{1'b0}};
     end else if(cen) begin
         dout <= pre_dout;
         rdpos <= rdpos+1'b1;

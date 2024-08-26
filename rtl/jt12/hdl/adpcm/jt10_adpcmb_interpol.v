@@ -80,7 +80,7 @@ always @(posedge clk) if(cen55) begin
     else pcminter <= ( (pcminter < pcmlast) == step_sign ) ? pcminter : step_sign ? pcminter - step : pcminter + step;
 end
 
-jt10_adpcm_div #(.dw(16)) u_div(
+jt10_adpcm_div #(.DW(16)) u_div(
     .rst_n  ( rst_n       ),
     .clk    ( clk         ),
     .cen    ( cen         ),

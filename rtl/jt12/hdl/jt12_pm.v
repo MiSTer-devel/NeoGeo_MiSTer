@@ -17,9 +17,7 @@
 	Version: 1.0
 	Date: 14-10-2018
 	*/
-// altera message_off 10030
 
-`timescale 1ns / 1ps
 
 // This implementation follows that of Alexey Khokholov (Nuke.YKT) in C language.
 

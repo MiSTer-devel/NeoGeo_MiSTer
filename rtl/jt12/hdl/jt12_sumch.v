@@ -18,7 +18,6 @@
 	Date: 1-31-2017
 	*/
 
-`timescale 1ns / 1ps
 
 /* The input is {op[1:0], ch[2:0]}
  it adds 1 to the channel and overflow to the operator correctly */

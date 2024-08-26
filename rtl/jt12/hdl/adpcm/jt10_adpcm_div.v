@@ -22,39 +22,39 @@
 // calculates d=a/b
 // a = b*d + r
 
-module jt10_adpcm_div #(parameter dw=16)(
+module jt10_adpcm_div #(parameter DW=16)(
     input               rst_n,
     input               clk,    // CPU clock
     input               cen,
     input               start,  // strobe
-    input      [dw-1:0] a,
-    input      [dw-1:0] b,
-    output reg [dw-1:0] d,
-    output reg [dw-1:0] r,
+    input      [DW-1:0] a,
+    input      [DW-1:0] b,
+    output reg [DW-1:0] d,
+    output reg [DW-1:0] r,
     output              working
 );
 
-reg  [dw-1:0] cycle;
+reg  [DW-1:0] cycle;
 assign working = cycle[0];
 
-wire [dw:0] sub = { r[dw-2:0], d[dw-1] } - b;  
+wire [DW:0] sub = { r[DW-2:0], d[DW-1] } - b;  
 
 always @(posedge clk or negedge rst_n)
     if( !rst_n ) begin
         cycle <= 'd0;
     end else if(cen) begin
         if( start ) begin
-            cycle <= ~16'd0;
-            r     <=  16'd0;
+            cycle <= {DW{1'b1}};
+            r     <= 0;
             d     <= a;
         end else if(cycle[0]) begin
-            cycle <= { 1'b0, cycle[dw-1:1] };
-            if( sub[dw] == 0 ) begin
-                r <= sub[dw-1:0];
-                d <= { d[dw-2:0], 1'b1};
+            cycle <= { 1'b0, cycle[DW-1:1] };
+            if( sub[DW] == 0 ) begin
+                r <= sub[DW-1:0];
+                d <= { d[DW-2:0], 1'b1};
             end else begin
-                r <= { r[dw-2:0], d[dw-1] };
-                d <= { d[dw-2:0], 1'b0 };
+                r <= { r[DW-2:0], d[DW-1] };
+                d <= { d[DW-2:0], 1'b0 };
             end
         end
     end

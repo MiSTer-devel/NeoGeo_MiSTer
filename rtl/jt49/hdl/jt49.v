@@ -35,22 +35,24 @@ module jt49 ( // note that input ports are not multiplexed
     output reg [7:0] A,      // linearised channel output
     output reg [7:0] B,
     output reg [7:0] C,
+    output           sample,
 
     input      [7:0] IOA_in,
     output     [7:0] IOA_out,
+    output           IOA_oe,
 
     input      [7:0] IOB_in,
-    output     [7:0] IOB_out
+    output     [7:0] IOB_out,
+    output           IOB_oe
 );
 
-parameter [1:0] COMP=2'b00;
+parameter [2:0] COMP=3'b000;
+parameter       YM2203_LUMPED=0;
 parameter       CLKDIV=3;
-wire [1:0] comp = COMP;
+wire [2:0] comp = COMP;
 
-reg [7:0] regarray[15:0];
-
-assign IOA_out = regarray[14];
-assign IOB_out = regarray[15];
+reg  [7:0] regarray[15:0];
+wire [7:0] port_A, port_B;
 
 wire [4:0] envelope;
 wire bitA, bitB, bitC;
@@ -58,6 +60,14 @@ wire noise;
 reg Amix, Bmix, Cmix;
 
 wire cen16, cen256;
+
+assign IOA_out = regarray[14];
+assign IOB_out = regarray[15];
+assign port_A  = IOA_in;
+assign port_B  = IOB_in;
+assign IOA_oe  = regarray[7][6];
+assign IOB_oe  = regarray[7][7];
+assign sample  = cen16;
 
 jt49_cen #(.CLKDIV(CLKDIV)) u_cen(
     .clk    ( clk     ),
@@ -159,7 +169,10 @@ always @(posedge clk) if( clk_en ) begin
     logC <= !Cmix ? 5'd0 : (use_envC ? envelope : volC );
 end
 
-reg [9:0] acc;
+reg  [9:0] acc;
+wire [9:0] elin;
+
+assign elin = {2'd0,lin};
 
 always @(posedge clk, negedge rst_n) begin
     if( !rst_n ) begin
@@ -171,7 +184,9 @@ always @(posedge clk, negedge rst_n) begin
         sound  <= 10'd0;
     end else if(clk_en) begin
         acc_st <= { acc_st[2:0], acc_st[3] };
-        acc <= acc + {2'b0,lin};
+        // Lumping the channel outputs for YM2203 will cause only the higher
+        // voltage to pass throuh, as the outputs seem to use a source follower.
+        acc    <= YM2203_LUMPED==1 ? (acc>elin ? acc : elin) : acc + elin;
         case( acc_st )
             4'b0001: begin
                 log   <= logA;
@@ -194,7 +209,7 @@ always @(posedge clk, negedge rst_n) begin
     end
 end
 
-reg [7:0] read_mask;
+reg  [7:0] read_mask;
 
 always @(*)
     case(addr)
@@ -226,8 +241,8 @@ always @(posedge clk, negedge rst_n) begin
         last_write  <= write;
         // Data read
         case( addr )
-            4'he: dout <= !regarray[7][6] ? IOA_in : 8'hff;
-            4'hf: dout <= !regarray[7][7] ? IOB_in : 8'hff;
+            4'he: dout <= port_A;
+            4'hf: dout <= port_B;
             default: dout <= regarray[ addr ] & read_mask;
         endcase
         // Data write

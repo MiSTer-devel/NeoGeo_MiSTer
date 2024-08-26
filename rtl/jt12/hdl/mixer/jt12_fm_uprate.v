@@ -43,10 +43,19 @@ module jt12_fm_uprate(
 );
 
 wire signed [15:0] fm2,fm3,fm4;
+reg  signed [15:0] mix_sum, mixed, fmin, psgin;
+reg                ov;
 
-reg [15:0] mixed;
-always @(posedge clk)
-    mixed <= (fm_en?fm_snd:16'd0) + {{1{psg_snd[11]}},psg_snd,3'b0};
+always @* begin
+    fmin    = fm_en?fm_snd:16'd0;
+    psgin   = {{1{psg_snd[11]}},psg_snd,3'b0};
+    mix_sum = fmin + psgin;
+    ov      = &{fmin[15],psgin[15],~mix_sum[15]} | &{~fmin[15],~psgin[15],mix_sum[15]};
+end
+
+always @(posedge clk) begin
+    mixed <= ov ? {fmin[15],{15{~fmin[15]}}} : mix_sum;
+end
 
 // 1008 --> 252 x4
 jt12_interpol #(.calcw(17),.inw(16),.rate(4),.m(1),.n(1)) 

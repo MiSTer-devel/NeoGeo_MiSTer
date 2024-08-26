@@ -1,4 +1,3 @@
-`timescale 1ns / 1ps
 
 
 /* This file is part of JT12.

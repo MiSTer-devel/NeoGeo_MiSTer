@@ -22,7 +22,7 @@
 // DC removal filter
 // input is unsigned
 // output is signed
-
+/* verilator tracing_off */
 module jt49_dcrm(
     input                clk,
     input                cen,

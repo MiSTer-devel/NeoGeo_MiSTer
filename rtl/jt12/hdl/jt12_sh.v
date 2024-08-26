@@ -18,7 +18,6 @@
 	Date: 1-31-2017
 	*/
 
-`timescale 1ns / 1ps
 
 // stages must be greater than 2
 module jt12_sh #(parameter width=5, stages=24 )

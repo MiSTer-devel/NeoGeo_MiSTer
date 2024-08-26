@@ -23,7 +23,6 @@
 // Accumulates an arbitrary number of inputs with saturation
 // restart the sum when input "zero" is high
 
-`timescale 1ns / 1ps
 
 module jt12_single_acc #(parameter 
         win=14, // input data width 
