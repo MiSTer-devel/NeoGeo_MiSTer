@@ -234,6 +234,16 @@ https://lmgtfy.com/?q=darksoft+neo+geo+roll-up+pack
 		<file name="teot-c1.bin" index="64" size="0x800000"/>
 		<file name="teot-c2.bin" index="65" size="0x800000"/>
 	</romset>
+	<romset name="captainbarrel" altname="Captain Barrel!" publisher="NEO.BYTE.FORCE / OzzyOuzo" year="2024">
+		<file name="captain-p1.bin" index="4"/>
+		<file name="captain-p2.bin" index="6"/>
+		<file name="captain-s1.bin" index="8"/>
+		<file name="captain-m1.bin" index="9"/>
+		<file name="captain-v1.bin" index="16"/>
+		<file name="captain-v2.bin" index="32"/>
+		<file name="captain-c1.bin" index="64"/>
+		<file name="captain-c2.bin" index="65"/>
+	</romset>
 
 	<!-- ROMs requiring 64MB SDRAM -->
 
