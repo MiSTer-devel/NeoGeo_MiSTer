@@ -263,7 +263,7 @@ video_freak video_freak
 // 0         1         2         3          4         5         6   
 // 01234567890123456789012345678901 23456789012345678901234567890123
 // 0123456789ABCDEFGHIJKLMNOPQRSTUV 0123456789ABCDEFGHIJKLMNOPQRSTUV
-// XXXXXXXXXXXXX XXX XXXXX XXXXXXX  XXXXXXXXXXX              XXXXXX 
+// XXXXXXXXXXXXX XXX XXXXX XXXXXXX  XXXXXXXXXXXX             XXXXXX 
 
 `include "build_id.v"
 localparam CONF_STR = {
@@ -288,6 +288,7 @@ localparam CONF_STR = {
 	"O3,Video Mode,NTSC,PAL;",
 	"-;",
 	"o9A,Input,Joystick or Spinner,Joystick,Spinner,Mouse(Irr.Maze);",
+	"oB,Multitap,No,NEO-FTC1B;",
 	"-;",
 	"H0O4,Memory Card,Plugged,Unplugged;",
 	"RL,Reload Memory Card;",
@@ -460,6 +461,8 @@ wire  [1:0] sd_ack;
 
 wire [15:0] joystick_0;	// ----HNLS DCBAUDLR
 wire [15:0] joystick_1;
+wire [15:0] joystick_2;
+wire [15:0] joystick_3;
 wire  [8:0] spinner_0, spinner_1;
 wire  [1:0] buttons;
 wire [10:0] ps2_key;
@@ -490,6 +493,7 @@ hps_io #(.CONF_STR(CONF_STR), .WIDE(1), .VDNUM(2)) hps_io
 	.forced_scandoubler(forced_scandoubler),
 
 	.joystick_0(joystick_0), .joystick_1(joystick_1),
+	.joystick_2(joystick_2), .joystick_3(joystick_3),
 	.spinner_0(spinner_0), .spinner_1(spinner_1),
 	.ps2_mouse(ps2_mouse),
 	.buttons(buttons),
@@ -1233,6 +1237,8 @@ assign sdr2_en = 0;
 assign sdram_dout  = sdr_pri_sel ? sdram1_dout : sdram2_dout;
 assign sdram_ready = sdram2_ready & sdram1_ready;
 
+wire [2:0] P1_OUT;
+
 neo_d0 D0(
 	.CLK(CLK_48M),
 	.CLK_EN_24M_P(CLK_EN_24M_P),
@@ -1250,6 +1256,7 @@ neo_d0 D0(
 	.nSDROM(nSDROM), .nSDMRD(nSDMRD), .nSDMWR(nSDMWR), .nZRAMCS(nZRAMCS),
 	.SDRD0(SDRD0),	.SDRD1(SDRD1),
 	.n2610CS(n2610CS), .n2610RD(n2610RD), .n2610WR(n2610WR),
+	.P1_OUT(P1_OUT),
 	.BNK(BNK)
 );
 
@@ -1609,6 +1616,9 @@ neo_g0 G0(
 	.CDD({8'hFF, CDD}), .PC(PAL_RAM_DATA)
 );
 
+wire [11:0] joy_0 = (status[43] & P1_OUT[0]) ? (joystick_2[11:0] | {P1_OUT[2],5'b00000}) : (joystick_0[11:0] | {status[43] & P1_OUT[2],4'b0000});
+wire [11:0] joy_1 = (status[43] & P1_OUT[0]) ? (joystick_3[11:0] | {P1_OUT[2],5'b00000}) : (joystick_1[11:0] | {status[43] & P1_OUT[2],4'b0000});
+
 neo_c1 C1(
 	.CLK(CLK_48M),
 	.M68K_ADDR(M68K_ADDR[21:17]),
@@ -1623,8 +1633,8 @@ neo_c1 C1(
 	.nLSPOE(nLSPOE), .nLSPWE(nLSPWE),
 	.nCRDO(nCRDO), .nCRDW(nCRDW), .nCRDC(nCRDC),
 	.nSDW(nSDW),
-	.P1_IN(~{(joystick_0[9:8]|ps2_mouse[2]), {use_mouse ? ms_pos : use_sp ? {|{joystick_0[7:4],ps2_mouse[1:0]},sp0} : {joystick_0[7:4]|{3{~xram & joystick_0[11]}}, joystick_0[0], joystick_0[1], joystick_0[2], joystick_0[3]}}}),
-	.P2_IN(~{ joystick_1[9:8],               {use_mouse ? ms_btn : use_sp ? {|{joystick_1[7:4]},               sp1} : {joystick_1[7:4]|{3{~xram & joystick_1[11]}}, joystick_1[0], joystick_1[1], joystick_1[2], joystick_1[3]}}}),
+	.P1_IN(~{(joy_0[9:8]|ps2_mouse[2]), {use_mouse ? ms_pos : use_sp ? {|{joy_0[7:4],ps2_mouse[1:0]},sp0} : {joy_0[7:4]|{3{~xram & joy_0[11]}}, joy_0[0], joy_0[1], joy_0[2], joy_0[3]}}}),
+	.P2_IN(~{ joy_1[9:8],               {use_mouse ? ms_btn : use_sp ? {|{joy_1[7:4]},               sp1} : {joy_1[7:4]|{3{~xram & joy_1[11]}}, joy_1[0], joy_1[1], joy_1[2], joy_1[3]}}}),
 	.nCD1(nCD1), .nCD2(nCD2),
 	.nWP(0),			// Memory card is never write-protected
 	.nROMWAIT(~rom_wait), .nPWAIT0(~p_wait[0]), .nPWAIT1(~p_wait[1]), .PDTACK(1),

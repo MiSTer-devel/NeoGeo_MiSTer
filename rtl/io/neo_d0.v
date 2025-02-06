@@ -60,11 +60,10 @@ module neo_d0(
 	z80ctrl Z80CTRL(CLK, SDA_L, SDA_H, nSDRD, nSDWR, nMREQ, nIORQ, nSDW, nRESET, nZ80NMI, nSDZ80R, nSDZ80W,
 				nSDZ80CLR, nSDROM, nSDMRD, nSDMWR, SDRD0, SDRD1, n2610CS, n2610RD, n2610WR, nZRAMCS);
 	
-	assign {P2_OUT, P1_OUT} = nRESETP ? REG_OUT : 6'b000000;
-	assign BNK = nRESETP ? REG_BNK : 3'b000;
+	assign {P2_OUT, P1_OUT} = REG_OUT;
+	assign BNK = REG_BNK;
 
-	always @(posedge CLK)
-	begin
+	always @(posedge CLK) begin
 		reg nBITWD0_d;
 		nBITWD0_d <= nBITWD0;
 		if (!nBITWD0 & nBITWD0_d) begin
@@ -73,6 +72,7 @@ module neo_d0(
 			else
 				REG_OUT <= M68K_DATA[5:0];
 		end
+		if(~nRESETP) {REG_BNK, REG_OUT} <= 0;
 	end
 	
 endmodule
