@@ -69,6 +69,7 @@ https://lmgtfy.com/?q=darksoft+neo+geo+roll-up+pack
 	<romset name="ganryu" altname="Ganryu" altnamej="Musashi Ganryuki" publisher="Visco" year="1999"/>
 	<romset name="ghostlop" altname="Ghostlop" publisher="Data East Corporation" year="1996"/>
 	<romset name="goalx3" altname="Goal! Goal! Goal!" publisher="Visco" year="1995"/>
+	<romset name="goldenaxe" altname=Golden Axe" publisher="Sega" year="1989"/>
 	<romset name="gowcaizr" altname="Voltage Fighter Gowcaizer" altnamej="Choujin Gakuen Gowcaizer" publisher="Technos Japan" year="1995"/>
 	<romset name="gpilots" altname="Ghost Pilots" publisher="SNK" year="1991" vromb_offset="0x280000"/>
 	<romset name="gpilotsh" altname="Ghost Pilots (NGH-020, US)" publisher="SNK" year="1991" vromb_offset="0x280000"/>
@@ -157,6 +158,7 @@ https://lmgtfy.com/?q=darksoft+neo+geo+roll-up+pack
 	<romset name="sengoku" altname="Sengoku" altnamej="Sengoku Denshou" publisher="SNK" year="1991"/>
 	<romset name="sengokuh" altname="Sengoku (NGH-017, US)" altnamej="Sengoku Denshou (NGH-017, US)" publisher="SNK" year="1991"/>
 	<romset name="sengoku2" altname="Sengoku 2" altnamej="Sengoku Denshou 2" publisher="SNK" year="1993"/>
+	<romset name="shinobi" altname="Shinobi" altnamej="Shinobi" publisher="Sega" year="1987"/>
 	<romset name="socbrawl" altname="Soccer Brawl" publisher="SNK" year="1991"/>
 	<romset name="socbrawlh,scbrawlh" altname="Soccer Brawl (NGH-031)" publisher="SNK" year="1991"/>
 	<romset name="sonicwi2" altname="Aero Fighters 2" altnamej="Sonic Wings 2" publisher="Video System Co." year="1994" rom_wait="0" p_wait="0"/>
