@@ -252,6 +252,14 @@ https://lmgtfy.com/?q=darksoft+neo+geo+roll-up+pack
 		<file name="340.m1" index="9"/>
 		<file name="340.v1" index="16"/>
 	</romset>
+	<romset name="wrldracr" altname="World Racer" publisher="Blastar" year="2025">
+	  <file name="wrldracr.p1" index="4"/>
+	  <file name="wrldracr.s1" index="8"/>
+	  <file name="wrldracr.c1" index="64"/>
+	  <file name="wrldracr.c2" index="65"/>
+	  <file name="wrldracr.m1" index="9"/>
+	  <file name="wrldracr.v1" index="16"/>
+	</romset>
 
 	<!-- ROMs requiring 64MB SDRAM -->
 
