@@ -320,9 +320,9 @@ localparam CONF_STR = {
 	"P1-;",
 	"-;",
 	"RE,Reset & apply;",  // decouple manual reset from system reset 
-	"J1,A,B,C,D,Start,Select,Coin,ABC;",	// ABC is a special key to press A+B+C at once, useful for keyboards that don't allow more than 2 keypresses at once
-	"jn,A,B,X,Y,Start,Select,L,R;",	        // name mapping 
-	"jp,B,A,D,C,Start,Select,L,R;",	        // positional mapping consistent with NeoGeoCD controller
+	"J1,A,B,C,D,Start,Select,Coin,ABC,A+B,C+D;",	// ABC is a special key to press A+B+C at once, useful for keyboards that don't allow more than 2 keypresses at once; A+B/C+D are useful for fighting games (Samurai Shodown, Garou, etc.)
+	"jn,A,B,X,Y,Start,Select,L,R,L2,R2;",	// name mapping 
+	"jp,B,A,D,C,Start,Select,L,R,L2,R2;",	// positional mapping consistent with NeoGeoCD controller
 	"V,v",`BUILD_DATE						// 
 };
 
@@ -461,7 +461,7 @@ wire  [1:0] sd_wr;
 wire  [1:0] sd_rd;
 wire  [1:0] sd_ack;
 
-wire [15:0] joystick_0;	// ----HNLS DCBAUDLR
+wire [15:0] joystick_0;	// 21--HNLS DCBAUDLR  (1=A+B, 2=C+D combos)
 wire [15:0] joystick_1;
 wire [15:0] joystick_2;
 wire [15:0] joystick_3;
@@ -1642,8 +1642,8 @@ neo_c1 C1(
 	.nLSPOE(nLSPOE), .nLSPWE(nLSPWE),
 	.nCRDO(nCRDO), .nCRDW(nCRDW), .nCRDC(nCRDC),
 	.nSDW(nSDW),
-	.P1_IN(~{(joy_0[9:8]|ps2_mouse[2]), {use_mouse ? ms_pos : use_sp ? {|{joy_0[7:4],ps2_mouse[1:0]},sp0} : {joy_0[7:4]|{3{~xram & joy_0[11]}}, joy_0[0], joy_0[1], joy_0[2], joy_0[3]}}}),
-	.P2_IN(~{ joy_1[9:8],               {use_mouse ? ms_btn : use_sp ? {|{joy_1[7:4]},               sp1} : {joy_1[7:4]|{3{~xram & joy_1[11]}}, joy_1[0], joy_1[1], joy_1[2], joy_1[3]}}}),
+	.P1_IN(~{(joy_0[9:8]|ps2_mouse[2]), {use_mouse ? ms_pos : use_sp ? {|{joy_0[7:4],ps2_mouse[1:0]},sp0} : {joy_0[7:4]|{3{~xram & joy_0[11]}}|{{2{joystick_0[13]}},{2{joystick_0[12]}}}, joy_0[0], joy_0[1], joy_0[2], joy_0[3]}}}),
+	.P2_IN(~{ joy_1[9:8],               {use_mouse ? ms_btn : use_sp ? {|{joy_1[7:4]},               sp1} : {joy_1[7:4]|{3{~xram & joy_1[11]}}|{{2{joystick_1[13]}},{2{joystick_1[12]}}}, joy_1[0], joy_1[1], joy_1[2], joy_1[3]}}}),
 	.nCD1(nCD1), .nCD2(nCD2),
 	.nWP(0),			// Memory card is never write-protected
 	.nROMWAIT(~rom_wait), .nPWAIT0(~p_wait[0]), .nPWAIT1(~p_wait[1]), .PDTACK(1),
