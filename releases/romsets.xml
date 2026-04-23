@@ -70,8 +70,8 @@ https://lmgtfy.com/?q=darksoft+neo+geo+roll-up+pack
 	<romset name="ghostlop" altname="Ghostlop" publisher="Data East Corporation" year="1996"/>
 	<romset name="goalx3" altname="Goal! Goal! Goal!" publisher="Visco" year="1995"/>
 	<romset name="gowcaizr" altname="Voltage Fighter Gowcaizer" altnamej="Choujin Gakuen Gowcaizer" publisher="Technos Japan" year="1995"/>
-	<romset name="gpilots" altname="Ghost Pilots" publisher="SNK" year="1991" vromb_offset="0x280000"/>
-	<romset name="gpilotsh" altname="Ghost Pilots (NGH-020, US)" publisher="SNK" year="1991" vromb_offset="0x280000"/>
+	<romset name="gpilots" altname="Ghost Pilots" publisher="SNK" year="1991" vromb_offset="0x200000"/>
+	<romset name="gpilotsh" altname="Ghost Pilots (NGH-020, US)" publisher="SNK" year="1991" vromb_offset="0x200000"/>
 	<romset name="gururin" altname="Gururin" publisher="Face" year="1994"/>
 	<romset name="hyprnoid" altname="Hypernoid" publisher="NeoHomeBrew" year="2021"/>
 	<romset name="ironclad" altname="Ironclad" altnamej="Choutetsu Brikin'ger" publisher="Saurus" year="1996"/>
@@ -169,7 +169,7 @@ https://lmgtfy.com/?q=darksoft+neo+geo+roll-up+pack
 	<romset name="stakwin" altname="Stakes Winner" altnamej="Stakes Winner: GI Kinzen Seiha e no Michi" publisher="Saurus" year="1995"/>
 	<romset name="stakwin2" altname="Stakes Winner 2" publisher="Saurus" year="1996"/>
 	<romset name="strhoop" altname="Street Hoop / Street Slam" altnamej="Dunk Dream" publisher="Data East Corporation" year="1994"/>
-	<romset name="superspy" altname="Super Spy, The" publisher="SNK" year="1990" vromb_offset="0x280000"/>
+	<romset name="superspy" altname="Super Spy, The" publisher="SNK" year="1990" vromb_offset="0x200000"/>
 	<romset name="tetrismn" altname="Tetris"/>
 	<romset name="tophuntr" altname="Top Hunter: Roddy &amp; Cathy" publisher="SNK" year="1994"/>
 	<romset name="tophuntrh,tphuntrh" altname="Top Hunter: Roddy &amp; Cathy (NGH-046)" publisher="SNK" year="1994"/>
