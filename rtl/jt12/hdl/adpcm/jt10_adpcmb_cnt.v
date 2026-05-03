@@ -77,8 +77,11 @@ always @(posedge clk or negedge rst_n)
         last_set <= 'b0;
     end else begin
         last_set <= set_flag;
-        if( clr_flag ) flag <= 1'b0;
-        if( !last_set && set_flag ) flag <= 1'b1;
+        if( clr_flag ) begin
+            flag <= 1'b0;
+        end else if( !last_set && set_flag ) begin
+            flag <= 1'b1;
+        end
     end
 
 // Address
