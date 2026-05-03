@@ -77,7 +77,6 @@ module jt12_mmr(
     output  reg  [15:0] adeltan_b,  // Delta-N
     output  reg  [ 7:0] aeg_b,      // Envelope Generator Control
     output  reg  [ 6:0] flag_ctl,
-    output  reg  [ 6:0] flag_mask,
     // Operator
     output          xuse_prevprev1,
     output          xuse_internal,
@@ -253,7 +252,6 @@ always @(posedge clk) begin : memory_mapped_registers
         astart_b    <= 0;
         aend_b      <= 0;
         adeltan_b   <= 0;
-        flag_mask   <= 0;
         aeg_b       <= 8'hff;
         // Original test features
         eg_stop     <= 0;
@@ -386,8 +384,7 @@ always @(posedge clk) begin : memory_mapped_registers
                             4'ha: adeltan_b[15:8] <= din;
                             4'hb: aeg_b           <= din;
                             4'hc: begin
-                               flag_mask   <= ~{din[7],din[5:0]};
-                               flag_ctl    <= {din[7],din[5:0]}; // this lasts a single clock cycle
+                               flag_ctl    <= {din[7],din[5:0]};
                            end
                             default:;
                         endcase
@@ -425,7 +422,6 @@ always @(posedge clk) begin : memory_mapped_registers
             { clr_flag_B, clr_flag_A } <= 2'd0;
             psg_wr_n <= 1'b1;
             pcm_wr   <= 1'b0;
-            flag_ctl <= 'd0;
             up_aon   <= 1'b0;
             acmd_up_b <= 1'b0;
         end
