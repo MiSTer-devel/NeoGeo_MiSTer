@@ -281,7 +281,7 @@ always @(posedge clk) begin : memory_mapped_registers
                     REG_CLK_N2: div_setting    <= 2'b0; // 2F
                     default:;
                 endcase
-            end else begin
+            end else if ( part == addr[1] ) begin
                 // Global registers
                 ch_din <= din;
                 if( selected_register == REG_KON && !part ) begin
