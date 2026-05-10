@@ -408,21 +408,22 @@ always @(posedge CLK_50M) begin
 	end
 end
 
-// The watchdog should output nRESET but it makes video sync stop for a moment, so the
-// MiSTer OSD jumps around. Provide an indication for devs that a watchdog reset happened ?
-
 reg [14:0] TRASH_ADDR;
 reg SYSTEM_TYPE, SYSTEM_CD_TYPE;
 
-reg nRESET;
+reg nRESET_CORE;
 always @(posedge CLK_48M) begin
 	reg rst_n;
+	reg got_rom_write = 0;
 
-	nRESET <= rst_n;
+	if (RESET) got_rom_write <= 0;
+	if (ioctl_download & ioctl_wr) got_rom_write <= 1;
+
+	nRESET_CORE <= rst_n;
 	rst_n <= &TRASH_ADDR;
 	if(CLK_EN_24M_N && ~&TRASH_ADDR) TRASH_ADDR <= TRASH_ADDR + 1'b1;
 
-	if (status[0] | status[14] | buttons[1] | bk_loading | RESET) begin
+	if (status[0] | status[14] | buttons[1] | bk_loading | RESET | ~got_rom_write) begin
 		TRASH_ADDR <= 0;
 		SYSTEM_TYPE <= status[1];	// Latch the system type on reset
 		SYSTEM_CD_TYPE <= status[2];
@@ -434,8 +435,8 @@ always @(posedge CLK_48M) begin
 	integer timeout = 0;
 	reg     last_rst = 0;
 
-	if (RESET) last_rst = 0;
-	if (status[0]) last_rst = 1;
+	if (RESET) last_rst <= 0;
+	if (status[0]) last_rst <= 1;
 
 	if (last_rst & ~status[0]) begin
 		osd_btn <= 0;
@@ -560,7 +561,7 @@ reg  [31:0] cfg = 0;
 wire [15:0] snd_right;
 wire [15:0] snd_left;
 
-wire nRESETP, nSYSTEM, CARD_WE, SHADOW, nVEC, nREGEN, nSRAMWEN, PALBNK;
+wire nRESET, nRESETP, nSYSTEM, CARD_WE, SHADOW, nVEC, nREGEN, nSRAMWEN, PALBNK;
 wire CD_nRESET_Z80;
 
 // Clocks
@@ -1288,7 +1289,7 @@ cpu_68k M68KCPU(
 	.CLK(CLK_48M),
 	.CLK_EN_68K_P(CLK_EN_68K_P),
 	.CLK_EN_68K_N(CLK_EN_68K_N),
-	.nRESET(nRESET_WD),
+	.nRESET(nRESET),
 	.M68K_ADDR(M68K_ADDR),
 	.FX68K_DATAIN(FX68K_DATAIN), .FX68K_DATAOUT(FX68K_DATAOUT),
 	.nLDS(nLDS), .nUDS(nUDS), .nAS(nAS), .M68K_RW(M68K_RW),
@@ -1335,7 +1336,7 @@ dpram #(15) WRAML(
 	.clock_b(CLK_48M),
 	.address_b(TRASH_ADDR),
 	.data_b(TRASH_ADDR[7:0]),
-	.wren_b(~nRESET)
+	.wren_b(~nRESET_CORE)
 );
 
 dpram #(15) WRAMU(
@@ -1348,7 +1349,7 @@ dpram #(15) WRAMU(
 	.clock_b(CLK_48M),
 	.address_b(TRASH_ADDR),
 	.data_b(TRASH_ADDR[7:0]),
-	.wren_b(~nRESET)
+	.wren_b(~nRESET_CORE)
 );
 
 wire [23:0] P2ROM_ADDR_PVC, P2ROM_ADDR_SMA;
@@ -2116,7 +2117,6 @@ lspc2_a2_sync	LSPC(
 	.FIXMAP_ADDR(FIXMAP_ADDR)	// Extracted for NEO-CMC
 );
 
-wire nRESET_WD;
 wire DOGE = SYSTEM_CDx ? ~CD_UPLOAD_EN : 1'b1; // UPLOAD_EN disables Watchdog?
 
 neo_b1 B1(
@@ -2135,8 +2135,8 @@ neo_b1 B1(
 	.PA(PAL_RAM_ADDR),
 	.EN_FIX(FIX_EN),
 	.DOGE(DOGE),
-	.nRST(nRESET),
-	.nRESET(nRESET_WD)
+	.nRST(nRESET_CORE),
+	.nRESET(nRESET)
 );
 
 spram #(13,16) PALRAM(
