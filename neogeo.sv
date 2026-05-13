@@ -1659,24 +1659,32 @@ neo_c1 C1(
 	.SYSTEM_TYPE({SYSTEM_CDx, SYSTEM_MVS})
 );
 
-reg       use_sp;
-reg [6:0] sp0, sp1;
+reg       use_sp = 0;
+reg [6:0] sp0 = 0, sp1 = 0;
 always @(posedge clk_sys) begin
 	reg old_sp0, old_sp1, old_ms;
+	reg latch_done = 0, ms_filtered = 0;
 
 	old_sp0 <= spinner_0[8];
-	if(old_sp0 ^ spinner_0[8]) sp0 <= sp0 - spinner_0[6:0];
+	if(latch_done && (old_sp0 ^ spinner_0[8])) sp0 <= sp0 - spinner_0[6:0];
 	
+	// Main fires a single mouse event on cold boot in input.cpp in input_notify_mode()
+	// Filter this event once to prevent accidental latching of use_sp on cold boot
 	old_ms <= ps2_mouse[24];
-	if(old_ms ^ ps2_mouse[24]) sp0 <= sp0 - ps2_mouse[14:8];
+	if(latch_done && (old_ms ^ ps2_mouse[24])) begin
+		ms_filtered <= 1;
+		if (ms_filtered) sp0 <= sp0 - ps2_mouse[14:8];
+	end
 
 	old_sp1 <= spinner_1[8];
-	if(old_sp1 ^ spinner_1[8]) sp1 <= sp1 - spinner_1[6:0];
+	if(latch_done && (old_sp1 ^ spinner_1[8])) sp1 <= sp1 - spinner_1[6:0];
+
+	latch_done <= 1;
 
 	if(status[42]) use_sp <= 1;
 	else if(status[41]) use_sp <= 0;
-	else begin
-		if((old_sp0 ^ spinner_0[8]) || (old_sp1 ^ spinner_1[8]) || (old_ms ^ ps2_mouse[24])) use_sp <= 1;
+	else if(latch_done) begin
+		if((old_sp0 ^ spinner_0[8]) || (old_sp1 ^ spinner_1[8]) || (ms_filtered && (old_ms ^ ps2_mouse[24]))) use_sp <= 1;
 		if(joystick_0[3:0] || joystick_1[3:0]) use_sp <= 0;
 	end
 end
