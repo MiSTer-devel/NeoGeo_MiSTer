@@ -155,6 +155,7 @@ begin
                 MREQ_n  <= '1';
                 DI_Reg  <= "00000000";
                 CEN_pol <= '0';
+                IntCycleD_n <= "11";
             elsif CEN_p = '1' and CEN_pol = '0' then
                 CEN_pol <= '1';
                 if WAIT_s = '1' or TState /= "010" then

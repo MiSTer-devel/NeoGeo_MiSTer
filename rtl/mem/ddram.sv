@@ -35,6 +35,8 @@ module ddram
 	output  [7:0] DDRAM_BE,
 	output        DDRAM_WE,
 
+	input         cache_reset,
+
 	input  [27:0] wraddr,
 	input  [15:0] din,
 	input         we_byte,  // 0:word write, 1:byte write
@@ -81,9 +83,15 @@ reg  [7:0] ram_wr_be;
 reg [2:0]  state  = 0;
 reg [1:0]  ch = 0; 
 
+reg [2:0]  cache_valid;
+
 always @(posedge DDRAM_CLK) begin
 	reg old_cpreq;
 	reg [6:0] cpcnt;
+
+	if (cache_reset) begin
+		cache_valid <= 3'b000;
+	end
 
 	cpwr <= 0;
 	if(!DDRAM_BUSY) begin
@@ -100,11 +108,11 @@ always @(posedge DDRAM_CLK) begin
 					state       <= 1;
 				end
 				else if(rd_req != rd_ack) begin
-					if(cache_addr[27:3] == rdaddr[27:3]) begin
+					if(cache_valid[0] & (cache_addr[27:3] == rdaddr[27:3])) begin
 						rd_ack      <= rd_req;
 						dout        <= ram_q[{rdaddr[2:0],3'b000} +:8];
 					end
-					else if((cache_addr[27:3]+1'd1) == rdaddr[27:3]) begin
+					else if(cache_valid[0] & ((cache_addr[27:3]+1'd1) == rdaddr[27:3])) begin
 						rd_ack      <= rd_req;
 						ram_q       <= next_q;
 						dout        <= next_q[{rdaddr[2:0],3'b000} +:8];
@@ -125,11 +133,11 @@ always @(posedge DDRAM_CLK) begin
 					end 
 				end
 				else if(rd_req2 != rd_ack2) begin
-					if(cache_addr2[27:3] == rdaddr2[27:3]) begin
+					if(cache_valid[1] & (cache_addr2[27:3] == rdaddr2[27:3])) begin
 						rd_ack2     <= rd_req2;
 						dout2       <= ram_q2[{rdaddr2[2:0],3'b000} +:8];
 					end
-					else if((cache_addr2[27:3]+1'd1) == rdaddr2[27:3]) begin
+					else if(cache_valid[1] & ((cache_addr2[27:3]+1'd1) == rdaddr2[27:3])) begin
 						rd_ack2     <= rd_req2;
 						ram_q2      <= next_q2;
 						dout2       <= next_q2[{rdaddr2[2:0],3'b000} +:8];
@@ -150,11 +158,11 @@ always @(posedge DDRAM_CLK) begin
 					end 
 				end 
 				else if(rd_req3 != rd_ack3) begin
-					if(cache_addr3[27:3] == rdaddr3[27:3]) begin
+					if(cache_valid[2] & (cache_addr3[27:3] == rdaddr3[27:3])) begin
 						rd_ack3     <= rd_req3;
 						dout3       <= ram_q3[{rdaddr3[2:0],3'b000} +:8];
 					end
-					else if((cache_addr3[27:3]+1'd1) == rdaddr3[27:3]) begin
+					else if(cache_valid[2] & ((cache_addr3[27:3]+1'd1) == rdaddr3[27:3])) begin
 						rd_ack3     <= rd_req3;
 						ram_q3      <= next_q3;
 						dout3       <= next_q3[{rdaddr3[2:0],3'b000} +:8];
@@ -187,12 +195,7 @@ always @(posedge DDRAM_CLK) begin
 				end
 
 			1: begin
-					cache_addr <= '1;
-					cache_addr2 <= '1; 
-					cache_addr3 <= '1; 
-					cache_addr[3:0] <= 0;
-					cache_addr2[3:0] <= 0; 
-					cache_addr3[3:0] <= 0; 
+					cache_valid <= 3'b000;
 					we_ack <= we_req;
 					state  <= 0;
 				end
@@ -219,13 +222,16 @@ always @(posedge DDRAM_CLK) begin
 			3: if(DDRAM_DOUT_READY) begin
 					if (ch==0) begin
 						next_q <= DDRAM_DOUT;
+						cache_valid[0] <= 1'b1;
 					end
 					else if (ch==1) begin
 						next_q2 <= DDRAM_DOUT;
+						cache_valid[1] <= 1'b1;
 					end 
 					else begin
 						next_q3 <= DDRAM_DOUT;
-					end 
+						cache_valid[2] <= 1'b1;
+					end
 					state  <= 0;
 				end
 

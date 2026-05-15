@@ -1778,7 +1778,12 @@ always @(posedge DDRAM_CLK) begin
 	old_rd <= z80_rom_rd;
 	if(old_rd == z80_rom_rd) old_rd1 <= old_rd;
 
-	if(~old_rd1 & old_rd) z80rd_req <= ~z80rd_req;
+	// nRESET is used here because otherwise z80rd_req is toggled at core boot
+	// which causes problems with DDRAM. (Z80_nSDRD is probably low for a few DDRAM_CLK
+	// cycles at core boot).
+	// If the core is loaded with SignalTap then DDRAM is stuck at waiting for
+	// DDRAM_DOUT_READY to go high which does not happen.
+	if(~old_rd1 & old_rd & nRESET) z80rd_req <= ~z80rd_req;
 end
 
 wire Z80_nWAIT = (z80rd_req == z80rd_ack);
@@ -1920,6 +1925,8 @@ reg ddr_we_byte;
 ddram DDRAM(
 	.*,
 	
+	.cache_reset(~nRESET),
+
 	.wraddr(ddr_waddr),
 	.din(ddr_wr_din),
 	.we_req(adpcm_wr),
