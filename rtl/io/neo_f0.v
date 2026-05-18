@@ -69,9 +69,9 @@ module neo_f0(
 								DIPSW;
 	
 	// REG_STATUS_A $320001~?, odd bytes
-	// In console mode, reading REG_STATUS_A returns 00. This is used by the Unibios to detect the system type.
+	// In console mode, reading REG_STATUS_A returns 00. This is used by the Unibios to detect the system type. It detects console if read value is $FF or [4:3] = 0.
 	assign M68K_DATA = nDIPRD1 ? 8'bzzzzzzzz :
-								SYSTEM_TYPE ? {RTC_DOUT, RTC_TP, 4'b1111, COIN2, COIN1} : 8'h00;
+								SYSTEM_TYPE ? {RTC_DOUT, RTC_TP, 4'b0111, COIN2, COIN1} : 8'h00;
 
 	reg nBITW0_d;
 	always @(posedge CLK)
